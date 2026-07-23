@@ -1,0 +1,24 @@
+# Cloned reference repo — tracked separately
+India_First_40B/
+
+# Downloaded datasets (can be large)
+data/
+*.jsonl
+*.parquet
+*.arrow
+*.bin
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# macOS
+.DS_Store
+
+# Environment
+.env
