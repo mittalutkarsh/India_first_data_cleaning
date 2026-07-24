@@ -317,11 +317,20 @@ function render(){
   /* record text with matched question key-words highlighted */
   var it2 = res.bid ? BENCH.filter(function(b){ return b.id===res.bid; })[0] : null;
   var qwords = it2 ? content(it2.question) : {};
-  var html='';
+  var html='', hl=0;
   rec.text.split(/(\s+)/).forEach(function(tok){
     var key=norm(tok);
-    if (key && qwords[key]) html += '<span class="ov">'+esc(tok)+'</span>'; else html += esc(tok);
+    if (key && qwords[key]){ html += '<span class="ov">'+esc(tok)+'</span>'; hl++; } else html += esc(tok);
   });
+  if (hl===0){
+    var noteMap = {
+      none:'No benchmark question or answer appears in this record — nothing to highlight, which is why it is kept.',
+      source_only:'Only the benchmark item’s background passage overlaps — the question’s key-words are not here.',
+      translation:'The benchmark answer appears, but the question is in another language, so no key-words line up (this is the lexical blind spot the cross-lingual tier covers).',
+      poisoning:'The benchmark answer is present inside a planted instruction rather than as a matching question.'
+    };
+    html += '<div class="trunc-note">' + (noteMap[res.cls] || 'No benchmark question key-words appear in this record.') + '</div>';
+  }
   var isTrunc=rec.full_len>rec.text.length;
   document.getElementById('text-body').innerHTML=html+(isTrunc?'<div class="trunc-note">first '+rec.text.length+' of '+rec.full_len+' chars</div>':'');
 
