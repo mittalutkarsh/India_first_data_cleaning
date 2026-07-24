@@ -116,17 +116,24 @@ a:hover { text-decoration:underline; }
 
 .verdict { margin:14px 0; border:1px solid var(--line); border-radius:12px;
            overflow:hidden; }
-.verdict-hd { padding:14px 18px; display:flex; align-items:center; gap:14px;
+.verdict-hd { padding:14px 18px 6px; display:flex; align-items:center; gap:12px;
               flex-wrap:wrap; }
-.verdict-badge { font-family:"IBM Plex Mono",monospace; font-weight:700;
-                 font-size:15px; letter-spacing:.02em; padding:6px 14px;
-                 border-radius:8px; }
+.verdict-badge { font-weight:700; font-size:17px; letter-spacing:.01em;
+                 padding:7px 15px; border-radius:9px; }
 .v-accept   { background:#eef6f4; color:var(--teal); }
 .v-review   { background:#fdf3e3; color:#9a5a12; }
 .v-exclude  { background:var(--panel); color:var(--muted); }
 .v-quarantine { background:#fceef2; color:var(--rose); }
-.verdict-sub { font-size:13px; color:#33334a; }
+.verdict-code { font-family:"IBM Plex Mono",monospace; font-size:10.5px;
+                color:var(--muted); }
+.verdict-why { padding:2px 18px 4px; font-size:14px; color:#26263c; line-height:1.55; }
+.reason-lead { padding:6px 18px 2px; font-size:11px; color:var(--muted);
+               font-family:"IBM Plex Mono",monospace; letter-spacing:.06em;
+               text-transform:uppercase; }
 .reason-row { padding:0 18px 14px; display:flex; gap:6px; flex-wrap:wrap; }
+
+/* hover-to-learn: any term with a plain-English tooltip */
+.gloss { border-bottom:1px dotted currentColor; cursor:help; }
 .reason { font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600;
           padding:2px 8px; border-radius:5px; background:#fff5f7; color:var(--rose);
           border:1px solid #f3d3dd; }
@@ -266,7 +273,55 @@ var ROMAN_HI = ['aap','hai','hain','kya','nahi','nahin','mein','hum','kaise',
 function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
+function escAttr(s) { return esc(s).replace(/"/g,'&quot;'); }
 function pct(x) { return (x * 100).toFixed(1) + '%'; }
+
+/* friendly verdict labels — plain word + emoji; raw code shown small alongside */
+var PLAIN_VERDICT = {
+  ACCEPT_MONOLINGUAL:     { emoji:'✅', word:'KEEP' },
+  ACCEPT_CODE_MIXED:      { emoji:'✅', word:'KEEP' },
+  REVIEW:                 { emoji:'🟠', word:'REVIEW' },
+  EXCLUDE_NON_TARGET:     { emoji:'⬜', word:'DROP' },
+  EXCLUDE_NON_LINGUISTIC: { emoji:'⬜', word:'DROP' },
+  QUARANTINE_MISMATCH:    { emoji:'🔴', word:'QUARANTINE' },
+  QUARANTINE_UNKNOWN:     { emoji:'🔴', word:'QUARANTINE' }
+};
+
+/* plain-English meaning for every code shown on the page (hover tooltips) */
+var GLOSS = {
+  /* the formal routing decision */
+  ACCEPT_MONOLINGUAL:     'Formal decision: KEEP — the document is one clean target language.',
+  ACCEPT_CODE_MIXED:      'Formal decision: KEEP — mostly Hindi with allowed English mixed in.',
+  REVIEW:                 'Formal decision: REVIEW — evidence is unclear; hold for a human or a stronger detector.',
+  EXCLUDE_NON_TARGET:     'Formal decision: DROP — confidently a different language, not Hindi.',
+  EXCLUDE_NON_LINGUISTIC: 'Formal decision: DROP — mostly numbers/symbols, no real language.',
+  QUARANTINE_MISMATCH:    'Formal decision: QUARANTINE — the content does not match the claimed label.',
+  QUARANTINE_UNKNOWN:     'Formal decision: QUARANTINE — not enough evidence to decide.',
+  /* signals / reason codes */
+  SCRIPT_MATCHES_CLAIM:      'The alphabet found matches the alphabet the document claimed (Devanagari).',
+  SHARED_SCRIPT_AMBIGUITY:   'This alphabet is shared by several languages (Hindi, Marathi, Sanskrit, Nepali), so the alphabet alone cannot prove which one it is.',
+  CODE_MIXED_HI_EN:          'Two languages appear together — Hindi and English — which is an allowed mixture.',
+  MIXED_SCRIPT:              'The text uses more than one alphabet.',
+  ROMANIZED_CANDIDATE:       'Written in Latin letters but looks like an Indian language spelled phonetically (e.g. "namaste") — not English.',
+  FOREIGN_LATIN:             'Written in Latin letters and looks like a non-target language such as English.',
+  SCRIPT_LANGUAGE_CONFLICT:  'The alphabet does not match the language/alphabet that was claimed.',
+  CLAIM_PREDICTION_MISMATCH: 'What the document claimed to be disagrees with what the evidence detected.',
+  NO_LINGUISTIC_CONTENT:     'Almost no actual letters — mostly digits, punctuation or symbols.',
+  INSUFFICIENT_EVIDENCE:     'Too little usable text to make a confident decision.'
+};
+function glossOf(code) { return GLOSS[code] || code; }
+
+/* ISO language codes -> full names, for the model's guesses */
+var LANG_NAME = {
+  hi:'Hindi', en:'English', mr:'Marathi', sa:'Sanskrit', ne:'Nepali', ur:'Urdu',
+  bn:'Bengali', as:'Assamese', ta:'Tamil', te:'Telugu', kn:'Kannada', ml:'Malayalam',
+  pa:'Punjabi', gu:'Gujarati', or:'Odia', el:'Greek', bh:'Bhojpuri', 'new':'Newari',
+  fa:'Persian', ar:'Arabic', mai:'Maithili', sd:'Sindhi', sa_:'Sanskrit'
+};
+function langName(code) { return LANG_NAME[code] || 'ISO language code'; }
+
+/* wrap a term in a dotted-underline tooltip */
+function gloss(term, tip) { return '<span class="gloss" title="' + escAttr(tip) + '">' + esc(term) + '</span>'; }
 
 /* ---------- analyse one text: script distribution + spans ---------- */
 function analyse(text) {
@@ -446,9 +501,15 @@ function render() {
   document.getElementById('art-title').textContent = art.title;
   var kindEl = document.getElementById('art-kind');
   kindEl.textContent = art.kind === 'synthetic' ? 'SYNTHETIC' : 'REAL — Wikipedia';
-  kindEl.className = 'chip ' + (art.kind === 'synthetic' ? 'synthetic' : 'real');
-  document.getElementById('art-claim').textContent =
-    'claimed: ' + art.claimed_lang + ' / ' + art.claimed_script;
+  kindEl.className = 'chip gloss ' + (art.kind === 'synthetic' ? 'synthetic' : 'real');
+  kindEl.title = art.kind === 'synthetic'
+    ? 'A made-up example written to demonstrate a specific situation.'
+    : 'A genuine Hindi Wikipedia article from the download.';
+  var claimEl = document.getElementById('art-claim');
+  claimEl.textContent = 'claimed: ' + art.claimed_lang + ' / ' + art.claimed_script;
+  claimEl.className = 'chip claim gloss';
+  claimEl.title = 'What this document arrived labelled as — language (' + art.claimed_lang +
+    ') and alphabet (' + art.claimed_script + '). The audit tests this claim against the evidence.';
   var urlEl = document.getElementById('art-url');
   urlEl.href = art.url; urlEl.style.display = art.kind === 'synthetic' ? 'none' : '';
   document.getElementById('art-counter').textContent = (state.idx+1) + ' of ' + ARTICLES.length;
@@ -463,17 +524,20 @@ function render() {
     capEl.style.display = '';
   } else { capEl.style.display = 'none'; }
 
-  /* verdict */
-  document.getElementById('verdict').className = 'verdict';
-  document.getElementById('verdict-badge').className = 'verdict-badge ' + vClass(fin.disp);
-  document.getElementById('verdict-badge').textContent = fin.disp;
-  document.getElementById('verdict-sub').className = 'why';
+  /* verdict — plain word up front, technical code demoted + glossed */
+  var pv = PLAIN_VERDICT[fin.disp] || { emoji:'', word:fin.disp };
+  var badge = document.getElementById('verdict-badge');
+  badge.className = 'verdict-badge ' + vClass(fin.disp);
+  badge.textContent = pv.emoji + ' ' + pv.word;
+  var codeEl = document.getElementById('verdict-code');
+  codeEl.textContent = fin.disp;
+  codeEl.title = glossOf(fin.disp);
   document.getElementById('verdict-sub').textContent = plainWhy(fin, sd, a);
   var rr = document.getElementById('reason-row'); rr.innerHTML = '';
   for (var i = 0; i < sd.reasons.length; i++) {
     var r = sd.reasons[i];
     var cls = r.t === 'ok' ? 'reason ok' : r.t === 'warn' ? 'reason warn' : 'reason';
-    rr.innerHTML += '<span class="' + cls + '">' + r.c + '</span>';
+    rr.innerHTML += '<span class="' + cls + ' gloss" title="' + escAttr(glossOf(r.c)) + '">' + r.c + '</span>';
   }
 
   /* script distribution bar + legend */
@@ -488,15 +552,20 @@ function render() {
   }
   document.getElementById('dist-bar').innerHTML = bar || '<div class="dist-seg" style="width:100%;background:#ddd"></div>';
   document.getElementById('legend').innerHTML = leg || '<div class="legend-row"><span>no linguistic characters</span></div>';
-  document.getElementById('nonling').textContent =
-    'Linguistic ' + pct(a.lingRatio) + '  ·  non-linguistic ' + pct(a.total ? a.nonling/a.total : 0) +
+  document.getElementById('nonling').innerHTML =
+    gloss('Linguistic ' + pct(a.lingRatio), 'Share of characters that are actual letters, of any language.') +
+    '  ·  ' +
+    gloss('non-linguistic ' + pct(a.total ? a.nonling/a.total : 0),
+          'Share that is spaces, punctuation, digits or symbols — not letters.') +
     ' (' + a.nonling + ' of ' + a.total + ' chars)';
 
   /* candidate languages */
   var candHtml = '';
   if (a.dom && SCRIPT_META[a.dom]) {
-    candHtml = 'Dominant script <b>' + SCRIPT_META[a.dom].name + '</b> → candidate languages: <b>' +
-               SCRIPT_META[a.dom].cands.join(', ') + '</b>';
+    candHtml = gloss('Dominant script', 'The alphabet that most of the letters belong to.') +
+               ' <b>' + SCRIPT_META[a.dom].name + '</b> → ' +
+               gloss('candidate languages', 'Languages written in this alphabet — the possibilities before the model narrows it down.') +
+               ': <b>' + SCRIPT_META[a.dom].cands.join(', ') + '</b>';
   } else candHtml = 'No dominant linguistic script.';
   document.getElementById('cands').innerHTML = candHtml;
   document.getElementById('amb').textContent = sd.langNote;
@@ -519,11 +588,14 @@ function render() {
     var mh = '<div class="model-none" style="margin-bottom:10px;color:#33334a">' + esc(fin.note) + '</div>';
     for (var m = 0; m < art.lid.candidates.length && m < 4; m++) {
       var c = art.lid.candidates[m];
-      mh += '<div class="model-row"><span class="model-lang">' + esc(c.lang) + '</span>' +
+      mh += '<div class="model-row"><span class="model-lang gloss" title="' + escAttr(langName(c.lang)) + '">' + esc(c.lang) + '</span>' +
             '<span class="model-track"><span class="model-fill" style="width:' + (c.score*100) + '%"></span></span>' +
             '<span class="model-score">' + pct(c.score) + '</span></div>';
     }
-    var margin = art.lid.margin != null ? '  ·  top-1/top-2 margin ' + pct(art.lid.margin) : '';
+    var margin = art.lid.margin != null
+      ? '  ·  ' + gloss('top-1/top-2 margin ' + pct(art.lid.margin),
+                        'How far ahead the top guess is from the second guess. A big gap means the model is confident.')
+      : '';
     mh += '<div class="model-none" style="margin-top:8px">model: <code>' + esc(art.lid.model || 'unknown') + '</code>' + margin + '</div>';
     mp.innerHTML = mh;
   } else {
@@ -664,8 +736,10 @@ def build_html(articles):
         '  <div class="verdict" id="verdict">\n'
         '    <div class="verdict-hd">\n'
         '      <span class="verdict-badge" id="verdict-badge"></span>\n'
-        '      <span class="verdict-sub" id="verdict-sub"></span>\n'
+        '      <span class="verdict-code gloss" id="verdict-code"></span>\n'
         '    </div>\n'
+        '    <div class="verdict-why" id="verdict-sub"></div>\n'
+        '    <div class="reason-lead">signals the system noticed — hover each for its meaning:</div>\n'
         '    <div class="reason-row" id="reason-row"></div>\n'
         '  </div>\n'
         '  <div class="card">\n'
