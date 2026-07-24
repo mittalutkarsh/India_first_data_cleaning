@@ -132,11 +132,22 @@ def _synthetic():
         "expected": "EXCLUDE_NON_LINGUISTIC",
     })
 
+    captions = {
+        "syn-hi-clean":      "Plain Hindi in Devanagari — the easy 'keep' case.",
+        "syn-hi-en-codemix": "Hindi sprinkled with English tech terms — allowed code-mixing.",
+        "syn-hi-romanized":  "Hindi written in English letters — the classic detection trap.",
+        "syn-en-mislabeled": "Actually English, sitting in the Hindi folder — should be dropped.",
+        "syn-ur-arabic":     "Urdu in Perso-Arabic script — wrong language for a 'Hindi' label.",
+        "syn-sa-shloka":     "Sanskrit — same Devanagari script as Hindi, but not Hindi.",
+        "syn-ta-mislabeled": "Tamil — a completely different script under a 'Hindi' label.",
+        "syn-zxx-symbols":   "Numbers and symbols only — no actual language to train on.",
+    }
     for a in out:
         a["url"]            = "#"
         a["claimed_lang"]   = "hi"
         a["claimed_script"] = "Deva"
         a["kind"]           = "synthetic"
+        a["caption"]        = captions.get(a["id"], "")
         a["text"]           = a["text"][:PREVIEW_CHARS]
         a["full_len"]       = len(a["text"])
     return out
@@ -174,6 +185,7 @@ def _real(path, n):
                 "claimed_lang":   "hi",
                 "claimed_script": "Deva",
                 "kind":           "real",
+                "caption":        "A real Hindi Wikipedia article — the everyday case the auditor sees most.",
             }
             if 0.02 < latin_ratio < 0.30:   # some Latin, still Hindi-dominant
                 mixed.append(rec)

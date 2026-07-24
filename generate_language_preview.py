@@ -57,6 +57,36 @@ a:hover { text-decoration:underline; }
             font-size:clamp(24px,3.6vw,38px); margin:8px 0 6px; }
 .phead .dek { font-size:13px; color:#33334a; margin:0; max-width:80ch; }
 .note { font-size:12px; color:var(--muted); margin-top:8px; max-width:80ch; }
+
+/* explainer + collapsible sections */
+.explainer { margin:16px 0 0; border:1px solid var(--line); border-radius:12px;
+             background:#fff; overflow:hidden; }
+.explainer > summary, .more > summary {
+  cursor:pointer; list-style:none; padding:12px 16px; font-weight:600;
+  font-size:13.5px; color:var(--indigo); background:var(--panel);
+  display:flex; align-items:center; gap:8px; }
+.explainer > summary::-webkit-details-marker,
+.more > summary::-webkit-details-marker { display:none; }
+.explainer > summary::before, .more > summary::before {
+  content:"\25B8"; font-size:11px; transition:transform .15s; color:var(--marigold); }
+.explainer[open] > summary::before, .more[open] > summary::before { transform:rotate(90deg); }
+.explainer-bd { padding:14px 18px; font-size:13.5px; color:#33334a; line-height:1.7; }
+.explainer-bd b { color:var(--ink); }
+.explainer-bd .lead { margin:0 0 12px; }
+.verdict-key { display:flex; flex-direction:column; gap:6px; margin:10px 0 4px; }
+.vk-row { display:flex; align-items:center; gap:10px; font-size:13px; }
+.vk-badge { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:11px;
+            padding:2px 9px; border-radius:6px; min-width:104px; text-align:center; }
+.more { margin-top:13px; border:1px solid var(--line); border-radius:12px;
+        background:#fff; overflow:hidden; }
+.more > summary { color:var(--muted); background:#fff; border-bottom:1px solid transparent; }
+.more[open] > summary { border-bottom:1px solid var(--line); }
+.more-bd { padding:15px; }
+
+.caption { margin:12px 0 0; padding:10px 14px; border-left:3px solid var(--marigold);
+           background:#fdf9f1; border-radius:0 8px 8px 0; font-size:13.5px; color:#5a4520; }
+.caption b { color:#8a5a12; }
+.why { font-size:14px; color:#26263c; line-height:1.55; }
 .art-controls { display:flex; align-items:center; gap:14px; padding:16px 0 0;
                 flex-wrap:wrap; }
 .ctrl-label { font-family:"IBM Plex Mono",monospace; font-size:10px;
@@ -354,6 +384,29 @@ function combine(scriptDisp, lid) {
   return { disp: scriptDisp.disp, note: 'Model top-1 "'+top+'" ('+pct(conf)+').' };
 }
 
+/* ---------- plain-English explanation of the verdict ---------- */
+function plainWhy(fin, sd, a) {
+  var d = fin.disp, latn = a.shares['Latn'] || 0;
+  if (d === 'ACCEPT_MONOLINGUAL')
+    return 'Reads as clean Hindi in Devanagari script, and the model agrees. It goes straight into the Hindi training data.';
+  if (d === 'ACCEPT_CODE_MIXED')
+    return 'Mostly Hindi with English mixed in (' + pct(latn) + ' Latin) — a normal, allowed mixture. Kept, and tagged as code-mixed so the training recipe knows.';
+  if (d === 'EXCLUDE_NON_LINGUISTIC')
+    return 'Almost no real words — mostly numbers, punctuation and symbols. There is no language here to train on, so it is excluded.';
+  if (d === 'EXCLUDE_NON_TARGET')
+    return 'The model is confident this is another language, not Hindi. It is dropped from the Hindi training mixture.';
+  if (d === 'QUARANTINE_MISMATCH')
+    return 'The script/language does not match the "Hindi" label this document was filed under — a labeling problem. Quarantine it and audit where it came from.';
+  if (d === 'REVIEW') {
+    if (a.dom === 'Latn')
+      return (a.romanHits >= 2
+        ? 'Written in English letters, but it carries Hindi cue-words — likely romanized Hindi, not English. The model is not sure, so we do not guess: send it for review.'
+        : 'Written in Latin letters — could be English or romanized Hindi, and the model is not confident either way. Send it for review rather than guessing.');
+    return 'Script alone cannot pin down the language (Devanagari is shared by Hindi / Marathi / Sanskrit), and the model leans away from Hindi. Flag it for a closer look.';
+  }
+  return fin.note || '';
+}
+
 /* ---------- render text coloured by script run ---------- */
 function colourText(text) {
   var html = '', run = '', runScript = null;
@@ -403,11 +456,19 @@ function render() {
   document.getElementById('next-btn').disabled = state.idx === ARTICLES.length-1;
   document.getElementById('art-select').value = state.idx;
 
+  /* teaching caption */
+  var capEl = document.getElementById('caption');
+  if (art.caption) {
+    capEl.innerHTML = '<b>What this example shows:</b> ' + esc(art.caption);
+    capEl.style.display = '';
+  } else { capEl.style.display = 'none'; }
+
   /* verdict */
   document.getElementById('verdict').className = 'verdict';
   document.getElementById('verdict-badge').className = 'verdict-badge ' + vClass(fin.disp);
   document.getElementById('verdict-badge').textContent = fin.disp;
-  document.getElementById('verdict-sub').textContent = fin.note;
+  document.getElementById('verdict-sub').className = 'why';
+  document.getElementById('verdict-sub').textContent = plainWhy(fin, sd, a);
   var rr = document.getElementById('reason-row'); rr.innerHTML = '';
   for (var i = 0; i < sd.reasons.length; i++) {
     var r = sd.reasons[i];
@@ -455,7 +516,7 @@ function render() {
   /* model LID panel */
   var mp = document.getElementById('model-panel');
   if (art.lid && art.lid.candidates && art.lid.candidates.length) {
-    var mh = '';
+    var mh = '<div class="model-none" style="margin-bottom:10px;color:#33334a">' + esc(fin.note) + '</div>';
     for (var m = 0; m < art.lid.candidates.length && m < 4; m++) {
       var c = art.lid.candidates[m];
       mh += '<div class="model-row"><span class="model-lang">' + esc(c.lang) + '</span>' +
@@ -558,13 +619,32 @@ def build_html(articles):
         '<div class="wrap">\n'
         '  <div class="phead">\n'
         '    <h1>Language Identification</h1>\n'
-        '    <p class="dek">Per <em>Language_Skill.md</em>: language ID is a corpus <b>admission &amp; accounting</b> '
-        'system, not one classifier call. Every article is claimed <code>hi / Deva</code> (as if from the Hindi dump); '
-        'the audit tests that claim against detected evidence and routes each document.</p>\n'
-        '    <p class="note">The browser runs the dependency-free <b>script tier</b> (Unicode-block distribution, '
-        'code-mix, claimed-vs-detected, routing + reason codes). Script alone cannot separate Hindi from Marathi/'
-        'Sanskrit, nor romanized Hindi from English — that is exactly why a model tier exists. ' + lid_note + '</p>\n'
+        '    <p class="dek">This page does not clean text — it <b>judges</b> it. Each document was filed as '
+        '<code>hi / Deva</code>; the audit tests whether that is true and decides what to do with it.</p>\n'
         '  </div>\n'
+        '  <details class="explainer" open>\n'
+        '    <summary>How to read this page</summary>\n'
+        '    <div class="explainer-bd">\n'
+        '      <p class="lead">Everything here came from a folder <b>labelled "Hindi"</b> — but labels lie. Real '
+        'corpora hide English, mislabelled languages, code-mixing and junk. Before spending training compute, every '
+        'document must be checked and <b>routed</b> to one of four outcomes:</p>\n'
+        '      <div class="verdict-key">\n'
+        '        <div class="vk-row"><span class="vk-badge v-accept">ACCEPT</span>'
+        '<span>Real target-language text → goes into training.</span></div>\n'
+        '        <div class="vk-row"><span class="vk-badge v-review">REVIEW</span>'
+        '<span>Evidence is unclear → hold for a human or a stronger detector.</span></div>\n'
+        '        <div class="vk-row"><span class="vk-badge v-exclude">EXCLUDE</span>'
+        '<span>Another language, or no language at all → dropped.</span></div>\n'
+        '        <div class="vk-row"><span class="vk-badge v-quarantine">QUARANTINE</span>'
+        '<span>Content conflicts with its label → set aside and audit the source.</span></div>\n'
+        '      </div>\n'
+        '      <p class="note" style="margin-top:12px">Pick a document below. The <b>🧪 examples</b> are a guided tour '
+        'of the situations an auditor hits; the rest are real Hindi Wikipedia. The verdict is decided in two tiers — a '
+        'dependency-free <b>script check</b> (which alphabet?) plus a <b>fastText model</b> (which language?). Script '
+        'alone cannot tell Hindi from Sanskrit, nor romanized Hindi from English — which is exactly why both exist. '
+        + lid_note + '</p>\n'
+        '    </div>\n'
+        '  </details>\n'
         '  <div class="art-controls">\n'
         '    <span class="ctrl-label">Document</span>\n'
         '    <div class="art-nav">\n'
@@ -580,6 +660,7 @@ def build_html(articles):
         '    <span class="chip claim" id="art-claim"></span>\n'
         '    <a id="art-url" href="#" target="_blank">&#8599; Wikipedia</a>\n'
         '  </div>\n'
+        '  <div class="caption" id="caption"></div>\n'
         '  <div class="verdict" id="verdict">\n'
         '    <div class="verdict-hd">\n'
         '      <span class="verdict-badge" id="verdict-badge"></span>\n'
@@ -587,39 +668,47 @@ def build_html(articles):
         '    </div>\n'
         '    <div class="reason-row" id="reason-row"></div>\n'
         '  </div>\n'
-        '  <div class="grid2">\n'
-        '    <div class="card">\n'
-        '      <div class="card-hd">Script distribution (Step 04)</div>\n'
-        '      <div class="card-bd">\n'
-        '        <div class="dist-bar" id="dist-bar"></div>\n'
-        '        <div class="legend" id="legend"></div>\n'
-        '        <div class="note" id="nonling" style="margin-top:10px"></div>\n'
-        '        <div class="cand" id="cands" style="margin-top:12px"></div>\n'
-        '        <div class="amb" id="amb"></div>\n'
-        '      </div>\n'
+        '  <div class="card">\n'
+        '    <div class="card-hd">Which alphabet is this? — script distribution</div>\n'
+        '    <div class="card-bd">\n'
+        '      <div class="dist-bar" id="dist-bar"></div>\n'
+        '      <div class="legend" id="legend"></div>\n'
+        '      <div class="note" id="nonling" style="margin-top:10px"></div>\n'
+        '      <div class="cand" id="cands" style="margin-top:12px"></div>\n'
+        '      <div class="amb" id="amb"></div>\n'
         '    </div>\n'
-        '    <div class="card">\n'
-        '      <div class="card-hd">Model LID — fastText (Steps 05/12)</div>\n'
-        '      <div class="card-bd"><div id="model-panel"></div></div>\n'
-        '    </div>\n'
-        '  </div>\n'
-        '  <div class="card" style="margin-top:13px">\n'
-        '    <div class="card-hd">Paragraph / span breakdown (Step 06)</div>\n'
-        '    <div class="card-bd"><div class="spans" id="spans"></div></div>\n'
         '  </div>\n'
         '  <div class="text-view">\n'
-        '    <div class="card-hd" style="border-bottom:1px solid var(--line)">Document text — coloured by script</div>\n'
+        '    <div class="card-hd" style="border-bottom:1px solid var(--line)">The document — coloured by script</div>\n'
         '    <div class="text-body" id="text-body"></div>\n'
         '  </div>\n'
-        '  <div class="acct">\n'
-        '    <h2>Corpus accounting (Step 14)</h2>\n'
-        '    <p class="note">Rolled up across all ' + str(len(articles)) + ' documents in the sample.</p>\n'
-        '    <div class="acct-grid">\n'
-        '      <div class="card"><div class="card-hd">By final disposition</div><div class="card-bd" id="acct-disp"></div></div>\n'
-        '      <div class="card"><div class="card-hd">By dominant script</div><div class="card-bd" id="acct-script"></div></div>\n'
+        '  <details class="more">\n'
+        '    <summary>Show analysis details — model scores &amp; paragraph breakdown</summary>\n'
+        '    <div class="more-bd">\n'
+        '      <div class="grid2">\n'
+        '        <div class="card">\n'
+        '          <div class="card-hd">Which language? — fastText model</div>\n'
+        '          <div class="card-bd"><div id="model-panel"></div></div>\n'
+        '        </div>\n'
+        '        <div class="card">\n'
+        '          <div class="card-hd">Paragraph-by-paragraph script</div>\n'
+        '          <div class="card-bd"><div class="spans" id="spans"></div></div>\n'
+        '        </div>\n'
+        '      </div>\n'
         '    </div>\n'
-        '    <div class="card" style="margin-top:13px"><div class="card-hd">Summary</div><div class="card-bd" id="acct-summary"></div></div>\n'
-        '  </div>\n'
+        '  </details>\n'
+        '  <details class="more">\n'
+        '    <summary>Show corpus accounting — the big picture across all ' + str(len(articles)) + ' documents</summary>\n'
+        '    <div class="more-bd">\n'
+        '      <p class="note" style="margin-top:0">Where every document in this sample ended up — the kind of '
+        'roll-up you would run over the whole corpus before training.</p>\n'
+        '      <div class="acct-grid">\n'
+        '        <div class="card"><div class="card-hd">By final disposition</div><div class="card-bd" id="acct-disp"></div></div>\n'
+        '        <div class="card"><div class="card-hd">By dominant script</div><div class="card-bd" id="acct-script"></div></div>\n'
+        '      </div>\n'
+        '      <div class="card" style="margin-top:13px"><div class="card-hd">Summary</div><div class="card-bd" id="acct-summary"></div></div>\n'
+        '    </div>\n'
+        '  </details>\n'
         '</div>\n'
         '<script>' + JS + '</script>\n'
         '</body>\n</html>\n'
