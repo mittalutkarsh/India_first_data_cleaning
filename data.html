@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data — India-First 40B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
+  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; }
+.nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:1280px; margin:0 auto; padding:0 24px 80px; }
+.phead { padding:34px 0 12px; border-bottom:2px solid var(--ink); }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(24px,3.6vw,38px); margin:8px 0 6px; }
+.phead .dek { font-size:13px; color:#33334a; margin:0; max-width:82ch; }
+.sec { margin:30px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:22px; margin:0 0 4px; }
+.sec .lead { font-size:13px; color:var(--muted); margin:0 0 14px; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.fact { background:#fff; padding:15px 16px; }
+.fact .n { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:22px; color:var(--indigo); }
+.fact .l { font-size:11.5px; color:var(--muted); margin-top:4px; }
+.tbl { width:100%; border-collapse:collapse; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.tbl th, .tbl td { text-align:left; padding:9px 13px; border-bottom:1px solid var(--line); }
+.tbl th { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+.tbl td code { font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--panel); padding:1px 5px; border-radius:4px; }
+.tier { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:1px 7px; border-radius:5px; }
+.t0 { background:#eef6f4; color:var(--teal); } .t1 { background:#eef0fb; color:var(--indigo); }
+.t2 { background:#fdf3e3; color:#9a5a12; } .t3 { background:#fceef2; color:var(--rose); }
+.langs { display:flex; flex-wrap:wrap; gap:8px; }
+.lang { border:1px solid var(--line); border-radius:8px; background:#fff; padding:8px 12px; font-size:13px; }
+.lang b { font-family:"Spectral",serif; }
+.lang .sc { font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--muted); }
+.callout { border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; padding:12px 15px; font-size:13.5px; color:#5a4520; margin-top:14px; }
+.callout b { color:#8a5a12; }
+</style>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="overview.html">Overview</a>
+  <a href="data.html" class="active">Data</a>
+  <a href="index.html">Cleaning</a>
+  <a href="language.html">Language</a>
+  <a href="quality.html">Quality</a>
+  <a href="dedup.html">Dedup</a>
+  <a href="pii.html">PII</a>
+  <a href="decontam.html">Decontam</a>
+  <a href="tokenizer.html">Tokenizer</a>
+  <a href="manifest.html">Manifest</a>
+</div></div>
+<div class="wrap">
+  <div class="phead">
+    <h1>The Data</h1>
+    <p class="dek">Where the corpus comes from, how provenance is tiered, and the small practice slice these interactive pages actually run on.</p>
+  </div>
+  <div class="sec">
+    <h2>Practice slice (what these pages use)</h2>
+    <p class="lead">A laptop-sized sample so everything runs live in the browser.</p>
+    <div class="facts">
+      <div class="fact"><div class="n">40,000</div><div class="l">Hindi Wikipedia articles</div></div>
+      <div class="fact"><div class="n">~14.5M</div><div class="l">estimated tokens</div></div>
+      <div class="fact"><div class="n">1,635</div><div class="l">avg characters / article</div></div>
+      <div class="fact"><div class="n">T0</div><div class="l">tier — native-verified</div></div>
+    </div>
+    <div class="callout"><b>Source:</b> <code>wikimedia/wikipedia</code>, config <code>20231101.hi</code>, streamed to <code>data/wiki_hi/wiki_hi.jsonl</code>. Each interactive page embeds ~10–30 of these real articles plus hand-made <b>🧪 synthetic</b> examples that tour the tricky cases the real data rarely shows.</div>
+  </div>
+  <div class="sec">
+    <h2>Full-corpus sources</h2>
+    <p class="lead">The datasets the real 6T-token corpus would draw on (beyond this practice slice).</p>
+    <table class="tbl">
+      <tr><th>Source</th><th>Scale</th><th>Role</th></tr>
+      <tr><td><code>ai4bharat/sangraha</code></td><td>~251B tokens</td><td>Largest verified Indic web + curated corpus</td></tr>
+      <tr><td><code>ai4bharat/IndicCorpV2</code></td><td>~20.9B tokens</td><td>Cleaned Indic monolingual web text</td></tr>
+      <tr><td><code>wikimedia/wikipedia</code></td><td>10–90M / language</td><td>High-trust native-verified reference text</td></tr>
+    </table>
+  </div>
+  <div class="sec">
+    <h2>Provenance tiers</h2>
+    <p class="lead">Every document is tagged by how trustworthy its origin is — this drives quality and PII policy downstream.</p>
+    <table class="tbl">
+      <tr><th>Tier</th><th>Meaning</th><th>Example</th></tr>
+      <tr><td><span class="tier t0">T0</span></td><td>Native-verified — high-trust, human-curated native text</td><td>Wikipedia, textbooks</td></tr>
+      <tr><td><span class="tier t1">T1</span></td><td>Native-web — crawled native text, machine-cleaned</td><td>Sangraha, IndicCorp</td></tr>
+      <tr><td><span class="tier t2">T2</span></td><td>Synthetic — model-generated, lineage-tracked</td><td>Generated Q&amp;A, distillation</td></tr>
+      <tr><td><span class="tier t3">T3</span></td><td>Translated — content ported from another language</td><td>MT of English corpora</td></tr>
+    </table>
+  </div>
+  <div class="sec">
+    <h2>Target languages</h2>
+    <p class="lead">The ten Indian languages the model treats as first-class.</p>
+    <div class="langs">
+      <div class="lang"><b>Hindi</b> <span class="sc">hi · Deva</span></div>
+      <div class="lang"><b>Bengali</b> <span class="sc">bn · Beng</span></div>
+      <div class="lang"><b>Tamil</b> <span class="sc">ta · Taml</span></div>
+      <div class="lang"><b>Telugu</b> <span class="sc">te · Telu</span></div>
+      <div class="lang"><b>Marathi</b> <span class="sc">mr · Deva</span></div>
+      <div class="lang"><b>Kannada</b> <span class="sc">kn · Knda</span></div>
+      <div class="lang"><b>Malayalam</b> <span class="sc">ml · Mlym</span></div>
+      <div class="lang"><b>Gujarati</b> <span class="sc">gu · Gujr</span></div>
+      <div class="lang"><b>Punjabi</b> <span class="sc">pa · Guru</span></div>
+      <div class="lang"><b>Odia</b> <span class="sc">or · Orya</span></div>
+    </div>
+    <div class="callout">Hindi and Marathi share the <b>Devanagari</b> script; that shared-script ambiguity is exactly what the <a href="language.html">Language</a> stage has to resolve.</div>
+  </div>
+</div>
+</body>
+</html>

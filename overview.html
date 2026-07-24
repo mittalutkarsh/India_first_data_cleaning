@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India-First 40B — Data Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
+  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; }
+.nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:1280px; margin:0 auto; padding:0 24px 80px; }
+.hero { padding:48px 0 20px; border-bottom:2px solid var(--ink); }
+.hero .eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
+.hero h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(30px,5vw,52px); margin:10px 0 10px; line-height:1.05; }
+.hero p { font-size:15px; color:#33334a; margin:0; max-width:70ch; }
+.sec { margin:32px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:22px; margin:0 0 4px; }
+.sec .lead { font-size:13px; color:var(--muted); margin:0 0 16px; }
+.stages { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+.stage { display:block; border:1px solid var(--line); border-radius:12px; background:#fff; padding:16px 17px; transition:border-color .12s, transform .12s; }
+.stage:hover { border-color:var(--indigo-soft); transform:translateY(-2px); text-decoration:none; }
+.stage .num { font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:var(--marigold); }
+.stage .nm { font-family:"Spectral",serif; font-weight:700; font-size:19px; color:var(--ink); margin:2px 0; }
+.stage .verb { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); }
+.stage .d { font-size:13px; color:#44445a; margin-top:8px; }
+.stage .go { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--indigo); margin-top:10px; }
+.facts { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.fact { background:#fff; padding:15px 16px; }
+.fact .n { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:22px; color:var(--indigo); }
+.fact .l { font-size:11.5px; color:var(--muted); margin-top:4px; }
+.mix { display:flex; height:26px; border-radius:7px; overflow:hidden; border:1px solid var(--line); margin-top:6px; }
+.mix span { display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; font-family:"IBM Plex Mono",monospace; }
+.mixleg { font-size:12px; color:var(--muted); margin-top:8px; }
+.conv { border:1px solid var(--line); border-radius:12px; background:#fff; padding:16px 18px; font-size:13.5px; color:#33334a; }
+.conv b { color:var(--ink); }
+.conv ul { margin:8px 0 0; padding-left:20px; } .conv li { margin:4px 0; }
+</style>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="overview.html" class="active">Overview</a>
+  <a href="data.html">Data</a>
+  <a href="index.html">Cleaning</a>
+  <a href="language.html">Language</a>
+  <a href="quality.html">Quality</a>
+  <a href="dedup.html">Dedup</a>
+  <a href="pii.html">PII</a>
+  <a href="decontam.html">Decontam</a>
+  <a href="tokenizer.html">Tokenizer</a>
+  <a href="manifest.html">Manifest</a>
+</div></div>
+<div class="wrap">
+  <div class="hero">
+    <div class="eyebrow">A 40-billion-parameter model, built India-first</div>
+    <h1>Turning raw Indian-language text into training-ready data.</h1>
+    <p>These pages are an interactive tour of the data pipeline behind India-First 40B — a model meant to match frontier models on general tasks while being genuinely fluent in the top-10 Indian languages. Each stage below is a live, self-explaining tool you can click through.</p>
+  </div>
+  <div class="sec">
+    <h2>The pipeline</h2>
+    <p class="lead">Eight stages take a raw web/Wikipedia document and decide, with evidence, whether it earns a place in the corpus. Click any stage.</p>
+    <div class="stages">
+<a class="stage" href="index.html"><div class="num">STAGE 01</div><div class="nm">Cleaning</div><div class="verb">Normalize</div><div class="d">Fix Unicode, strip control chars & boilerplate, decode entities — without touching Indic joiners.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="language.html"><div class="num">STAGE 02</div><div class="nm">Language</div><div class="verb">Identify</div><div class="d">Which language is this really? Script analysis + a model, routing keep / review / quarantine.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="quality.html"><div class="num">STAGE 03</div><div class="nm">Quality</div><div class="verb">Judge</div><div class="d">Nine cheap checks + a strictness slider decide if a document is good enough to train on.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="dedup.html"><div class="num">STAGE 04</div><div class="nm">Dedup</div><div class="verb">De-duplicate</div><div class="d">MinHash / Jaccard find exact & near copies; keep one representative, drop the rest — keep translations.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="pii.html"><div class="num">STAGE 05</div><div class="nm">PII</div><div class="verb">Redact</div><div class="d">Detect emails, IDs, secrets & names; mask or quarantine — never expose raw personal data.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="decontam.html"><div class="num">STAGE 06</div><div class="nm">Decontam</div><div class="verb">Protect eval</div><div class="d">Remove training copies of benchmark items so scores measure ability, not memorization.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="tokenizer.html"><div class="num">STAGE 07</div><div class="nm">Tokenizer</div><div class="verb">Measure fertility</div><div class="d">Why Indic scripts cost 2–4× the tokens under an English tokenizer — and how to fix it.</div><div class="go">Open &#8594;</div></a>
+<a class="stage" href="manifest.html"><div class="num">STAGE 08</div><div class="nm">Manifest</div><div class="verb">Admit</div><div class="d">The system-of-record: hashes, imported stage results, admission gates → admit / block a shard.</div><div class="go">Open &#8594;</div></a>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>What we are building</h2>
+    <p class="lead">The corpus target the pipeline feeds.</p>
+    <div class="facts">
+      <div class="fact"><div class="n">40B</div><div class="l">parameters, trained from scratch</div></div>
+      <div class="fact"><div class="n">6T</div><div class="l">token corpus target</div></div>
+      <div class="fact"><div class="n">10</div><div class="l">Indian languages, first-class</div></div>
+      <div class="fact"><div class="n">4</div><div class="l">provenance tiers (T0–T3)</div></div>
+    </div>
+    <div style="margin-top:16px">
+      <div style="font-size:12px;color:#888;font-family:'IBM Plex Mono',monospace">TARGET CORPUS MIX</div>
+      <div class="mix">
+        <span style="width:40%;background:#2E357E">English 40%</span>
+        <span style="width:22%;background:#147D74">Indic 22%</span>
+        <span style="width:20%;background:#6169B8">Code 20%</span>
+        <span style="width:12%;background:#E0982B">Math/Sci 12%</span>
+        <span style="width:6%;background:#B5476B">Other 6%</span>
+      </div>
+      <div class="mixleg">Indic gets a deliberately large share so the model is fluent, not just capable of translation.</div>
+    </div>
+  </div>
+  <div class="sec">
+    <h2>How to read these pages</h2>
+    <div class="conv">
+      A few conventions run through every stage:
+      <ul>
+        <li><b>Plain verdicts</b> — a colour-coded badge (KEEP / REVIEW / DROP / …) with a one-sentence reason.</li>
+        <li><b>A strictness slider</b> — most stages have named policy bundles; drag it and every verdict re-computes live.</li>
+        <li><b>Hover-to-learn</b> — any dotted-underlined term shows a plain-English tooltip.</li>
+        <li><b>🧪 synthetic vs real</b> — hand-made examples tour the tricky cases; the rest are real Hindi Wikipedia.</li>
+        <li><b>Offline tiers</b> — heavy models (fastText, embeddings, a real tokenizer) are noted where a browser can’t run them.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+</body>
+</html>
