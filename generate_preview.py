@@ -10,6 +10,8 @@ Open: push to GitHub Pages, or python3 -m http.server 8000 locally.
 
 import json
 import os
+import re
+import unicodedata
 
 JSONL_PATH    = os.path.join("data", "wiki_hi", "wiki_hi.jsonl")
 OUTPUT_PATH   = "index.html"
@@ -18,30 +20,160 @@ PREVIEW_CHARS = 3000
 
 
 # ---------------------------------------------------------------------------
+# Synthetic "kitchen-sink" demo article
+# ---------------------------------------------------------------------------
+# Real Hindi Wikipedia is pre-cleaned Parquet, so most filters are no-ops on
+# it. This synthetic article deliberately contains every kind of noise so all
+# 11 steps fire visibly. Every invisible character is written with a Python
+# escape (\uXXXX / \xNN) — no raw control bytes live in this source file.
+
+def build_synthetic_article():
+    BOM   = "﻿"          # Step 10
+    ZWNJ  = "‌"          # Step 07 (preserved)
+    ZWJ   = "‍"          # Step 07 (preserved)
+    ZWSP  = "​"          # Step 08
+    NBSP  = " "          # Step 13
+    FFFD  = "�"          # Step 12
+    NUL   = "\x00"          # Step 09
+    VT    = "\x0b"          # Step 09
+    DEL   = "\x7f"          # Step 09
+    C1    = "\x85"          # Step 09 (NEL, a C1 control)
+    LRE   = "‪"          # Step 11 (bidi embedding)
+    PDF   = "‬"          # Step 11 (pop directional formatting)
+    RLI   = "⁦"          # Step 11 (directional isolate)
+    PDI   = "⁩"          # Step 11
+    # NFC: decomposed forms that will compose on normalize()
+    QA_DECOMP = "क़"      # क + ़  -> क़  (U+0958)
+    E_ACUTE   = "é"           # e + ◌́  -> é
+
+    lines = [
+        BOM + "साफ-सफाई डेमो लेख " + LRE + "(bidi embed)" + PDF,
+        "",
+        "1. HTML एंटिटीज़: AT&amp;T, 5 &lt; 10 &gt; 3, &quot;नमस्ते&quot;, "
+        "&#2360;&#2340;&#2381;&#2351; (सत्य), &#x0939;िंदी &nbsp; समाप्त।",
+        "",
+        "2. यूनिकोड NFC: " + QA_DECOMP + "िला (क़िला), caf" + E_ACUTE + " — "
+        "दोनों संयोजित रूप में सामान्यीकृत होंगे।",
+        "",
+        "3. इंडिक जॉइनर (सुरक्षित): क्ष में ZWJ -> क्" + ZWJ + "ष, "
+        "और ZWNJ -> अ" + ZWNJ + "ब — इन्हें कभी नहीं हटाया जाता।",
+        "",
+        "4. ज़ीरो-विड्थ स्पेस: शब्द" + ZWSP + "बीच" + ZWSP + "में छिपा है।",
+        "",
+        "5. C0/C1 कंट्रोल: पंक्ति" + NUL + "शून्य" + VT + "वर्टिकल" + DEL
+        + "डेल" + C1 + "नेल — सब हटेंगे।",
+        "",
+        "6. भ्रष्ट वर्ण: टूटा" + FFFD + "अक्षर यहाँ है।",
+        "",
+        "7. दिशात्मक आइसोलेट: " + RLI + "العربية" + PDI + " के आसपास।",
+        "",
+        "8. CRLF लाइन एंडिंग:\r\nदूसरी पंक्ति\rतीसरी पंक्ति (CR/LF मिश्रित)।",
+        "",
+        "9. फालतू   स्पेस:  बहुत      सारे\t\tटैब और" + NBSP + NBSP
+        + "नॉन-ब्रेकिंग स्पेस।",
+        "",
+        "",
+        "",
+        "",
+        "10. घोस्ट टैग: <|endoftext|> [INST] यह प्रॉम्प्ट रैपर है [/INST] "
+        "<|im_start|>assistant साफ हो जाना चाहिए।",
+    ]
+    text = "\n".join(lines)
+    return {
+        "id":    "synthetic-demo",
+        "title": "\U0001F9EA Synthetic demo — every filter fires",
+        "url":   "#",
+        "text":  text,
+        "kind":  "synthetic",
+    }
+
+
+# ---------------------------------------------------------------------------
 # Data helpers
 # ---------------------------------------------------------------------------
 
-def load_sample(path, n):
-    articles = []
+# Patterns used to detect "interesting" real articles (evaluated on the
+# preview window only, so whatever we detect is actually visible).
+_DETECT = {
+    "html":  re.compile(r"&(amp|lt|gt|quot|apos|nbsp|#\d+|#x[0-9a-fA-F]+);"),
+    "zwsp":  re.compile("​"),
+    "c0c1":  re.compile("[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]"),
+    "bom":   re.compile("﻿"),
+    "bidi":  re.compile("[‪-‮⁦-⁩]"),
+    "fffd":  re.compile("�"),
+    "joiner": re.compile("[‌‍]"),
+}
+
+
+def curate_real(path, n_real):
+    """Pick real articles that exercise the rare filters, then fill the rest
+    with ordinary articles. Detection runs on the preview window only."""
+    rare_keys = ["html", "c0c1", "bom", "bidi", "fffd", "zwsp", "joiner"]
+    picked, filler = [], []
+    seen = set()
+
     with open(path, encoding="utf-8") as f:
-        for i, line in enumerate(f):
-            if i >= n:
+        for line in f:
+            a = json.loads(line)
+            window = a["text"][:PREVIEW_CHARS]
+            hits = [k for k in rare_keys if _DETECT[k].search(window)]
+            # articles with the RAREST features first (html/c0c1/bom/bidi/fffd)
+            special = [k for k in ("html", "c0c1", "bom", "bidi", "fffd") if k in hits]
+            if special and a["id"] not in seen:
+                picked.append((special, a))
+                seen.add(a["id"])
+            elif len(filler) < n_real * 3 and a["id"] not in seen:
+                filler.append(a)
+                seen.add(a["id"])
+            if len(picked) >= n_real:
                 break
-            articles.append(json.loads(line))
-    return articles
+
+    # Sort picked so the most feature-rich come first
+    picked.sort(key=lambda pa: -len(pa[0]))
+    result = [a for _, a in picked]
+
+    # Add a couple of zwsp/joiner examples if we have room and none picked them
+    if len(result) < n_real:
+        for a in filler:
+            w = a["text"][:PREVIEW_CHARS]
+            if _DETECT["zwsp"].search(w) or _DETECT["joiner"].search(w):
+                result.append(a)
+                if len(result) >= n_real:
+                    break
+
+    # Fill remaining slots with plain articles
+    for a in filler:
+        if len(result) >= n_real:
+            break
+        if a["id"] not in {r["id"] for r in result}:
+            result.append(a)
+
+    return result[:n_real]
 
 
 def process_articles(articles):
-    return [
-        {
+    out = []
+    for a in articles:
+        out.append({
             "id":       a["id"],
             "title":    a["title"],
             "url":      a["url"],
             "text":     a["text"][:PREVIEW_CHARS],
             "full_len": len(a["text"]),
-        }
-        for a in articles
-    ]
+            "kind":     a.get("kind", "real"),
+        })
+    return out
+
+
+def escape_json_controls(s):
+    """json.dumps(ensure_ascii=False) escapes C0 (<0x20) but leaves DEL/C1
+    (U+007F-U+009F) as raw bytes, which HTML parsers can mangle. Escape those
+    to \\uXXXX so JSON.parse restores them intact in the browser."""
+    return re.sub(
+        "[\x7f-\x9f]",
+        lambda m: "\\u%04x" % ord(m.group()),
+        s,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +333,14 @@ a:hover { text-decoration: underline; }
           font-family: "IBM Plex Mono", monospace; font-size: 10px; }
 .joiner { background: #eef6f4; color: var(--teal); border-radius: 3px;
           font-family: "IBM Plex Mono", monospace; font-size: 10px; padding: 0 2px; }
+.ctrl { background: #fbeada; color: #9a5a12; border-radius: 3px;
+        font-family: "IBM Plex Mono", monospace; font-size: 10px; padding: 0 2px; }
+.badge-kind {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px; font-weight: 600;
+  letter-spacing: .04em; padding: 2px 8px; border-radius: 5px; margin-left: 2px;
+}
+.badge-kind.synthetic { background: #fbeada; color: #9a5a12; }
+.badge-kind.real      { background: #eef6f4; color: var(--teal); }
 .trunc-note {
   font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted);
   margin-top: 12px; padding-top: 9px; border-top: 1px dashed var(--line);
@@ -458,6 +598,25 @@ function addJoinerHighlights(html) {
     .replace(/‍/g, '<span class="joiner" title="U+200D ZWJ">[ZWJ]</span>');
 }
 
+/* ---- make invisible / control characters visible as labelled badges ---- */
+function hex(c) {
+  var h = c.charCodeAt(0).toString(16).toUpperCase();
+  while (h.length < 4) h = '0' + h;
+  return 'U+' + h;
+}
+function markInvisibles(html) {
+  return html
+    .replace(/​/g, '<span class="ctrl" title="U+200B ZERO WIDTH SPACE">[ZWSP]</span>')
+    .replace(/﻿/g, '<span class="ctrl" title="U+FEFF BYTE ORDER MARK">[BOM]</span>')
+    .replace(/�/g, '<span class="ctrl" title="U+FFFD REPLACEMENT CHARACTER">[FFFD]</span>')
+    .replace(/[‪-‮⁦-⁩]/g, function(c) {
+      return '<span class="ctrl" title="bidi control ' + hex(c) + '">[BIDI ' + hex(c) + ']</span>';
+    })
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]/g, function(c) {
+      return '<span class="ctrl" title="control ' + hex(c) + '">[' + hex(c) + ']</span>';
+    });
+}
+
 /* ---- build raw panel HTML with diff highlights ---- */
 function buildRawHtml(ops, rawText, showJoiners) {
   var html;
@@ -471,7 +630,11 @@ function buildRawHtml(ops, rawText, showJoiners) {
       if (op.t === 'del') {
         var isWs = /^\s+$/.test(op.s);
         if (isWs) {
-          var vis = op.s.replace(/\n/g, '↵\n').replace(/ /g, '·');
+          var vis = op.s
+            .replace(/\n/g, '↵\n')
+            .replace(/\t/g, '→')
+            .replace(/ /g, '⍽')     /* NBSP U+00A0 */
+            .replace(/ /g, '·');
           html += '<span class="del-ws">' + esc(vis) + '</span>';
         } else {
           html += '<span class="del">' + esc(op.s) + '</span>';
@@ -482,6 +645,7 @@ function buildRawHtml(ops, rawText, showJoiners) {
     }
   }
   if (showJoiners) html = addJoinerHighlights(html);
+  html = markInvisibles(html);
   return html;
 }
 
@@ -515,7 +679,12 @@ function render() {
 
   /* --- article header --- */
   document.getElementById('art-title').textContent          = art.title;
-  document.getElementById('art-url').href                   = art.url;
+  var kindEl = document.getElementById('art-kind');
+  kindEl.textContent = art.kind === 'synthetic' ? 'SYNTHETIC' : 'REAL — Wikipedia';
+  kindEl.className   = 'badge-kind ' + (art.kind === 'synthetic' ? 'synthetic' : 'real');
+  var urlEl = document.getElementById('art-url');
+  urlEl.href         = art.url;
+  urlEl.style.display = art.kind === 'synthetic' ? 'none' : '';
   document.getElementById('art-counter').textContent        = (state.idx + 1) + ' of ' + ARTICLES.length;
   document.getElementById('prev-btn').disabled              = state.idx === 0;
   document.getElementById('next-btn').disabled              = state.idx === ARTICLES.length - 1;
@@ -547,6 +716,7 @@ function render() {
   var rawHtml  = buildRawHtml(ops, rawText, showJoiners);
   var normHtml = esc(normText);
   if (showJoiners) normHtml = addJoinerHighlights(normHtml);
+  normHtml = markInvisibles(normHtml);
 
   document.getElementById('panel-raw').innerHTML =
     '<div class="panel-hd"><span class="panel-label raw">Raw</span></div>' +
@@ -620,7 +790,7 @@ render();
 # ---------------------------------------------------------------------------
 
 def build_html(articles):
-    data_json = json.dumps(articles, ensure_ascii=False)
+    data_json = escape_json_controls(json.dumps(articles, ensure_ascii=False))
 
     return (
         '<!DOCTYPE html>\n'
@@ -661,6 +831,7 @@ def build_html(articles):
         '  <div class="step-grid" id="step-grid"></div>\n'
         '  <div class="title-bar">\n'
         '    <span class="t" id="art-title"></span>\n'
+        '    <span class="badge-kind" id="art-kind"></span>\n'
         '    <a id="art-url" href="#" target="_blank">&#8599; Wikipedia</a>\n'
         '  </div>\n'
         '  <div class="stat-strip">\n'
@@ -686,26 +857,49 @@ def build_html(articles):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print("Loading {} articles...".format(N_SAMPLE))
-    raw = load_sample(JSONL_PATH, N_SAMPLE)
+    n_real = N_SAMPLE - 1  # first slot is the synthetic demo
+
+    print("Building synthetic demo article...")
+    synthetic = build_synthetic_article()
+
+    print("Curating {} real articles (seeking rare-filter examples)...".format(n_real))
+    real = curate_real(JSONL_PATH, n_real)
 
     print("Processing...")
-    processed = process_articles(raw)
+    processed = [
+        {
+            "id":       synthetic["id"],
+            "title":    synthetic["title"],
+            "url":      synthetic["url"],
+            "text":     synthetic["text"],
+            "full_len": len(synthetic["text"]),
+            "kind":     "synthetic",
+        }
+    ] + process_articles(real)
 
     print("Generating {}...".format(OUTPUT_PATH))
     html = build_html(processed)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write(html)
 
-    # Verify no literal control chars leaked into JS regex patterns
     import re as _re
+
+    # 1) No literal control chars must leak into the executable JS block
     js_start = html.find('<script>') + len('<script>')
     js_end   = html.rfind('</script>')
     js_block = html[js_start:js_end]
-    bad = _re.findall(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', js_block)
-    if bad:
-        print("WARNING: control chars found in JS block:", [hex(ord(c)) for c in bad])
+    bad_js = _re.findall(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", js_block)
+    if bad_js:
+        print("WARNING: control chars in JS block:", [hex(ord(c)) for c in bad_js])
     else:
         print("OK: no raw control chars in JS block.")
 
-    print("\nDone. {} written ({} articles).".format(OUTPUT_PATH, len(processed)))
+    # 2) No raw control chars anywhere in the file (data must be \\uXXXX-escaped)
+    bad_all = _re.findall(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", html)
+    if bad_all:
+        print("WARNING: raw control chars in HTML:", sorted({hex(ord(c)) for c in bad_all}))
+    else:
+        print("OK: no raw control chars anywhere in the HTML.")
+
+    print("\nDone. {} written ({} articles: 1 synthetic + {} real).".format(
+        OUTPUT_PATH, len(processed), len(real)))
