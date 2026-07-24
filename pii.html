@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PII &amp; Redaction — India-First 40B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8;
+  --marigold:#E0982B; --teal:#147D74; --rose:#B5476B; --line:#E3E4EE;
+  --muted:#656579; --panel:#F1F2F8;
+}
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.03em; color:var(--muted);
+  padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; }
+.nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:1280px; margin:0 auto; padding:0 24px 80px; }
+.phead { padding:34px 0 12px; border-bottom:2px solid var(--ink); }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(24px,3.6vw,38px); margin:8px 0 6px; }
+.phead .dek { font-size:13px; color:#33334a; margin:0; max-width:82ch; }
+.note { font-size:12px; color:var(--muted); margin-top:8px; max-width:82ch; }
+.warn { margin:12px 0 0; padding:9px 13px; background:#fdf3e3; border:1px solid #f0dcb8; border-radius:9px;
+  font-size:12px; color:#7a4d10; }
+
+.explainer { margin:16px 0 0; border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.explainer > summary, .more > summary { cursor:pointer; list-style:none; padding:12px 16px; font-weight:600;
+  font-size:13.5px; color:var(--indigo); background:var(--panel); display:flex; align-items:center; gap:8px; }
+.explainer > summary::-webkit-details-marker, .more > summary::-webkit-details-marker { display:none; }
+.explainer > summary::before, .more > summary::before { content:"\25B8"; font-size:11px; transition:transform .15s; color:var(--marigold); }
+.explainer[open] > summary::before, .more[open] > summary::before { transform:rotate(90deg); }
+.explainer-bd { padding:14px 18px; font-size:13.5px; color:#33334a; line-height:1.7; }
+.explainer-bd .lead { margin:0 0 12px; } .explainer-bd b { color:var(--ink); }
+.verdict-key { display:flex; flex-direction:column; gap:6px; margin:10px 0 4px; }
+.vk-row { display:flex; align-items:center; gap:10px; font-size:13px; }
+.vk-badge { font-weight:700; font-size:11px; padding:2px 9px; border-radius:6px; min-width:150px; text-align:center; }
+.more { margin-top:13px; border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.more > summary { color:var(--muted); background:#fff; }
+.more[open] > summary { border-bottom:1px solid var(--line); }
+.more-bd { padding:15px; }
+
+.strict { margin:16px 0 0; border:1px solid var(--line); border-radius:12px; background:#fff; padding:16px 18px; }
+.strict-top { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.strict-top .lbl { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.strict-name { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:13.5px; color:var(--indigo); }
+.strict-desc { font-size:12.5px; color:var(--muted); margin-left:auto; }
+.strict input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--indigo); }
+.strict-ticks { display:flex; justify-content:space-between; font-family:"IBM Plex Mono",monospace; font-size:9.5px; color:var(--muted); }
+.strict-ticks span { flex:1; text-align:center; }
+.strict-ticks span:first-child { text-align:left; } .strict-ticks span:last-child { text-align:right; }
+
+.art-controls { display:flex; align-items:center; gap:14px; padding:16px 0 0; flex-wrap:wrap; }
+.ctrl-label { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:600; }
+.art-nav { display:flex; align-items:center; gap:8px; }
+.nav-btn { font-family:"IBM Plex Mono",monospace; font-size:14px; border:1px solid var(--line); border-radius:7px; padding:5px 13px; background:#fff; color:var(--indigo); cursor:pointer; }
+.nav-btn:hover { background:var(--panel); } .nav-btn:disabled { color:var(--muted); cursor:default; }
+.art-counter { font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); min-width:68px; text-align:center; }
+.art-select { font-family:"Inter",sans-serif; font-size:13px; padding:5px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; max-width:360px; }
+
+.title-bar { margin:16px 0 0; padding:12px 15px; background:#fff; border:1px solid var(--line); border-radius:10px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.title-bar .t { font-family:"Spectral",serif; font-weight:600; font-size:19px; }
+.title-bar a { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); }
+.chip { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; letter-spacing:.04em; padding:2px 8px; border-radius:5px; }
+.chip.synthetic { background:#fbeada; color:#9a5a12; } .chip.real { background:#eef6f4; color:var(--teal); }
+.chip.tier { background:#eef0fb; color:var(--indigo); }
+.caption { margin:12px 0 0; padding:10px 14px; border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; font-size:13.5px; color:#5a4520; } .caption b { color:#8a5a12; }
+
+.verdict { margin:14px 0; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.verdict-hd { padding:14px 18px 6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.verdict-badge { font-weight:700; font-size:17px; padding:7px 15px; border-radius:9px; }
+.v-keep { background:#eef6f4; color:var(--teal); }
+.v-quar { background:#fceef2; color:var(--rose); }
+.v-excl { background:var(--panel); color:var(--muted); }
+.verdict-code { font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted); }
+.verdict-why { padding:2px 18px 14px; font-size:14px; color:#26263c; line-height:1.55; }
+.gloss { border-bottom:1px dotted currentColor; cursor:help; }
+
+.card { border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.card-hd { padding:9px 15px; border-bottom:1px solid var(--line); background:var(--panel); font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--indigo); }
+.card-bd { padding:14px 15px; }
+
+.tbl { width:100%; border-collapse:collapse; font-size:12.5px; }
+.tbl th, .tbl td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--line); }
+.tbl th { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+.tbl code { background:var(--panel); padding:1px 6px; border-radius:4px; font-size:11px; }
+.pill { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:1px 7px; border-radius:5px; }
+.act-mask { background:#fdf3e3; color:#9a5a12; } .act-remove { background:#fceef2; color:var(--rose); }
+.act-pseudo { background:#eef0fb; color:var(--indigo); } .act-keep { background:#eef6f4; color:var(--teal); }
+.empty { font-size:13px; color:var(--teal); }
+
+.panels { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-top:13px; }
+@media (max-width:860px){ .panels { grid-template-columns:1fr; } }
+.panel-body { padding:14px; background:#fff; min-height:150px; max-height:320px; overflow-y:auto; font-size:13px;
+  line-height:1.85; white-space:pre-wrap; word-break:break-word; }
+.ph { padding:8px 14px; border-bottom:1px solid var(--line); background:var(--panel); font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; }
+.ph.raw { color:var(--muted); } .ph.out { color:var(--indigo); }
+.hl { border-radius:3px; padding:0 2px; }
+.t-secret,.t-strong_id,.t-sensitive { background:#fceef2; color:#8a1a3a; }
+.t-contact { background:#fdf3e3; color:#8a5a12; }
+.t-online_id,.t-person_private { background:#eef0fb; color:var(--indigo); }
+.t-person_public,.t-org_loc { background:#eef6f4; color:var(--teal); }
+.ph-out { background:#eef0fb; color:var(--indigo); border-radius:3px; padding:0 3px; font-family:"IBM Plex Mono",monospace; font-size:11px; }
+.blocked { padding:20px; text-align:center; color:var(--rose); font-size:13.5px; }
+
+.acct-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+@media (max-width:860px){ .acct-grid { grid-template-columns:1fr; } }
+.acct-row { display:flex; align-items:center; gap:10px; font-size:13px; padding:5px 0; border-bottom:1px dashed var(--line); }
+.acct-row:last-child { border-bottom:none; }
+.acct-k { flex:1; } .acct-v { font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--indigo); }
+.acct-bar { height:10px; border-radius:5px; }
+.sweep { width:100%; border-collapse:collapse; font-size:12px; margin-top:6px; }
+.sweep th, .sweep td { padding:5px 6px; text-align:center; border-bottom:1px solid var(--line); font-family:"IBM Plex Mono",monospace; }
+.sweep th:first-child, .sweep td:first-child { text-align:left; }
+.sweep tr.here { background:#f5f6fd; }
+.trunc-note { font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted); margin-top:12px; padding-top:9px; border-top:1px dashed var(--line); }
+</style>
+</head>
+<body>
+<script type="application/json" id="articles-data">[{"id": "pii-forum-contact", "title": "🧪 Forum post with contact details", "source_tier": "forum", "caption": "An email and a phone number — direct contact info, masked but the post is kept.", "expected": "KEEP_SCRUBBED", "text": "क्या किसी के पास पुरानी किताबें हैं बेचने के लिए?\nमुझसे संपर्क करें: ravi.sharma@example.com पर या फ़ोन करें 98765 43210 पर।\nमुझे हिंदी साहित्य की किताबें चाहिए।", "url": "#", "kind": "synthetic", "full_len": 161}, {"id": "pii-reddit-handle", "title": "🧪 Reddit comment (handle + name)", "source_tier": "forum", "caption": "A username and a private person's name — pseudonymized, post kept.", "expected": "KEEP_SCRUBBED", "text": "u/booklover_42 ने लिखा:\nमेरी दोस्त प्रिया को भी यही किताब पसंद है। उसने मुझे सुझाई थी।\nआप github.com/priyacodes पर उसका काम देख सकते हैं।", "url": "#", "kind": "synthetic", "full_len": 137}, {"id": "pii-code-secret", "title": "🧪 Code with a leaked secret", "source_tier": "code", "caption": "A hard-coded API key and password — a critical secret, so the whole file is quarantined.", "expected": "QUARANTINE_DOCUMENT", "text": "import boto3\nAWS_ACCESS_KEY = 'AKIAIOSFODNN7EXAMPLE'\nDB_PASSWORD = 'sup3rs3cret_pass'\nclient = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY)\ndef upload(f): return client.upload_file(f, 'my-bucket', f)", "url": "#", "kind": "synthetic", "full_len": 207}, {"id": "pii-news-public", "title": "🧪 News article (public figure)", "source_tier": "news", "caption": "A public official quoted in the news — the name is kept for attribution; no contact info.", "expected": "KEEP_SCRUBBED", "text": "नई दिल्ली — प्रधानमंत्री अमित वर्मा ने संसद में शिक्षा नीति पर बयान दिया।\nउन्होंने कहा कि सरकार अगले वर्ष स्कूलों की संख्या बढ़ाएगी।\nविपक्ष ने इस घोषणा का स्वागत किया।", "url": "#", "kind": "synthetic", "full_len": 167}, {"id": "pii-govt-ids", "title": "🧪 Document with government IDs", "source_tier": "email", "caption": "An Aadhaar number and a PAN — strong identifiers; two together quarantine the document.", "expected": "QUARANTINE_DOCUMENT", "text": "आवेदन फॉर्म संलग्न है।\nआधार संख्या: 2345 6789 0123\nपैन कार्ड: ABCDE1234F\nकृपया सत्यापन के बाद सूचित करें।", "url": "#", "kind": "synthetic", "full_len": 105}, {"id": "pii-payment-ip", "title": "🧪 Order note (card + IP)", "source_tier": "email", "caption": "A payment card (Luhn-valid) and an IP address — masked; a single card doesn't quarantine.", "expected": "KEEP_SCRUBBED", "text": "ऑर्डर की पुष्टि हो गई है।\nकार्ड नंबर 4111 1111 1111 1111 से भुगतान प्राप्त हुआ।\nअनुरोध सर्वर 203.0.113.45 से आया था।", "url": "#", "kind": "synthetic", "full_len": 116}, {"id": "pii-sensitive", "title": "🧪 Health detail about a person", "source_tier": "forum", "caption": "A private person linked to a health condition — a sensitive attribute; quarantined.", "expected": "QUARANTINE_DOCUMENT", "text": "बहुत दुख की बात है।\nमेरे पड़ोसी अमित को कैंसर का पता चला है।\nकृपया उनके लिए प्रार्थना करें।", "url": "#", "kind": "synthetic", "full_len": 91}, {"id": "pii-clean", "title": "🧪 Clean article (no PII)", "source_tier": "news", "caption": "No personal data at all — nothing to redact, kept as-is.", "expected": "KEEP_SCRUBBED", "text": "योग शरीर और मन को स्वस्थ रखने की प्राचीन भारतीय पद्धति है।\nनियमित अभ्यास से एकाग्रता बढ़ती है और तनाव कम होता है।\nआज पूरी दुनिया में योग को अपनाया जा रहा है।", "url": "#", "kind": "synthetic", "full_len": 157}, {"id": "pii-org-location", "title": "🧪 Orgs & places only", "source_tier": "news", "caption": "Only a company and cities — not people. Kept without redaction (avoids over-redaction).", "expected": "KEEP_SCRUBBED", "text": "गूगल ने भारत में अपना नया कार्यालय खोला है।\nयह कार्यालय दिल्ली और मुंबई के बाद बेंगलुरु में स्थित है।\nकंपनी ने स्थानीय इंजीनियरों को नौकरी देने की घोषणा की।", "url": "#", "kind": "synthetic", "full_len": 156}, {"id": "pii-directory", "title": "🧪 Contact directory (personal records)", "source_tier": "leaked", "caption": "A list of many people with their contact details — primarily a personal record; excluded.", "expected": "EXCLUDE_DOCUMENT", "text": "सदस्य सूची:\nराहुल — rahul@example.com — 98111 22233\nप्रिया — priya@example.com — 98222 33344\nअमित — amit@example.com — 98333 44455\nसुनीता — sunita@example.com — 98444 55566", "url": "#", "kind": "synthetic", "full_len": 172}, {"id": "10", "title": "हम होंगे कामयाब", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%AE%20%E0%A4%B9%E0%A5%8B%E0%A4%82%E0%A4%97%E0%A5%87%20%E0%A4%95%E0%A4%BE%E0%A4%AE%E0%A4%AF%E0%A4%BE%E0%A4%AC", "text": "हम होंगे कामयाब ( का गिरिजा कुमार माथुर द्वारा किया गया हिंदी भावानुवाद) एक प्रतिरोध गीत है। यह गीत बीसवीं सदी में नागरिक अधिकार आंदोलन का प्रधान स्वर बना। इस गीत को आमतौर पर \"I'll Overcome Some Day\" (\"आई विल ओवरकम सम डे\") से काव्यावतरित माना जाता है, जो चार्ल्स अल्बर्ट टिंडले द्वारा गाया गया था और जिसे 1900 में पहली बार प्रकाशित किया गया था।\n\nसन्दर्भ\nHum Honge Kamyab Lyrics \nनागरिक अधिकार आंदोलन\nदेशभक्ति के गीत\nआधार", "full_len": 420, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "14", "title": "दैनिक पूजा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%A6%E0%A5%88%E0%A4%A8%E0%A4%BF%E0%A4%95%20%E0%A4%AA%E0%A5%82%E0%A4%9C%E0%A4%BE", "text": "दैनिक पूजा विधि हिन्दू धर्म की कई उपासना पद्धतियों में से एक है। ये एक दैनिक कर्म है। विभिन्न देवताओं को प्रसन्न करने के लिये कई मन्त्र बताये गये हैं, जो लगभग सभी पुराणों से हैं। वैदिक मन्त्र यज्ञ और हवन के लिये होते हैं।\n\nपूजा की रीति इस तरह है : पहले कोई भी देवता चुनें, जिसकी पूजा करनी है। फ़िर विधिवत निम्नलिखित मन्त्रों (सभी संस्कृत में हैं) के साथ उसकी पूजा करें। पौराणिक देवताओं के मन्त्र इस प्रकार हैं :\n\n विनायक : ॐ सिद्धि विनायकाय नमः . \n सरस्वती : ॐ सरस्वत्यै नमः . \n लक्ष्मी : ॐ महा लक्ष्म्यै नमः . \n दुर्गा : ॐ दुर्गायै नमः . \n महाविष्णु : ॐ श्री विष्णवे नमः . or ॐ नमो नारायणाय .\n कृष्ण : ॐ श्री कृष्णाय नमः . or ॐ नमो भगवते वासुदेवाय .\n राम : ॐ श्री रामचन्द्राय नमः . \n नरसिंह : ॐ श्री नारसिंहाय नमः . \n शिव : ॐ शिवाय नमः या ॐ नमः शिवाय . \n\nनीचे लिखे मन्त्र गणेश के लिये हैं :\n\nदैनिक विनायक पूजा\n\nध्यान श्लोक \n\nशुक्लाम्बर धरं विष्णुं शशि वर्णम् चतुर्भुजम् . \nप्रसन्न वदनं ध्यायेत् सर्व विघ्नोपशान्तये ..\n\nषोडशोपचार पूजन \n\nॐ सिद्धि विनायकाय नमः . ध्यायामि . \nॐ सिद्धि विनायकाय नमः . आवाहयामि . \nॐ सिद्धि विनायकाय नमः . आसनं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . अर्घ्यं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पाद्यं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . आचमनीयं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . उप हारं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पंचामृत स्नानं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . वस्त्र युग्मं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . यज्ञोपवीतं धारयामि . \nॐ सिद्धि विनायकाय नमः . आभरणानि समर्पयामि . \nॐ सिद्धि विनायकाय नमः . गंधं धारयामि . \nॐ सिद्धि विनायकाय नमः . अक्षतान् समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पुष्पैः पूजयामि . \nॐ सिद्धि विनायकाय नमः . प्रतिष्ठापयामि .\n\nअथ अंग पूजा \nविनायक (गणेश) के पाँच नाम चुनें और ऐसा कहें :\nॐ महा गणपतये नमः . पादौ पूजयामि . \nॐ विघ्न राजाय नमः . उदरम् पूजयामि . \nॐ एक दन्ताय नमः . बाहुं पूजयामि . \nॐ गौरी पुत्राय नमः . हृदयं पूजयामि . \nॐ आदि वन्दिताय नमः . शिरः पूजयामि . \nॐ सिद्धि विनायकाय नमः . अंग पूजां समर्पयामि .\n\nअथ पत्र पूजा \nविनायक (गणेश) के पाँच नाम चुनें और ऐसा कहें :\nॐ महा गणपतये नमः . आम्र पत्रम् समर्पयामि . \nॐ विघ्न राजाय", "full_len": 3827, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "54", "title": "हिन्दी", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%80", "text": "हिन्दी जिसके मानकीकृत रूप को मानक हिन्दी कहा जाता है, विश्व की एक प्रमुख भाषा है और भारत की एक राजभाषा है। केन्द्रीय स्तर पर भारत में सह-आधिकारिक भाषा अंग्रेजी है। यह हिन्दुस्तानी भाषा की एक मानकीकृत रूप है जिसमें संस्कृत के तत्सम तथा तद्भव शब्दों का प्रयोग अधिक है और अरबी–फ़ारसी शब्द कम हैं। हिन्दी संवैधानिक रूप से भारत की राजभाषा और भारत की सबसे अधिक बोली और समझी जाने वाली भाषा है। हिन्दी भारत की राष्ट्रभाषा नहीं है क्योंकि भारत के संविधान में किसी भी भाषा को ऐसा दर्जा नहीं दिया गया है। एथनोलॉग के अनुसार हिन्दी विश्व की तीसरी सबसे अधिक बोली जाने वाली भाषा है। विश्व आर्थिक मंच की गणना के अनुसार यह विश्व की दस शक्तिशाली भाषाओं में से एक है।\n\nभारत की जनगणना २०११ में 57.1% भारतीय जनसंख्या हिन्दी जानती है जिसमें से 43.63% भारतीय लोगों ने हिन्दी को अपनी मूल भाषा या मातृभाषा घोषित किया था। इसके अतिरिक्त भारत, पाकिस्तान और अन्य देशों में 14 करोड़ 10 लाख लोगों द्वारा बोली जाने वाली उर्दू, व्याकरण के आधार पर हिन्दी के समान है, एवं दोनों ही हिन्दुस्तानी भाषा की परस्पर-सुबोध्य रूप हैं। एक विशाल संख्या में लोग हिन्दी और उर्दू दोनों को ही समझते हैं। भारत में हिन्दी, विभिन्न भारतीय राज्यों की 14 आधिकारिक भाषाओं और क्षेत्र की बोलियों का उपयोग करने वाले लगभग 1 अरब लोगों में से अधिकांश की दूसरी भाषा है। हिन्दी भारत में सम्पर्क भाषा का कार्य करती है  और कुछ हद तक पूरे भारत में सामान्यतः एक सरल रूप में समझी जानेवाली भाषा है। कभी-कभी 'हिन्दी' शब्द का प्रयोग नौ भारतीय राज्यों के सन्दर्भ में भी उपयोग किया जाता है, जिनकी आधिकारिक भाषा हिन्दी है और हिन्दी भाषी बहुमत है, अर्थात् बिहार, छत्तीसगढ़, हरियाणा, हिमाचल प्रदेश, झारखण्ड, मध्य प्रदेश, राजस्थान, उत्तराखण्ड, जम्मू और कश्मीर (२०२० से) उत्तर प्रदेश और राष्ट्रीय राजधानी क्षेत्र दिल्ली का।\n\nहिन्दी और इसकी बोलियाँ सम्पूर्ण भारत के विविध राज्यों में बोली जाती हैं। भारत और अन्य देशों में भी लोग हिन्दी बोलते, पढ़ते और लिखते हैं। फ़िजी, मॉरिशस, गयाना, सूरीनाम, नेपाल और संयुक्त अरब अमीरात में भी हिन्दी या इसकी मान्य बोलियों का उपयोग करने वाले लोगों की बड़ी संख्या मौजूद है। फरवरी 2019 में अबू धाबी में हिन्दी को न्यायालय की तीसरी भाषा के रूप में ", "full_len": 22266, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "56", "title": "फ़ारसी भाषा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AB%E0%A4%BC%E0%A4%BE%E0%A4%B0%E0%A4%B8%E0%A5%80%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE", "text": "फ़ारसी (), एक भाषा है जो ईरान, ताजिकिस्तान, अफ़गानिस्तान और उज़बेकिस्तान में बोली जाती है। यह ईरान, अफ़ग़ानिस्तान, ताजिकिस्तान की राजभाषा है और इसे ७.५ करोड़ लोग बोलते हैं। भाषाई परिवार के लिहाज़ से यह हिन्द यूरोपीय परिवार की हिन्द ईरानी (इंडो ईरानियन) शाखा की ईरानी उपशाखा का सदस्य है और हिन्दी की तरह इसमें क्रिया वाक्य के अंत में आती है। फ़ारसी संस्कृत से क़ाफ़ी मिलती-जुलती है और उर्दू (और हिन्दी) में इसके कई शब्द प्रयुक्त होते हैं। ये अरबी-फ़ारसी लिपि में लिखी जाती है। अंग्रेज़ों के आगमन से पहले भारतीय उपमहाद्वीप में फ़ारसी भाषा का प्रयोग दरबारी कामों तथा लेखन की भाषा के रूप में होता है। दरबार में प्रयुक्त होने के कारण ही अफ़गानिस्तान में इस दरी कहा जाता है।\n\nवर्गीकरण \nइसे हिन्द-यूरोपीय भाषा परिवार की हिन्द-ईरानी शाखा की ईरानी भाषाओं की उपशाखा के पश्चिमी विभाग में वर्गीकृत किया जाता है। हालाँकि भारतीय उपमहाद्वीप में फ़ारसी को ग़लती से अरबी भाषा के समीप समझा जाता है, भाषावैज्ञानिक दृष्टि से यह अरबी से बहुत भिन्न और संस्कृत के बहुत समीप है। संस्कृत और फ़ारसी में कई हज़ारों मिलते-जुलते सजातीय शब्द मिलते हैं जो दोनों भाषाओँ की सांझी धरोहर हैं, जैसे की सप्ताह/हफ़्ता, नर/नर (पुरुष), दूर/दूर, हस्त/दस्त (हाथ), शत/सद (सौ), आप/आब (पानी), हर/ज़र (फ़ारसी में पीला-सुनहरा, संस्कृत में पीला-हरा), मय/मद/मधु (शराब/शहद), अस्ति/अस्त (है), रोचन/रोशन (चमकीला), एक/येक, कपि/कपि (वानर), दन्त/दन्द (दाँत), मातृ/मादर, पितृ/पिदर, भ्रातृ/बिरादर (भाई), दुहितृ/दुख़्तर (बेटी), वंश/बच/बच्चा, शुकर/ख़ूक (सूअर), अश्व/अस्ब (घोड़ा), गौ/गऊ (गाय), जन/जान (संस्कृत में व्यक्ति/जीव, फ़ारसी में जीवन), भूत/बूद (था, अतीत), ददामि/दादन (देना), युवन/जवान, नव/नव (नया) और सम/हम (बराबर)।\n\nनाम \nभारत में इसे फ़ारसी कहा जाता है। इसका मूल नाम 'पारसी' है पर अरब लोग, जिन्होंने फ़ारस पर सातवीं सदी के अंत तक अधिकार कर लिया था, की वर्णमाला में 'प' अक्षर नहीं होता है। इस कारण से वे इसे फ़ारसी कहते थे और यही नाम भारत में भी प्रयुक्त होता है। यूनानी लोग फार्स को पर्सिया (पुरानी ग्रीक में पर्सिस, Πέρσις) कहते थे। जिसके कारण यहाँ की भाषा पर्सियन (Persian) कहलाई। यही नाम अंग्रेज़ी सहित अन्य यूरोपीय भाषाओं में प्रयुक्त होता है।\n\nइ", "full_len": 5557, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "58", "title": "देवनागरी", "url": "https://hi.wikipedia.org/wiki/%E0%A4%A6%E0%A5%87%E0%A4%B5%E0%A4%A8%E0%A4%BE%E0%A4%97%E0%A4%B0%E0%A5%80", "text": "देवनागरी भारतीय उपमहाद्वीप में प्रयुक्त प्राचीन ब्राह्मी लिपि पर आधारित बाएँ से दाएँ आबूगीदा है। यह प्राचीन भारत में पहली से चौथी शताब्दी ईस्वी तक विकसित किया गया था और ७वीं शताब्दी ईस्वी तक नियमित उपयोग में था।  देवनागरी लिपि, जिसमें १४ स्वर और ३३ व्यञ्जन सहित ४७ प्राथमिक वर्ण हैं, दुनिया में चौथी सबसे व्यापक रूप से अपनाई जाने वाली लेखन प्रणाली है, जिसका उपयोग १२० से अधिक भाषाओं के लिए किया जा रहा है। \n\nइस लिपि की शब्दावली भाषा के उच्चारण को दर्शाती है।  रोमन लिपि के विपरीत, इस लिपि में अक्षर केस की कोई अवधारणा नहीं है। यह बाएँ से दाएँ लिखा गया है, चौकोर रूपरेखा के भीतर सममित गोल आकृतियों के लिए एक दृढ़ प्राथमिकता है, और एक क्षैतिज रेखा द्वारा पहचाना जा सकता है, जिसे शिरोरेखा के रूप में जाना जाता है, जो पूर्ण अक्षरों के शीर्ष के साथ चलती है। एक सरसरी दृष्टि में, देवनागरी लिपि अन्य भारतीय लिपियों जैसे पूर्वी नागरी लिपि या गुरमुखी लिपि से अलग दिखाई देती है, लेकिन एक निकटतम अवलोकन से पता चलता है कि वे कोण और संरचनात्मक जोर को छोड़कर बहुत समान हैं।\n\nपरिचय \nअधिकतर भाषाओं की तरह देवनागरी भी बायें से दायें लिखी जाती है। प्रत्येक शब्द के ऊपर एक रेखा खिंची होती है (कुछ वर्णों के ऊपर रेखा नहीं होती है) जिसे शिरोरेखा कहते हैं। देवनागरी का विकास ब्राह्मी लिपि से हुआ है। यह एक ध्वन्यात्मक लिपि है जो प्रचलित लिपियों (रोमन, अरबी, चीनी आदि) में सबसे अधिक वैज्ञानिक है। इससे वैज्ञानिक और व्यापक लिपि शायद केवल अध्वव लिपि है। भारत की कई लिपियाँ देवनागरी से बहुत अधिक मिलती-जुलती हैं, जैसे- बांग्ला, गुजराती, गुरुमुखी आदि। कम्प्यूटर प्रोग्रामों की सहायता से भारतीय लिपियों को परस्पर परिवर्तन बहुत आसान हो गया है।\n\nभारतीय भाषाओं के किसी भी शब्द या ध्वनि को देवनागरी लिपि में ज्यों का त्यों लिखा जा सकता है और फिर लिखे पाठ को लगभग 'हू-ब-हू' उच्चारण किया जा सकता है, जो कि रोमन लिपि और अन्य कई लिपियों में सम्भव नहीं है, जब तक कि उनका विशेष मानकीकरण न किया जाये, जैसे आइट्रांस या IAST ।\n\nइसमें कुल ५२ अक्षर हैं, जिसमें १४ स्वर और ३८ व्यंजन हैं। अक्षरों की क्रम व्यवस्था (विन्यास) भी बहुत ही वैज्ञानिक है। स्वर-व्यंजन, कोमल-कठोर, अल्पप्राण-महाप्राण, अनुनासिक्य-अन्तस्थ-उष्म इत्यादि वर्गीकरण भी वैज्ञानि", "full_len": 27584, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "59", "title": "भारत", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4", "text": "{{Infobox country\n| conventional_long_name = भारत गणराज्य\n| common_name            = भारत\n| native_name            =  Republic of India (अंग्रेजी में)\n| image_flag             = Flag of India.svg\n| alt_flag               = क्षैतिज तिरंगे झंडे में ऊपर से नीचे तक गहरी केसरिया, सफेद और हरी क्षैतिज पट्टियाँ हैं। सफेद पट्टी के केंद्र में 24 तीलियों वाला एक नेवी-ब्लू पहिया है।\n| image_coat             = Emblem of India.svg\n| symbol_width           = 60px\n| alt_coat               = तीन शेर बाएं, दाएं और दर्शक की ओर मुख किए हुए हैं, एक फ्रिज़ के ऊपर एक सरपट दौड़ता घोड़ा, एक 24-स्पोक पहिया और एक हाथी है। नीचे एक आदर्श वाक्य है: \"सत्यमेव जयते\"।\n| symbol_type            = राज्य प्रतीक\n| other_symbol_type      = राष्ट्रीय गीत: \n| other_symbol           = जन गण मन भारत का राष्ट्रीय गान है, जिसके शब्दों में सरकार अवसर पड़ने पर परिवर्तन कर सकती है; और गीत वंदे मातरम, जिसने भारतीय स्वतंत्रता के संघर्ष में एक ऐतिहासिक भूमिका निभाई है, को जन गण मन के साथ समान रूप से सम्मानित किया जाएगा और इसके साथ समान दर्जा दिया जाएगा।}}}}\n\n| national_motto         = \"सत्यमेव जयते\" (संस्कृत\n| national_anthem        = \n\n| national_languages     =कोई नहीं (भारत की कोई राष्ट्रभाषा नहीं है)\n| image_map              = India (orthographic projection).svg\n| map_width              = 250px\n| alt_map                = भारत पर केन्द्रित ग्लोब की छवि, जिसमें भारत पर प्रकाश डाला गया है।\n| map_caption            = भारत द्वारा नियंत्रित क्षेत्र को गहरे हरे रंग में दिखाया गया है; दावा किया गया लेकिन नियंत्रित नहीं किया गया क्षेत्र हल्के हरे रंग में दिखाया गया है\n| capital                = नयी दिल्ली\n| coordinates            = \n| largest_city           = \n| official_languages     = \n| languages_type = स्थानीय भाषाएँ\n| languages = 447 बोली\n| regional_languages     = \n| demonym                = भारतीय\n| government_type        = संघीय संसदीय संवैधानिक गणराज्य\n| leader_title1          = राष्ट्रपति\n| leader_name1           = द्रौपदी मुर्मू\n| leader_title2          = उपराष्ट्रपति\n| leader_name2           = जगदीप धनखड़\n| le", "full_len": 47507, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "74", "title": "संस्कृत भाषा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B8%E0%A4%82%E0%A4%B8%E0%A5%8D%E0%A4%95%E0%A5%83%E0%A4%A4%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE", "text": "संस्कृत (संस्कृतम्, ) भारत की एक भाषा है। संस्कृत एक हिंद-आर्य भाषा है जो हिंद-यूरोपीय भाषा परिवार की एक शाखा है। संस्कृत दिव्य एवं समृद्ध भाषा है। ऐतिहासिकता की दृष्टि में यह संसार की सभी भाषाओं की जननी है। संस्कृत संसार की प्राचीनतम एवं प्रथम भाषा है। भारतीय आर्ष ग्रंथ का समस्त ज्ञान इसी भाषा में लिपिबद्ध है। संस्कृत ज्ञान की अभिव्यक्ति की भाषा है। आधुनिक भारतीय भाषाएँ जैसे, हिंदी, बांग्ला, मराठी, सिन्धी, पंजाबी, नेपाली, आदि इसी से उत्पन्न हुई हैं। इन सभी भाषाओं में यूरोपीय बंजारों की रोमानी भाषा भी शामिल है। संस्कृत में वैदिक धर्म से संबंधित लगभग सभी धर्मग्रंथ लिखे गए हैं। बौद्ध धर्म (विशेषकर महायान) तथा जैन मत के भी कई महत्त्वपूर्ण ग्रंथ संस्कृत में लिखे गए हैं। आज भी हिंदू धर्म के अधिकतर यज्ञ और पूजा संस्कृत में ही होते हैं। \n\nसंस्कृत का अर्थ है \"संस्कार की गयी \" अर्थात \"बदलाव की गयी\", संस्कृत भाषा देवनागरी लिपि मे लिखी गयी है, धम्म लिपि में समय के साथ थोड़ा- थोड़ा सुधार (बदलाव) होता रहा उदाहरण के लिए मौर्य का व गुप्त काल के शिलालेखों व अभिलेखों में शब्दो मे थोड़ा फर्क दिखायी पड़ता है। अनेक शताब्दियों तक यह चलता गया तथा पाली प्राकृत भाषा (  धम्म लिपि मे ) से अनेक लिपियों का उदय हुआ जैसे दक्षिण मे तमिल, तेलुगु व उत्तर मे बांगला, नागरी  शारदा । 10000 ईसा पूर्व में इंग्लिश लिपि का प्रचलन शुरू हुआ व 11 शताब्दी तक आते आते देवनागरी लिपि पूर्ण से विकसित हो गयी , अगर बात करे संस्कृत भाषा की चूंकि संस्कृत की लिपि देवनागरी है अत: यह भी 10 वीं शताब्दी के मध्य आयी है, इससे पहले संस्कृत भाषा का कोई पुरातात्विक प्रमाण नही मिला व ना ही कही इसका जिक्र है। अत: इससे सिद्ध होता है की भारत (जिसका प्राचीन नाम हिंदुस्तान है) की  सबसे पुरानी भाषा  प्राकृत पाली है व सबसे प्राचीन लिपि धम्म लिपि (आजकल ब्राह्मी लिपि) है। अगर देखा जाए सबसे प्राचीन भाषा व लिपि सिंधु घाटी सभ्यता की भाषा जो अब तक नही पढ़ी गयी है । \n\nसंस्कृत आमतौर पर कई पुरानी इंडो-आर्यन किस्मों को जोड़ती है। इनमें से सबसे पुरातन ऋग्वेद में पाया जाने वाला वैदिक संस्कृत है, जो 9 वीं शताब्दी के बाद रचित 1000 भजनों का एक संग्रह है, जो इंडो-आर्यन जनजातियों द्वारा आज के उत्तरी अफगानिस्तान और उत्तरी भारत में अफगानिस्तान से पूर्व की", "full_len": 16262, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}, {"id": "76", "title": "हिन्दू", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%82", "text": "हिंदू ( ; /ˈ h ɪ n d uː z / ) वे लोग हैं जो धार्मिक रूप से हिंदू धर्म का पालन करते हैं।   ऐतिहासिक रूप से, इस शब्द का उपयोग भारतीय उपमहाद्वीप में रहने वाले लोगों के लिए भौगोलिक, सांस्कृतिक और बाद में धार्मिक पहचानकर्ता के रूप में भी किया गया है।  \n\n\"हिन्दू\" शब्द की उत्पत्ति पुरानी फ़ारसी से हुई है जिसने इन नामों को संस्कृत नाम सिंधु , सिंधु नदी का जिक्र करते हुए। समान शब्दों के ग्रीक सजातीय शब्द \" इंडस \" (नदी के लिए) और \" इंडिया \" (नदी की भूमि के लिए) हैं।    \" हिंदू \" शब्द का तात्पर्य सिंधु (सिंधु) नदी के आसपास या उससे परे भारतीय उपमहाद्वीप में रहने वाले लोगों के लिए एक भौगोलिक, जातीय या सांस्कृतिक पहचानकर्ता भी है।  16वीं शताब्दी ईस्वी तक, यह शब्द उपमहाद्वीप के उन निवासियों को संदर्भित करने लगा जो तुर्क या मुस्लिम नहीं थे।    हिंदू एक पुरातन वर्तनी संस्करण है, जिसका उपयोग आज अपमानजनक माना जाता है।  \n\nधार्मिक या सांस्कृतिक अर्थ में, स्थानीय भारतीय आबादी के भीतर हिंदू आत्म-पहचान का ऐतिहासिक विकास अस्पष्ट है।   प्रतिस्पर्धी सिद्धांतों में कहा गया है कि हिंदू पहचान ब्रिटिश औपनिवेशिक युग में विकसित हुई, या यह मुस्लिम आक्रमणों और मध्ययुगीन हिंदू-मुस्लिम युद्धों के बाद 8वीं शताब्दी ईस्वी के बाद विकसित हुई होगी।    हिंदू पहचान की भावना और हिंदू शब्द 13वीं और 18वीं शताब्दी के बीच संस्कृत और बंगाली के कुछ ग्रंथों में दिखाई देता है।   14वीं और 18वीं सदी के भारतीय कवियों जैसे विद्यापति, कबीर, तुलसीदास और एकनाथ ने हिंदू धर्म (हिंदू धर्म) वाक्यांश का इस्तेमाल किया और इसकी तुलना तुरक धर्म ( इस्लाम ) से की।   ईसाई भिक्षु सेबेस्टियाओ मैनरिक ने 1649 में एक धार्मिक संदर्भ में 'हिंदू' शब्द का इस्तेमाल किया था।  18वीं शताब्दी में, यूरोपीय व्यापारियों और उपनिवेशवादियों ने सामूहिक रूप से भारतीय धर्मों के अनुयायियों को हिंदू के रूप में संदर्भित करना शुरू कर दिया था। तुर्क, मुगल और अरब जैसे समूहों के लिए मुसलमानों के विपरीत, जो इस्लाम के अनुयायी थे।   19वीं सदी के मध्य तक, औपनिवेशिक प्राच्यवादी ग्रंथों ने हिंदुओं को बौद्ध, सिख और जैन से अलग कर दिया,  लेकिन औपनिवेशिक कानून लगभग 20वीं सदी के मध्य तक उन सभी को हिंदू शब्द के दायरे में मानते रहे।  विद्वानों का कहना है कि हिंदू, बौद्ध, जैन और स", "full_len": 21412, "kind": "real", "source_tier": "news", "caption": "A real Hindi Wikipedia article — mostly public/encyclopedic, little to redact.", "expected": null}]</script>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="#">Overview</a><a href="#">Data</a>
+  <a href="index.html">Cleaning</a>
+  <a href="language.html">Language</a>
+  <a href="quality.html">Quality</a>
+  <a href="dedup.html">Dedup</a>
+  <a href="pii.html" class="active">PII</a>
+  <a href="#">Tokenizer</a>
+</div></div>
+<div class="wrap">
+  <div class="phead">
+    <h1>PII &amp; Redaction</h1>
+    <p class="dek">Per <em>PII.md</em>: find personal data, decide from <b>entity type + context + source</b>, replace only the necessary spans with typed placeholders, and route the document — without erasing public attribution, organisations or places.</p>
+    <div class="warn">⚠️ Every identifier on this page is <b>synthetic / fake</b> (example.com, standard test card, invented Aadhaar/PAN/keys). A real run <b>never displays raw PII</b> — note the detection table below shows only typed placeholders, never the value.</div>
+  </div>
+  <details class="explainer" open>
+    <summary>How to read this page</summary>
+    <div class="explainer-bd">
+      <p class="lead">Each document is scanned for personal data. Every hit gets a <b>risk tier</b> and an <b>action</b> (mask / pseudonymize / keep), then the whole document is routed:</p>
+      <div class="verdict-key">
+        <div class="vk-row"><span class="vk-badge v-keep">✅ KEEP (scrubbed)</span><span>PII replaced with placeholders; the text is kept.</span></div>
+        <div class="vk-row"><span class="vk-badge v-quar">🔴 QUARANTINE</span><span>A secret, a sensitive attribute, or strong IDs — held for governed handling.</span></div>
+        <div class="vk-row"><span class="vk-badge v-excl">⬜ EXCLUDE</span><span>Primarily a personal-record dump — dropped entirely.</span></div>
+      </div>
+      <p class="note" style="margin-top:12px">The decision depends on the <b>source</b> (a public figure is kept in the news but pseudonymized on a forum) and on the <b>policy</b>. The slider selects a named policy bundle (from <em>policy-and-thresholds.md</em>) from least to most aggressive. Full multilingual NER and quasi-identifier linkage are a documented offline tier. Hover any underlined term.</p>
+    </div>
+  </details>
+  <div class="strict">
+    <div class="strict-top">
+      <span class="lbl">Policy</span>
+      <span class="strict-name" id="strict-name"></span>
+      <span class="strict-desc" id="strict-desc"></span>
+    </div>
+    <input type="range" min="0" max="4" step="1" value="2" id="strict-slider">
+    <div class="strict-ticks"><span>0 structured</span><span>1 attribution</span><span>2 balanced</span><span>3 aggressive</span><span>4 high-risk</span></div>
+  </div>
+  <div class="art-controls">
+    <span class="ctrl-label">Document</span>
+    <div class="art-nav">
+      <button class="nav-btn" id="prev-btn">&#8592;</button>
+      <span class="art-counter" id="art-counter"></span>
+      <button class="nav-btn" id="next-btn">&#8594;</button>
+    </div>
+    <select class="art-select" id="art-select"></select>
+  </div>
+  <div class="title-bar">
+    <span class="t" id="art-title"></span>
+    <span class="chip" id="art-kind"></span>
+    <span class="chip tier" id="art-tier"></span>
+    <a id="art-url" href="#" target="_blank">&#8599; Wikipedia</a>
+  </div>
+  <div class="caption" id="caption"></div>
+  <div class="verdict" id="verdict">
+    <div class="verdict-hd">
+      <span class="verdict-badge" id="verdict-badge"></span>
+      <span class="verdict-code gloss" id="verdict-code"></span>
+    </div>
+    <div class="verdict-why" id="verdict-sub"></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">Detected PII — typed placeholders only, never the raw value</div>
+    <div class="card-bd"><div id="pii-table"></div></div>
+  </div>
+  <div class="panels">
+    <div class="card"><div class="ph raw">Input (synthetic) — detected spans highlighted</div><div class="panel-body" id="panel-raw"></div></div>
+    <div class="card"><div class="ph out">Output — redacted / routed</div><div class="panel-body" id="panel-out"></div></div>
+  </div>
+  <details class="more">
+    <summary>Show metrics &amp; independent re-scan</summary>
+    <div class="more-bd"><div id="mech"></div></div>
+  </details>
+  <details class="more">
+    <summary>Show corpus accounting across all 18 documents</summary>
+    <div class="more-bd">
+      <div class="acct-grid">
+        <div class="card"><div class="card-hd">Document routing at current policy</div><div class="card-bd" id="acct-disp"></div></div>
+        <div class="card"><div class="card-hd">Entities detected (whole corpus)</div><div class="card-bd" id="acct-entities"></div></div>
+      </div>
+      <div class="card" style="margin-top:13px"><div class="card-hd">Routing across every policy</div><div class="card-bd" id="sweep"></div></div>
+    </div>
+  </details>
+</div>
+<script>
+var RAW = JSON.parse(document.getElementById('articles-data').textContent);
+var state = { idx:0, policy:2 };
+
+var HI_NAMES = ['राहुल','प्रिया','अमित','सुनीता','रवि','वर्मा','शर्मा'];
+var PUBLIC_MARKERS = ['प्रधानमंत्री','राष्ट्रपति','मुख्यमंत्री','मंत्री','नेता','सांसद','अभिनेता','डॉ','President','Minister'];
+var SENSITIVE = ['कैंसर','एचआईवी','एड्स','बीमारी','गर्भवती','cancer','HIV','AIDS'];
+var ORG_LOC = ['गूगल','Google','भारत','दिल्ली','मुंबई','बेंगलुरु','कंपनी','कार्यालय'];
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function reEsc(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+
+function luhn(num){ var s=0, alt=false; for (var i=num.length-1;i>=0;i--){ var n=+num[i];
+  if (isNaN(n)) return false; if (alt){ n*=2; if (n>9) n-=9; } s+=n; alt=!alt; } return s%10===0; }
+
+/* ---------- offset-based detection (mirror of the verified Python) ---------- */
+function detect(text){
+  var spans=[], occ=new Array(text.length).fill(false);
+  function free(a,b){ for (var i=a;i<b;i++) if (occ[i]) return false; return true; }
+  function claim(a,b){ for (var i=a;i<b;i++) occ[i]=true; }
+  function run(re, tier, ph, validator){
+    var m; re.lastIndex=0;
+    while ((m=re.exec(text))!==null){ var a=m.index, b=a+m[0].length;
+      if (b===a){ re.lastIndex++; continue; }
+      if (free(a,b) && (!validator || validator(m[0]))){ claim(a,b); spans.push({start:a,end:b,tier:tier,ph:ph}); } }
+  }
+  run(/-----BEGIN[ A-Z]*PRIVATE KEY-----/g,'secret','<SECRET>');
+  run(/\bAKIA[0-9A-Z]{16}\b/g,'secret','<SECRET>');
+  run(/(?:password|passwd|pwd|api[_-]?key|secret|token)\s*[=:]\s*['"]?[^\s'"]{6,}/gi,'secret','<SECRET>');
+  run(/(?:\d[ -]?){13,19}/g,'strong_id','<CARD>', function(v){ var d=v.replace(/\D/g,''); return d.length>=13 && d.length<=19 && luhn(d); });
+  run(/\b\d{4}[ -]?\d{4}[ -]?\d{4}\b/g,'strong_id','<AADHAAR>');
+  run(/\b[A-Z]{5}\d{4}[A-Z]\b/g,'strong_id','<PAN>');
+  run(/[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g,'contact','<EMAIL>');
+  run(/[A-Za-z0-9._%+-]+\s*\[?\(?at\)?\]?\s*[A-Za-z0-9.-]+\s*\[?\(?dot\)?\]?\s*[A-Za-z]{2,}/gi,'contact','<EMAIL>');
+  run(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g,'contact','<IP_ADDRESS>', function(v){ return v.split('.').every(function(x){ return +x<=255; }); });
+  run(/(?:\+91[ -]?)?[6-9]\d{4}[ -]?\d{5}\b/g,'contact','<PHONE>');
+  run(/github\.com\/[A-Za-z0-9_-]+/g,'online_id','<USERNAME>');
+  run(/(?:^|\s)u\/[A-Za-z0-9_-]+/g,'online_id','<USERNAME>');
+  run(/(?:^|\s)@[A-Za-z0-9_]{2,}/g,'online_id','<USERNAME>');
+  for (var n=0;n<HI_NAMES.length;n++){ var reN=new RegExp(reEsc(HI_NAMES[n]),'g'), m;
+    while ((m=reN.exec(text))!==null){ var a=m.index,b=a+m[0].length; if (!free(a,b)) continue;
+      var before=text.slice(Math.max(0,a-20),a);
+      var pub=PUBLIC_MARKERS.some(function(mk){ return before.indexOf(mk)!==-1; });
+      claim(a,b); spans.push({start:a,end:b,tier:pub?'person_public':'person_private',ph:'<PERSON>'}); } }
+  [['sensitive',SENSITIVE,'<SENSITIVE>'],['org_loc',ORG_LOC,'<ORG_LOC>']].forEach(function(pair){
+    pair[1].forEach(function(w){ var reW=new RegExp(reEsc(w),'g'), m;
+      while ((m=reW.exec(text))!==null){ var a=m.index,b=a+m[0].length; if (!free(a,b)) continue;
+        claim(a,b); spans.push({start:a,end:b,tier:pair[0],ph:pair[2]}); } }); });
+  spans.sort(function(x,y){ return x.start-y.start; });
+  return spans;
+}
+
+function flagsOf(spans){
+  var t={}; spans.forEach(function(s){ t[s.tier]=(t[s.tier]||0)+1; });
+  return { secret:!!t.secret, contact:t.contact||0, strong:t.strong_id||0,
+           direct:(t.contact||0)+(t.strong_id||0),
+           sensitiveLinked:!!t.sensitive && !!t.person_private, t:t };
+}
+function routeDoc(spans, policy){
+  var f=flagsOf(spans);
+  if (f.secret) return 'QUARANTINE_DOCUMENT';
+  if (policy>=1 && f.direct>=6) return 'EXCLUDE_DOCUMENT';
+  if (policy===2 && (f.sensitiveLinked || f.strong>=2)) return 'QUARANTINE_DOCUMENT';
+  if (policy===3 && (f.sensitiveLinked || f.strong>=1 || f.direct>=3)) return 'QUARANTINE_DOCUMENT';
+  if (policy===4 && (f.sensitiveLinked || f.strong>=1 || f.contact>=1)) return 'QUARANTINE_DOCUMENT';
+  return 'KEEP_SCRUBBED';
+}
+function actionFor(tier, policy){
+  if (tier==='secret') return 'REMOVE';
+  if (tier==='strong_id'||tier==='contact') return 'MASK';
+  if (tier==='online_id') return policy===0?'KEEP':'PSEUDONYMIZE';
+  if (tier==='person_private') return policy===0?'KEEP':'MASK';
+  if (tier==='person_public') return policy<=2?'KEEP':'MASK';
+  if (tier==='sensitive') return policy<=1?'KEEP':'REMOVE';
+  return 'KEEP';   /* org_loc */
+}
+
+var POLICIES = {
+  0:{name:'STRUCTURED_ONLY', desc:'Redact only structured identifiers & secrets; leave all names.'},
+  1:{name:'PUBLIC_ATTRIBUTION_PRESERVING', desc:'Keep public figures, mask private names; exclude personal-record dumps.'},
+  2:{name:'MULTILINGUAL_BALANCED', desc:'The balanced default: also quarantine strong-ID and sensitive-attribute docs.'},
+  3:{name:'PRIVATE_SOURCE_AGGRESSIVE', desc:'Treat sources as private: pseudonymize even public names; quarantine sooner.'},
+  4:{name:'HIGH_RISK_QUARANTINE', desc:'Quarantine any document with a strong ID, contact detail or sensitive attribute.'}
+};
+var TIER_LABEL = { secret:'Critical secret', strong_id:'Strong identifier', contact:'Direct contact',
+  online_id:'Online handle', person_private:'Private person', person_public:'Public figure',
+  sensitive:'Sensitive attribute', org_loc:'Org / place' };
+var GLOSS = {
+  secret:'API key, password or private key — account/system compromise. Quarantines the whole document.',
+  strong_id:'Card / Aadhaar / PAN — a single valid one can identify a person, so it is redacted.',
+  contact:'Email, phone or IP — direct contact info, masked with a typed placeholder.',
+  online_id:'A username/handle — pseudonymized to break cross-site linkage.',
+  person_private:'An ordinary private individual’s name.',
+  person_public:'A public / attributed figure — kept for provenance in curated/news sources.',
+  sensitive:'A sensitive attribute (e.g. health) tied to a person — quarantined.',
+  org_loc:'A company or place — not a natural person, so it is kept (avoids over-redaction).',
+  KEEP_SCRUBBED:'The document is kept after replacing PII spans with typed placeholders.',
+  QUARANTINE_DOCUMENT:'Set aside for governed handling — a secret, sensitive attribute, or too many strong IDs.',
+  EXCLUDE_DOCUMENT:'Dropped — it is primarily a personal-record dump (many contact identifiers).',
+  masked:'The raw value is never shown. This is the typed placeholder that replaces it.'
+};
+function glossOf(c){ return GLOSS[c]||c; }
+function pct(x){ return Math.round(x*100)+'%'; }
+
+var VBADGE = { KEEP_SCRUBBED:{e:'✅',w:'KEEP (scrubbed)',c:'v-keep'},
+  QUARANTINE_DOCUMENT:{e:'🔴',w:'QUARANTINE',c:'v-quar'},
+  EXCLUDE_DOCUMENT:{e:'⬜',w:'EXCLUDE',c:'v-excl'} };
+
+/* build the redacted output (only meaningful when KEEP_SCRUBBED) */
+function redact(text, spans, policy){
+  var out='', pos=0, pcount=0, ucount=0, persons={}, users={};
+  spans.forEach(function(s){
+    out += esc(text.slice(pos, s.start));
+    var act = actionFor(s.tier, policy);
+    if (act==='KEEP'){ out += esc(text.slice(s.start, s.end)); }
+    else {
+      var ph = s.ph;
+      if (s.tier==='person_private'||s.tier==='person_public'){ var key=text.slice(s.start,s.end);
+        if (!persons[key]) persons[key]='<PERSON_'+(++pcount)+'>'; ph=persons[key]; }
+      else if (s.tier==='online_id'){ var k2=text.slice(s.start,s.end);
+        if (!users[k2]) users[k2]='<USERNAME_'+(++ucount)+'>'; ph=users[k2]; }
+      out += '<span class="ph-out">'+esc(ph)+'</span>';
+    }
+    pos = s.end;
+  });
+  out += esc(text.slice(pos));
+  return out;
+}
+function highlightInput(text, spans){
+  var out='', pos=0;
+  spans.forEach(function(s){ out += esc(text.slice(pos,s.start));
+    out += '<span class="hl t-'+s.tier+'" title="'+escAttr(TIER_LABEL[s.tier]||s.tier)+'">'+esc(text.slice(s.start,s.end))+'</span>';
+    pos=s.end; });
+  out += esc(text.slice(pos)); return out;
+}
+
+/* ---------- render ---------- */
+function render(){
+  var art=RAW[state.idx], spans=detect(art.text), disp=routeDoc(spans, state.policy);
+
+  document.getElementById('art-title').textContent=art.title;
+  var kindEl=document.getElementById('art-kind'); kindEl.textContent=art.kind==='synthetic'?'SYNTHETIC':'REAL — Wikipedia';
+  kindEl.className='chip '+(art.kind==='synthetic'?'synthetic':'real');
+  var tierEl=document.getElementById('art-tier'); tierEl.textContent='source: '+art.source_tier; tierEl.className='chip tier';
+  var urlEl=document.getElementById('art-url'); urlEl.href=art.url; urlEl.style.display=art.kind==='synthetic'?'none':'';
+  document.getElementById('art-counter').textContent=(state.idx+1)+' of '+RAW.length;
+  document.getElementById('prev-btn').disabled=state.idx===0;
+  document.getElementById('next-btn').disabled=state.idx===RAW.length-1;
+  document.getElementById('art-select').value=state.idx;
+  var capEl=document.getElementById('caption');
+  if (art.caption){ capEl.innerHTML='<b>What this example shows:</b> '+esc(art.caption); capEl.style.display=''; }
+  else capEl.style.display='none';
+
+  var vb=VBADGE[disp]; var badge=document.getElementById('verdict-badge');
+  badge.className='verdict-badge '+vb.c; badge.textContent=vb.e+' '+vb.w;
+  var codeEl=document.getElementById('verdict-code'); codeEl.textContent=disp; codeEl.title=glossOf(disp);
+  document.getElementById('verdict-sub').textContent = whyText(disp, spans, art);
+
+  /* detection table (NEVER raw values) */
+  var host=document.getElementById('pii-table');
+  if (!spans.length){ host.innerHTML='<div class="empty">✓ No PII detected — nothing to redact.</div>'; }
+  else {
+    var rows='<table class="tbl"><tr><th>entity</th><th>risk tier</th><th>action</th><th>replaced with</th></tr>';
+    for (var i=0;i<spans.length;i++){ var s=spans[i], act=actionFor(s.tier, state.policy);
+      var actCls={MASK:'act-mask',REMOVE:'act-remove',PSEUDONYMIZE:'act-pseudo',KEEP:'act-keep'}[act];
+      rows += '<tr><td><span class="gloss" title="'+escAttr(glossOf(s.tier))+'">'+(TIER_LABEL[s.tier]||s.tier)+'</span></td>'+
+        '<td>'+s.tier+'</td>'+
+        '<td><span class="pill '+actCls+'">'+act+'</span></td>'+
+        '<td>'+(act==='KEEP'?'<span style="color:#999">kept</span>':'<code>'+esc(s.ph)+'</code>')+'</td></tr>'; }
+    rows += '</table>';
+    host.innerHTML=rows;
+  }
+
+  /* before / after */
+  document.getElementById('panel-raw').innerHTML=highlightInput(art.text, spans);
+  var outHost=document.getElementById('panel-out');
+  if (disp==='KEEP_SCRUBBED'){ outHost.innerHTML=redact(art.text, spans, state.policy); }
+  else { var msg=disp==='QUARANTINE_DOCUMENT'
+      ? 'Document QUARANTINED — held for governed handling; not emitted to training as-is.'
+      : 'Document EXCLUDED — primarily a personal record; dropped from the corpus.';
+    outHost.innerHTML='<div class="blocked">'+msg+'</div>'; }
+
+  /* residual re-scan of the output */
+  var residual=0;
+  if (disp==='KEEP_SCRUBBED'){ var tmp=document.createElement('div'); tmp.innerHTML=redact(art.text,spans,state.policy);
+    residual=detect(tmp.textContent).filter(function(s){ return s.tier!=='org_loc' && actionFor(s.tier,state.policy)!=='KEEP'; }).length; }
+  var f=flagsOf(spans);
+  document.getElementById('mech').innerHTML =
+    '<div class="acct-row"><span class="acct-k">PII spans detected</span><span class="acct-v">'+spans.length+'</span></div>'+
+    '<div class="acct-row"><span class="acct-k">Direct identifiers (contact + strong)</span><span class="acct-v">'+f.direct+'</span></div>'+
+    '<div class="acct-row"><span class="acct-k">Critical secrets</span><span class="acct-v">'+(f.t.secret||0)+'</span></div>'+
+    '<div class="acct-row"><span class="acct-k">Residual PII after redaction (independent re-scan)</span><span class="acct-v">'+(disp==='KEEP_SCRUBBED'?residual+(residual===0?' ✓':''):'n/a')+'</span></div>';
+
+  accounting();
+}
+
+function whyText(disp, spans, art){
+  var f=flagsOf(spans);
+  if (disp==='QUARANTINE_DOCUMENT'){
+    if (f.secret) return 'Contains a critical secret (API key / password) — the whole document is quarantined; the value is never emitted.';
+    if (f.sensitiveLinked) return 'A sensitive attribute (e.g. health) is tied to a private person — quarantined for governed handling.';
+    return 'Carries strong government/financial identifiers — quarantined at this policy rather than lightly masked.';
+  }
+  if (disp==='EXCLUDE_DOCUMENT') return 'Mostly a list of people with their contact details ('+f.direct+' direct identifiers) — a personal-record dump, so it is dropped entirely.';
+  if (!spans.length) return 'No personal data found — kept unchanged.';
+  var acted=spans.filter(function(s){ return actionFor(s.tier,state.policy)!=='KEEP'; }).length;
+  if (!acted) return 'The only entities here are public figures / organisations / places — kept as-is, nothing to redact at this policy.';
+  return acted+' PII span(s) replaced with typed placeholders; the document keeps its meaning and is accepted.';
+}
+
+/* ---------- corpus accounting ---------- */
+var DCOLOR={ KEEP_SCRUBBED:'#147D74', QUARANTINE_DOCUMENT:'#B5476B', EXCLUDE_DOCUMENT:'#656579' };
+function countsAt(p){ var c={}; for (var i=0;i<RAW.length;i++){ var d=routeDoc(detect(RAW[i].text),p); c[d]=(c[d]||0)+1; } return c; }
+function entityCounts(){ var c={}; for (var i=0;i<RAW.length;i++){ detect(RAW[i].text).forEach(function(s){ c[s.tier]=(c[s.tier]||0)+1; }); } return c; }
+
+function accounting(){
+  var total=RAW.length, c=countsAt(state.policy);
+  var order=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; }), rows='';
+  for (var i=0;i<order.length;i++){ var k=order[i], n=c[k], w=(n/total)*100, vb=VBADGE[k]||{e:'',w:k};
+    rows+='<div class="acct-row"><span class="acct-k">'+vb.e+' '+vb.w+' <span style="color:#999;font-size:11px">'+k+'</span></span>'+
+      '<span style="width:120px"><span class="acct-bar" style="display:block;width:'+w+'%;background:'+(DCOLOR[k]||'#6169B8')+'"></span></span>'+
+      '<span class="acct-v">'+n+'</span></div>'; }
+  document.getElementById('acct-disp').innerHTML=rows;
+
+  var ec=entityCounts(), ek=Object.keys(ec).sort(function(a,b){ return ec[b]-ec[a]; }), erows='';
+  for (var j=0;j<ek.length;j++){ erows+='<div class="acct-row"><span class="acct-k">'+(TIER_LABEL[ek[j]]||ek[j])+'</span><span class="acct-v">'+ec[ek[j]]+'</span></div>'; }
+  document.getElementById('acct-entities').innerHTML=erows;
+
+  var sw='<table class="sweep"><tr><th>policy</th><th>keep</th><th>quar</th><th>excl</th></tr>';
+  for (var p=0;p<5;p++){ var cc=countsAt(p);
+    sw+='<tr'+(p===state.policy?' class="here"':'')+'><td>'+p+' '+POLICIES[p].name+'</td><td>'+(cc.KEEP_SCRUBBED||0)+'</td><td>'+(cc.QUARANTINE_DOCUMENT||0)+'</td><td>'+(cc.EXCLUDE_DOCUMENT||0)+'</td></tr>'; }
+  sw+='</table>'; document.getElementById('sweep').innerHTML=sw;
+}
+
+/* ---------- wiring ---------- */
+var sel=document.getElementById('art-select');
+for (var i=0;i<RAW.length;i++){ var o=document.createElement('option'); o.value=i; o.textContent=(i+1)+'. '+RAW[i].title; sel.appendChild(o); }
+sel.addEventListener('change', function(){ state.idx=parseInt(this.value,10); render(); });
+document.getElementById('prev-btn').addEventListener('click', function(){ if (state.idx>0){ state.idx--; render(); } });
+document.getElementById('next-btn').addEventListener('click', function(){ if (state.idx<RAW.length-1){ state.idx++; render(); } });
+document.addEventListener('keydown', function(e){ if (e.key==='ArrowLeft'&&state.idx>0){ state.idx--; render(); } if (e.key==='ArrowRight'&&state.idx<RAW.length-1){ state.idx++; render(); } });
+var slider=document.getElementById('strict-slider');
+function updatePolicy(){ state.policy=parseInt(slider.value,10);
+  document.getElementById('strict-name').textContent=state.policy+' · '+POLICIES[state.policy].name;
+  document.getElementById('strict-desc').textContent=POLICIES[state.policy].desc; render(); }
+slider.addEventListener('input', updatePolicy);
+updatePolicy();
+</script>
+</body>
+</html>
