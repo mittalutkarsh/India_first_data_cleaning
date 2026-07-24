@@ -209,6 +209,7 @@ var GLOSS = {
   inflation:'How much a benchmark score would be overstated if the model memorized the leaked items.'
 };
 function glossOf(c){ return GLOSS[c]||c; }
+function gloss(term, key){ return '<span class="gloss" title="'+escAttr(glossOf(key))+'">'+esc(term)+'</span>'; }
 function pct(x){ return Math.round(x*100)+'%'; }
 
 /* benchmark contamination at a policy: item is dirty if some record removes/quarantines against it */
