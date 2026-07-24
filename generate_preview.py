@@ -812,6 +812,7 @@ def build_html(articles):
         '  <a href="#">Overview</a><a href="#">Data</a>\n'
         '  <a href="index.html" class="active">Cleaning</a>\n'
         '  <a href="language.html">Language</a>\n'
+        '  <a href="quality.html">Quality</a>\n'
         '  <a href="#">Tokenizer</a>\n'
         '</div></div>\n'
         '<div class="wrap">\n'
