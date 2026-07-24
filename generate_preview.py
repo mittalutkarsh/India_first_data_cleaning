@@ -1,15 +1,15 @@
 """
-Generate index.html — interactive data cleaning preview tool.
-Always shows Raw (left) vs Stage (right) side by side.
-Deleted/removed content highlighted in rose on the left panel.
+Generate index.html — interactive normalization preview.
+Normalization steps follow Normalization_SKILLS.md (Steps 04-14).
+Each step is a checkbox; left panel shows raw with removed content
+highlighted in rose; right panel shows the normalized result.
 
-Run : python3 generate_preview.py
-Serve: python3 -m http.server 8000  (then open http://localhost:8000)
+Run:  python3 generate_preview.py
+Open: push to GitHub Pages, or python3 -m http.server 8000 locally.
 """
 
 import json
 import os
-import re
 
 JSONL_PATH    = os.path.join("data", "wiki_hi", "wiki_hi.jsonl")
 OUTPUT_PATH   = "index.html"
@@ -18,7 +18,7 @@ PREVIEW_CHARS = 3000
 
 
 # ---------------------------------------------------------------------------
-# Data loading
+# Data helpers
 # ---------------------------------------------------------------------------
 
 def load_sample(path, n):
@@ -31,119 +31,44 @@ def load_sample(path, n):
     return articles
 
 
-def estimate_tokens(text):
-    return round(len(text) / 4.5)
-
-
-# ---------------------------------------------------------------------------
-# Cleaning stages  (each returns new_text, status, reason)
-# ---------------------------------------------------------------------------
-
-def stage_raw(text):
-    return text, "kept", None
-
-
-def stage_whitespace(text):
-    new = re.sub(r'\n{3,}', '\n\n', text)
-    new = re.sub(r'[ \t]+', ' ', new)
-    new = new.strip()
-    return new, "kept", None
-
-
-def stage_length_filter(text):
-    if len(text) < 400:
-        return text, "filtered", f"Too short ({len(text)} chars, min 400)"
-    return text, "kept", None
-
-
-def stage_stub_filter(text):
-    patterns = ["may refer to", "disambiguation", "is a stub"]
-    lower = text.lower()
-    for p in patterns:
-        if p in lower:
-            return text, "filtered", f'Matched stub pattern: "{p}"'
-    return text, "kept", None
-
-
-STAGES = [
-    ("raw",             "Raw",                   stage_raw),
-    ("whitespace_norm", "Whitespace Normalized",  stage_whitespace),
-    ("length_filter",   "Length Filter",          stage_length_filter),
-    ("stub_filter",     "Stub / Disambig Filter", stage_stub_filter),
-]
-
-
-# ---------------------------------------------------------------------------
-# Process articles through all stages
-# ---------------------------------------------------------------------------
-
 def process_articles(articles):
-    result = []
-    for art in articles:
-        stages_out = {}
-        current_text   = art["text"]
-        current_status = "kept"
-
-        for stage_id, _, fn in STAGES:
-            if current_status == "filtered":
-                stages_out[stage_id] = {
-                    "text":     current_text[:PREVIEW_CHARS],
-                    "full_len": len(current_text),
-                    "tokens":   estimate_tokens(current_text),
-                    "chars":    len(current_text),
-                    "status":   "filtered",
-                    "reason":   None,
-                }
-            else:
-                new_text, status, reason = fn(current_text)
-                stages_out[stage_id] = {
-                    "text":     new_text[:PREVIEW_CHARS],
-                    "full_len": len(new_text),
-                    "tokens":   estimate_tokens(new_text),
-                    "chars":    len(new_text),
-                    "status":   status,
-                    "reason":   reason,
-                }
-                current_text   = new_text
-                current_status = status
-
-        result.append({
-            "id":     art["id"],
-            "title":  art["title"],
-            "url":    art["url"],
-            "stages": stages_out,
-        })
-    return result
+    return [
+        {
+            "id":       a["id"],
+            "title":    a["title"],
+            "url":      a["url"],
+            "text":     a["text"][:PREVIEW_CHARS],
+            "full_len": len(a["text"]),
+        }
+        for a in articles
+    ]
 
 
 # ---------------------------------------------------------------------------
-# HTML generation  (data embedded in <script type="application/json">)
+# CSS
 # ---------------------------------------------------------------------------
 
 CSS = """
 :root {
-  --bg: #FAFBFD; --ink: #16162A; --indigo: #2E357E; --indigo-soft: #6169B8;
-  --marigold: #E0982B; --teal: #147D74; --teal-soft: #3aa89c;
-  --rose: #B5476B; --line: #E3E4EE; --muted: #656579; --panel: #F1F2F8;
+  --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8;
+  --marigold:#E0982B; --teal:#147D74; --teal-soft:#3aa89c;
+  --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8;
 }
-* { box-sizing: border-box; }
+*, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
   margin: 0; background: var(--bg); color: var(--ink);
   font-family: "Inter", system-ui, sans-serif;
-  font-size: 16px; line-height: 1.62; -webkit-font-smoothing: antialiased;
+  font-size: 15px; line-height: 1.6; -webkit-font-smoothing: antialiased;
 }
 a { color: var(--indigo); text-decoration: none; }
 a:hover { text-decoration: underline; }
-
-/* nav */
 .nav {
   position: sticky; top: 0; z-index: 50;
-  background: rgba(250,251,253,.95);
-  border-bottom: 1px solid var(--line);
+  background: rgba(250,251,253,.96); border-bottom: 1px solid var(--line);
 }
 .nav-in {
-  max-width: 1200px; margin: 0 auto; padding: 11px 24px;
+  max-width: 1280px; margin: 0 auto; padding: 10px 24px;
   display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
 }
 .brand {
@@ -151,145 +76,154 @@ a:hover { text-decoration: underline; }
   color: var(--indigo); font-size: 16px; margin-right: auto;
 }
 .nav a {
-  font-family: "IBM Plex Mono", monospace; font-size: 11.5px;
-  color: var(--muted); padding: 3px 2px; border-bottom: 2px solid transparent;
+  font-family: "IBM Plex Mono", monospace; font-size: 11px;
+  letter-spacing: .03em; color: var(--muted);
+  padding: 3px 2px; border-bottom: 2px solid transparent;
 }
 .nav a:hover { color: var(--ink); text-decoration: none; }
 .nav a.active { color: var(--indigo); border-bottom-color: var(--marigold); }
-
-/* layout */
-.wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px 80px; }
-.phead { padding: 40px 0 16px; border-bottom: 2px solid var(--ink); }
+.wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px 80px; }
+.phead { padding: 34px 0 12px; border-bottom: 2px solid var(--ink); }
 .phead h1 {
   font-family: "Spectral", serif; font-weight: 700;
-  font-size: clamp(26px, 4vw, 40px); margin: 8px 0 6px;
+  font-size: clamp(24px, 3.6vw, 38px); margin: 8px 0 6px;
 }
-.phead .dek { font-size: 14px; color: #33334a; margin: 0; }
-.del-example {
+.phead .dek { font-size: 13px; color: #33334a; margin: 0; }
+.del-eg {
   background: #fceef2; color: #8a1a3a; border-radius: 3px;
-  padding: 1px 5px; font-family: "IBM Plex Mono", monospace; font-size: 12px;
+  padding: 1px 5px; font-family: "IBM Plex Mono", monospace; font-size: 11px;
 }
-
-/* controls */
-.controls {
-  display: flex; align-items: flex-end; gap: 20px;
-  flex-wrap: wrap; padding: 20px 0 0;
+.art-controls {
+  display: flex; align-items: center; gap: 14px;
+  padding: 16px 0 0; flex-wrap: wrap;
 }
 .ctrl-label {
-  display: block; font-family: "IBM Plex Mono", monospace;
-  font-size: 10px; letter-spacing: .12em; text-transform: uppercase;
-  color: var(--muted); font-weight: 600; margin-bottom: 5px;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); font-weight: 600;
 }
-select {
-  font-family: "IBM Plex Mono", monospace; font-size: 13px;
-  border: 1px solid var(--line); border-radius: 8px;
-  padding: 8px 14px; background: #fff; color: var(--ink);
-  cursor: pointer; outline: none; min-width: 230px;
-}
-select:focus { border-color: var(--indigo); }
-.article-nav { display: flex; align-items: center; gap: 8px; }
+.art-nav { display: flex; align-items: center; gap: 8px; }
 .nav-btn {
   font-family: "IBM Plex Mono", monospace; font-size: 14px;
   border: 1px solid var(--line); border-radius: 7px;
-  padding: 6px 14px; background: #fff; color: var(--indigo); cursor: pointer;
+  padding: 5px 13px; background: #fff; color: var(--indigo); cursor: pointer;
 }
 .nav-btn:hover { background: var(--panel); }
 .nav-btn:disabled { color: var(--muted); cursor: default; background: #fff; }
-.article-counter {
+.art-counter {
   font-family: "IBM Plex Mono", monospace; font-size: 12px;
-  color: var(--muted); min-width: 70px; text-align: center;
+  color: var(--muted); min-width: 68px; text-align: center;
 }
-
-/* title bar */
+.toggle-btn {
+  margin-left: auto; font-family: "IBM Plex Mono", monospace; font-size: 11px;
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 11px; background: #fff; color: var(--muted); cursor: pointer;
+}
+.toggle-btn:hover { color: var(--indigo); border-color: var(--indigo-soft); }
+.step-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 8px; margin: 12px 0 0;
+}
+.step-card {
+  border: 1px solid var(--line); border-radius: 10px; background: #fff;
+  padding: 10px 11px; display: flex; align-items: flex-start; gap: 8px;
+  cursor: pointer; user-select: none; transition: border-color .12s;
+}
+.step-card:hover { border-color: var(--indigo-soft); }
+.step-card.on { border-color: var(--indigo); background: #f5f6fd; }
+.step-card.preserve:hover { border-color: var(--teal-soft); }
+.step-card.preserve.on { border-color: var(--teal); background: #eef6f4; }
+.step-cb { margin-top: 2px; accent-color: var(--indigo); cursor: pointer; flex-shrink: 0; }
+.step-card.preserve .step-cb { accent-color: var(--teal); }
+.step-body { flex: 1; min-width: 0; }
+.step-num {
+  font-family: "IBM Plex Mono", monospace; font-size: 9px;
+  font-weight: 600; letter-spacing: .1em; color: var(--marigold);
+  display: block; margin-bottom: 2px;
+}
+.step-card.preserve .step-num { color: var(--teal); }
+.step-name {
+  font-weight: 600; font-size: 12px; color: var(--ink);
+  display: block; margin-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.step-desc { font-size: 10.5px; color: var(--muted); line-height: 1.35; display: block; margin-bottom: 5px; }
+.step-badge {
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
+  font-weight: 600; padding: 1px 6px; border-radius: 4px;
+  background: var(--panel); color: var(--muted); display: inline-block;
+}
+.step-badge.changed { background: #fceef2; color: var(--rose); }
+.step-badge.found   { background: #eef6f4; color: var(--teal); }
 .title-bar {
-  margin: 16px 0 0; padding: 12px 18px;
-  background: #fff; border: 1px solid var(--line); border-radius: 12px;
+  margin: 12px 0 0; padding: 10px 15px; background: #fff;
+  border: 1px solid var(--line); border-radius: 10px;
   display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
 }
-.title-bar .t {
-  font-family: "Spectral", serif; font-weight: 600; font-size: 20px;
-}
-.title-bar a {
-  font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted);
-}
-
-/* stats strip */
+.title-bar .t { font-family: "Spectral", serif; font-weight: 600; font-size: 18px; }
+.title-bar a { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted); }
 .stat-strip {
-  display: grid; grid-template-columns: repeat(5, 1fr);
-  gap: 1px; background: var(--line);
-  border: 1px solid var(--line); margin: 14px 0;
-  border-radius: 10px; overflow: hidden;
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 1px;
+  background: var(--line); border: 1px solid var(--line);
+  margin: 11px 0; border-radius: 10px; overflow: hidden;
 }
-.stat { background: var(--bg); padding: 12px 14px; }
+.stat { background: var(--bg); padding: 10px 13px; }
 .stat-n {
   font-family: "IBM Plex Mono", monospace; font-weight: 600;
-  font-size: clamp(14px, 2.2vw, 20px); color: var(--indigo); line-height: 1;
+  font-size: clamp(12px, 1.9vw, 18px); color: var(--indigo); line-height: 1;
 }
-.stat-l { font-size: 10.5px; color: var(--muted); margin-top: 5px; }
-.rose .stat-n { color: var(--rose); }
-.teal .stat-n { color: var(--teal); }
-.muted-stat .stat-n { color: var(--muted); }
-@media (max-width: 640px) { .stat-strip { grid-template-columns: repeat(3, 1fr); } }
-
-/* panels */
-.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 820px) { .panels { grid-template-columns: 1fr; } }
-.panel { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.stat-l { font-size: 10px; color: var(--muted); margin-top: 4px; }
+.stat.rose .stat-n { color: var(--rose); }
+.stat.teal .stat-n { color: var(--teal); }
+.stat.grey .stat-n { color: var(--muted); }
+@media (max-width: 600px) { .stat-strip { grid-template-columns: repeat(3, 1fr); } }
+.panels { display: grid; grid-template-columns: 1fr 1fr; gap: 13px; }
+@media (max-width: 860px) { .panels { grid-template-columns: 1fr; } }
+.panel { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
 .panel-hd {
-  padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; display: flex; align-items: center; gap: 8px;
   border-bottom: 1px solid var(--line); background: var(--panel);
 }
 .panel-label {
-  font-family: "IBM Plex Mono", monospace; font-size: 10.5px;
+  font-family: "IBM Plex Mono", monospace; font-size: 10px;
   font-weight: 600; letter-spacing: .09em; text-transform: uppercase; flex: 1;
 }
-.panel-label.raw   { color: var(--muted); }
-.panel-label.stage { color: var(--indigo); }
-.pbadge {
-  font-family: "IBM Plex Mono", monospace; font-size: 10px;
-  padding: 2px 8px; border-radius: 5px; font-weight: 600;
-}
-.pbadge.kept     { background: #e8f5f3; color: var(--teal); }
-.pbadge.filtered { background: #fceef2; color: var(--rose); }
+.panel-label.raw  { color: var(--muted); }
+.panel-label.norm { color: var(--indigo); }
 .panel-body {
-  padding: 18px; background: #fff;
-  min-height: 300px; max-height: 560px; overflow-y: auto;
-  position: relative; font-size: 14px; line-height: 1.75;
+  padding: 15px; background: #fff; min-height: 260px; max-height: 520px;
+  overflow-y: auto; font-size: 13.5px; line-height: 1.8;
   white-space: pre-wrap; word-break: break-word;
 }
-
-/* diff highlights */
-.del    { background: #fceef2; color: #8a1a3a; border-radius: 3px; padding: 0 1px; }
-.del-ws { background: #fceef2; color: #c0718d; border-radius: 3px; padding: 0 1px;
-           font-family: "IBM Plex Mono", monospace; font-size: 11px; }
-
-/* filtered overlay */
-.filtered-overlay {
-  position: absolute; inset: 0; background: rgba(181,71,107,.07);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 10px;
-}
-.filtered-badge {
-  font-family: "IBM Plex Mono", monospace; font-size: 13px; font-weight: 600;
-  background: var(--rose); color: #fff; padding: 6px 18px;
-  border-radius: 8px; letter-spacing: .1em;
-}
-.filtered-reason {
-  font-family: "IBM Plex Mono", monospace; font-size: 11px;
-  color: var(--rose); background: #fceef2;
-  border: 1px solid #f0c0cc; border-radius: 6px;
-  padding: 5px 12px; max-width: 280px; text-align: center;
-}
+.del    { background: #fceef2; color: #8a1a3a; border-radius: 3px; }
+.del-ws { background: #fceef2; color: #c0718d; border-radius: 3px;
+          font-family: "IBM Plex Mono", monospace; font-size: 10px; }
+.joiner { background: #eef6f4; color: var(--teal); border-radius: 3px;
+          font-family: "IBM Plex Mono", monospace; font-size: 10px; padding: 0 2px; }
 .trunc-note {
-  font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--muted);
-  margin-top: 14px; padding-top: 10px; border-top: 1px dashed var(--line);
+  font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--muted);
+  margin-top: 12px; padding-top: 9px; border-top: 1px dashed var(--line);
 }
 """
 
+
+# ---------------------------------------------------------------------------
+# JavaScript
+# NOTE: This is a raw string. All regex unicode escapes (\uXXXX) are
+# written as literal ASCII so the browser's JS engine interprets them,
+# NOT Python.  Never embed actual invisible/control characters here.
+# ---------------------------------------------------------------------------
+
 JS = r"""
-const ARTICLES = JSON.parse(document.getElementById('articles-data').textContent);
-const STAGES   = JSON.parse(document.getElementById('stages-data').textContent);
-let state = { idx: 0, stageIdx: 0 };
+var ARTICLES = JSON.parse(document.getElementById('articles-data').textContent);
+var state = { idx: 0 };
+
+/* ---- helpers ---- */
+function countRe(text, re) {
+  var m = text.match(re);
+  return m ? m.length : 0;
+}
 
 function esc(s) {
   return String(s)
@@ -299,156 +233,373 @@ function esc(s) {
 }
 
 function fmt(n) {
+  n = Math.abs(n);
   if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
   if (n >= 1e3) return (n / 1e3).toFixed(1) + 'k';
   return String(n);
 }
 
-/* ---- word+whitespace level diff ---- */
+/* ================================================================
+   NORMALIZATION STEPS  (Normalization_SKILLS.md Steps 04-14)
+   All Unicode ranges use \uXXXX JS escape sequences — safe ASCII.
+   ================================================================ */
+
+var STEPS = [
+  {
+    id: 'step04', num: '04', name: 'HTML Entities',
+    desc: 'Decode &amp; &lt; &#8217; and numeric refs',
+    preserve: false,
+    fn: function(text) {
+      var before = text;
+      text = text
+        .replace(/&amp;/g,    '&')
+        .replace(/&lt;/g,     '<')
+        .replace(/&gt;/g,     '>')
+        .replace(/&quot;/g,   '"')
+        .replace(/&apos;/g,   "'")
+        .replace(/&nbsp;/g,   ' ')
+        .replace(/&#(\d+);/g, function(_, n) {
+          var c = parseInt(n, 10);
+          try { return c > 0 ? String.fromCodePoint(c) : _; } catch(e) { return _; }
+        })
+        .replace(/&#x([0-9a-fA-F]+);/g, function(_, h) {
+          var c = parseInt(h, 16);
+          try { return c > 0 ? String.fromCodePoint(c) : _; } catch(e) { return _; }
+        });
+      return { text: text, count: Math.max(0, before.length - text.length), label: 'decoded' };
+    }
+  },
+
+  {
+    id: 'step05', num: '05', name: 'Unicode NFC',
+    desc: 'Compose diacritics to canonical form',
+    preserve: false,
+    fn: function(text) {
+      var norm = text.normalize('NFC');
+      return { text: norm, count: Math.max(0, text.length - norm.length), label: 'changed' };
+    }
+  },
+
+  {
+    id: 'step06', num: '06', name: 'Line Endings',
+    desc: 'Convert CRLF and standalone CR to LF',
+    preserve: false,
+    fn: function(text) {
+      var count = countRe(text, /\r/g);
+      return { text: text.replace(/\r\n/g, '\n').replace(/\r/g, '\n'), count: count, label: 'converted' };
+    }
+  },
+
+  {
+    id: 'step07', num: '07', name: 'Indic Joiners',
+    desc: 'Highlight U+200C ZWNJ and U+200D ZWJ — preserved',
+    preserve: true,   // highlight-only, no removal
+    fn: function(text) {
+      var count = countRe(text, /[‌‍]/g);
+      return { text: text, count: count, label: 'found' };
+    }
+  },
+
+  {
+    id: 'step08', num: '08', name: 'Zero Width Space',
+    desc: 'Remove U+200B extraction noise',
+    preserve: false,
+    fn: function(text) {
+      var count = countRe(text, /​/g);
+      return { text: text.replace(/​/g, ''), count: count, label: 'removed' };
+    }
+  },
+
+  {
+        id: 'step09', num: '09', name: 'C0/C1 Controls',
+    desc: 'Remove NUL and controls, keep LF and TAB',
+    preserve: false,
+    fn: function(text) {
+      var re = /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x80-\x9f]/g;
+      var count = countRe(text, re);
+      return { text: text.replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f\x80-\x9f]/g, ''), count: count, label: 'removed' };
+    }
+  },
+
+  {
+id: 'step10', num: '10', name: 'BOM',
+    desc: 'Remove U+FEFF byte order marks',
+    preserve: false,
+    fn: function(text) {
+      var count = countRe(text, /﻿/g);
+      return { text: text.replace(/﻿/g, ''), count: count, label: 'removed' };
+    }
+  },
+
+  {
+    id: 'step11', num: '11', name: 'Bidi Controls',
+    desc: 'Remove U+202A-U+202E and U+2066-U+2069',
+    preserve: false,
+    fn: function(text) {
+      var count = countRe(text, /[‪-‮⁦-⁩]/g);
+      return { text: text.replace(/[‪-‮⁦-⁩]/g, ''), count: count, label: 'removed' };
+    }
+  },
+
+  {
+    id: 'step12', num: '12', name: 'U+FFFD Corrupt',
+    desc: 'Remove U+FFFD replacement characters',
+    preserve: false,
+    fn: function(text) {
+      var count = countRe(text, /�/g);
+      return { text: text.replace(/�/g, ''), count: count, label: 'removed' };
+    }
+  },
+
+  {
+    id: 'step13', num: '13', name: 'Whitespace',
+    desc: 'Collapse spaces, trim lines, max 2 newlines',
+    preserve: false,
+    fn: function(text) {
+      var before = text;
+      // tabs to spaces
+      text = text.replace(/\t/g, ' ');
+      // collapse horizontal whitespace: regular space + non-breaking space U+00A0
+      text = text.replace(/[  ]+/g, ' ');
+      // trim trailing spaces per line
+      text = text.replace(/[ ]+$/mg, '');
+      // trim leading spaces per line
+      text = text.replace(/^[ ]+/mg, '');
+      // collapse 3+ newlines to 2
+      text = text.replace(/\n{3,}/g, '\n\n');
+      text = text.trim();
+      return { text: text, count: Math.max(0, before.length - text.length), label: 'removed' };
+    }
+  },
+
+  {
+    id: 'step14', num: '14', name: 'Ghost Tags',
+    desc: 'Remove <|endoftext|>, [INST], role wrappers',
+    preserve: false,
+    fn: function(text) {
+      var patterns = [
+        /<\|endoftext\|>/g,
+        /<\|im_start\|>/g,      /<\|im_end\|>/g,
+        /<\|eot_id\|>/g,
+        /<\|start_header_id\|>/g, /<\|end_header_id\|>/g,
+        /\[INST\]/g,            /\[\/INST\]/g,
+        /\[USER\]/g,            /\[ASSISTANT\]/g,
+        /<<SYS>>/g,             /<\/SYS>>/g,
+        /<s>\s*/g,              /\s*<\/s>/g
+      ];
+      var count = 0;
+      for (var i = 0; i < patterns.length; i++) {
+        count += countRe(text, patterns[i]);
+        text = text.replace(patterns[i], '');
+      }
+      return { text: text, count: count, label: 'removed' };
+    }
+  }
+];
+
+/* ---- apply checked steps in order ---- */
+function applySteps(rawText, checkedIds) {
+  var text = rawText;
+  var counts = {};
+  for (var i = 0; i < STEPS.length; i++) {
+    var step = STEPS[i];
+    var result = step.fn(text);           // compute on current accumulated text
+    counts[step.id] = { count: result.count, label: result.label };
+    if (!step.preserve && checkedIds[step.id]) {
+      text = result.text;                 // only advance if checked
+    }
+  }
+  return { normalized: text, counts: counts };
+}
+
+/* ---- word+whitespace diff ---- */
 function splitTokens(text) {
-  return text.split(/(\s+)/).filter(function(t) { return t.length > 0; });
+  var parts = text.split(/(\s+)/);
+  var out = [];
+  for (var i = 0; i < parts.length; i++) {
+    if (parts[i].length > 0) out.push(parts[i]);
+  }
+  return out;
 }
 
 function computeDiff(oldText, newText) {
   if (oldText === newText) return null;
-  const a = splitTokens(oldText);
-  const b = splitTokens(newText);
-  if (a.length > 1000 || b.length > 1000) return null;
-
-  const m = a.length, n = b.length;
-  const dp = [];
-  for (let i = 0; i <= m; i++) {
-    dp[i] = new Int32Array(n + 1);
-  }
-  for (let i = m - 1; i >= 0; i--) {
-    for (let j = n - 1; j >= 0; j--) {
+  var a = splitTokens(oldText);
+  var b = splitTokens(newText);
+  if (a.length > 1200 || b.length > 1200) return null;
+  var m = a.length, n = b.length, i, j;
+  var dp = [];
+  for (i = 0; i <= m; i++) dp[i] = new Int32Array(n + 1);
+  for (i = m - 1; i >= 0; i--) {
+    for (j = n - 1; j >= 0; j--) {
       dp[i][j] = a[i] === b[j]
         ? dp[i+1][j+1] + 1
-        : Math.max(dp[i+1][j], dp[i][j+1]);
+        : (dp[i+1][j] >= dp[i][j+1] ? dp[i+1][j] : dp[i][j+1]);
     }
   }
-
-  const ops = [];
-  let i = 0, j = 0;
+  var ops = [];
+  i = 0; j = 0;
   while (i < m || j < n) {
     if (i < m && j < n && a[i] === b[j]) {
-      ops.push({ type: 'eq', text: a[i] }); i++; j++;
+      ops.push({ t: 'eq', s: a[i] }); i++; j++;
     } else if (j < n && (i >= m || dp[i][j+1] >= dp[i+1][j])) {
-      ops.push({ type: 'ins', text: b[j] }); j++;
+      ops.push({ t: 'ins', s: b[j] }); j++;
     } else {
-      ops.push({ type: 'del', text: a[i] }); i++;
+      ops.push({ t: 'del', s: a[i] }); i++;
     }
   }
   return ops;
 }
 
-/* ---- build HTML for left (raw) panel with diff highlights ---- */
-function buildRawHtml(ops, rawText) {
-  if (!ops) return esc(rawText);
-  var html = '';
-  for (var k = 0; k < ops.length; k++) {
-    var op = ops[k];
-    if (op.type === 'ins') continue;  // insertions don't appear in raw
-    if (op.type === 'del') {
-      var isWs = /^\s+$/.test(op.text);
-      if (isWs) {
-        var visible = op.text.replace(/\n/g, '↵\n').replace(/ /g, '·');
-        html += '<span class="del-ws">' + esc(visible) + '</span>';
+/* ---- joiner highlight: run on the final HTML string ---- */
+function addJoinerHighlights(html) {
+  return html
+    .replace(/‌/g, '<span class="joiner" title="U+200C ZWNJ">[ZWNJ]</span>')
+    .replace(/‍/g, '<span class="joiner" title="U+200D ZWJ">[ZWJ]</span>');
+}
+
+/* ---- build raw panel HTML with diff highlights ---- */
+function buildRawHtml(ops, rawText, showJoiners) {
+  var html;
+  if (!ops) {
+    html = esc(rawText);
+  } else {
+    html = '';
+    for (var k = 0; k < ops.length; k++) {
+      var op = ops[k];
+      if (op.t === 'ins') continue;
+      if (op.t === 'del') {
+        var isWs = /^\s+$/.test(op.s);
+        if (isWs) {
+          var vis = op.s.replace(/\n/g, '↵\n').replace(/ /g, '·');
+          html += '<span class="del-ws">' + esc(vis) + '</span>';
+        } else {
+          html += '<span class="del">' + esc(op.s) + '</span>';
+        }
       } else {
-        html += '<span class="del">' + esc(op.text) + '</span>';
+        html += esc(op.s);
       }
-    } else {
-      html += esc(op.text);
     }
   }
+  if (showJoiners) html = addJoinerHighlights(html);
   return html;
 }
 
-/* ---- render a single panel ---- */
-function buildPanel(labelText, labelClass, badgeStatus, bodyHtml, showFilteredOverlay, reason, isTruncated, fullLen, previewLen) {
-  var truncNote = isTruncated
-    ? '<div class="trunc-note">Showing first ' + fmt(previewLen) + ' of ' + fmt(fullLen) + ' chars</div>'
-    : '';
-  var overlay = '';
-  if (showFilteredOverlay) {
-    overlay = '<div class="filtered-overlay">'
-            + '<div class="filtered-badge">FILTERED</div>'
-            + (reason ? '<div class="filtered-reason">' + esc(reason) + '</div>' : '')
-            + '</div>';
-  }
-  return '<div class="panel-hd">'
-       + '<span class="panel-label ' + labelClass + '">' + esc(labelText) + '</span>'
-       + '<span class="pbadge ' + badgeStatus + '">' + badgeStatus + '</span>'
-       + '</div>'
-       + '<div class="panel-body">'
-       + bodyHtml
-       + truncNote
-       + overlay
-       + '</div>';
-}
-
 /* ---- main render ---- */
-function render() {
-  var art      = ARTICLES[state.idx];
-  var stage    = STAGES[state.stageIdx];
-  var rawData  = art.stages[STAGES[0].id];
-  var sData    = art.stages[stage.id];
-
-  document.getElementById('article-title').textContent = art.title;
-  document.getElementById('article-url').href          = art.url;
-  document.getElementById('article-counter').textContent = (state.idx + 1) + ' of ' + ARTICLES.length;
-  document.getElementById('prev-btn').disabled = (state.idx === 0);
-  document.getElementById('next-btn').disabled = (state.idx === ARTICLES.length - 1);
-
-  document.getElementById('s-raw-tok').textContent   = fmt(rawData.tokens);
-  document.getElementById('s-stage-tok').textContent = fmt(sData.tokens);
-  document.getElementById('s-raw-chars').textContent = fmt(rawData.chars);
-
-  var delta    = sData.tokens - rawData.tokens;
-  var deltaEl  = document.getElementById('s-delta');
-  var deltaCell = deltaEl.parentElement;
-  deltaEl.textContent = delta === 0 ? '—' : (delta > 0 ? '+' : '') + fmt(delta);
-  deltaCell.className = 'stat ' + (delta < 0 ? 'rose' : delta > 0 ? 'teal' : 'muted-stat');
-
-  var statusEl   = document.getElementById('s-status');
-  var statusCell = document.getElementById('s-status-cell');
-  statusEl.textContent = sData.status.toUpperCase();
-  statusCell.className = 'stat ' + (sData.status === 'filtered' ? 'rose' : 'teal');
-
-  // build diff between raw and stage
-  var ops = computeDiff(rawData.text, sData.text);
-
-  // left panel — raw with highlights
-  var rawHtml = buildPanel(
-    'Raw', 'raw', rawData.status,
-    buildRawHtml(ops, rawData.text),
-    false, null,
-    rawData.full_len > rawData.text.length,
-    rawData.full_len, rawData.text.length
-  );
-
-  // right panel — stage result with filtered overlay if needed
-  var stageHtml = buildPanel(
-    stage.label, 'stage', sData.status,
-    esc(sData.text),
-    sData.status === 'filtered', sData.reason,
-    sData.full_len > sData.text.length,
-    sData.full_len, sData.text.length
-  );
-
-  document.getElementById('panel-raw').innerHTML   = rawHtml;
-  document.getElementById('panel-stage').innerHTML = stageHtml;
+function getChecked() {
+  var ids = {};
+  var cbs = document.querySelectorAll('.step-cb');
+  for (var i = 0; i < cbs.length; i++) ids[cbs[i].dataset.id] = cbs[i].checked;
+  return ids;
 }
 
-// populate stage dropdown
-var sel = document.getElementById('stage-select');
-STAGES.forEach(function(s, i) {
-  var o = document.createElement('option');
-  o.value = i; o.textContent = s.label;
-  sel.appendChild(o);
-});
-sel.addEventListener('change', function(e) { state.stageIdx = +e.target.value; render(); });
+function render() {
+  var art        = ARTICLES[state.idx];
+  var rawText    = art.text;
+  var checkedIds = getChecked();
 
+  var pipeline   = applySteps(rawText, checkedIds);
+  var normText   = pipeline.normalized;
+  var counts     = pipeline.counts;
+  var showJoiners = checkedIds['step07'];
+
+  /* --- step badge updates --- */
+  for (var i = 0; i < STEPS.length; i++) {
+    var s  = STEPS[i];
+    var sc = counts[s.id];
+    var el = document.getElementById('badge-' + s.id);
+    if (!el) continue;
+    el.textContent = sc.count + ' ' + sc.label;
+    el.className   = 'step-badge' + (sc.count > 0 ? (s.preserve ? ' found' : ' changed') : '');
+  }
+
+  /* --- article header --- */
+  document.getElementById('art-title').textContent          = art.title;
+  document.getElementById('art-url').href                   = art.url;
+  document.getElementById('art-counter').textContent        = (state.idx + 1) + ' of ' + ARTICLES.length;
+  document.getElementById('prev-btn').disabled              = state.idx === 0;
+  document.getElementById('next-btn').disabled              = state.idx === ARTICLES.length - 1;
+
+  /* --- stats --- */
+  var rawTok      = Math.round(rawText.length / 4.5);
+  var normTok     = Math.round(normText.length / 4.5);
+  var delta       = normTok - rawTok;
+  var charsRm     = rawText.length - normText.length;
+  var stepsOn     = Object.keys(checkedIds).filter(function(k) { return checkedIds[k]; }).length;
+
+  document.getElementById('s-raw').textContent    = fmt(rawTok);
+  document.getElementById('s-norm').textContent   = fmt(normTok);
+  document.getElementById('s-chars').textContent  = charsRm > 0 ? '-' + fmt(charsRm) : '0';
+  document.getElementById('s-steps').textContent  = stepsOn;
+
+  var dEl   = document.getElementById('s-delta');
+  var dCell = dEl.parentElement;
+  dEl.textContent  = delta === 0 ? '—' : (delta > 0 ? '+' : '') + fmt(Math.abs(delta));
+  dCell.className  = 'stat ' + (delta < 0 ? 'rose' : delta > 0 ? 'teal' : 'grey');
+
+  /* --- panels --- */
+  var ops     = computeDiff(rawText, normText);
+  var isTrunc = art.full_len > art.text.length;
+  var truncNote = isTrunc
+    ? '<div class="trunc-note">Showing first ' + fmt(art.text.length) + ' of ' + fmt(art.full_len) + ' chars</div>'
+    : '';
+
+  var rawHtml  = buildRawHtml(ops, rawText, showJoiners);
+  var normHtml = esc(normText);
+  if (showJoiners) normHtml = addJoinerHighlights(normHtml);
+
+  document.getElementById('panel-raw').innerHTML =
+    '<div class="panel-hd"><span class="panel-label raw">Raw</span></div>' +
+    '<div class="panel-body">' + rawHtml + truncNote + '</div>';
+
+  document.getElementById('panel-norm').innerHTML =
+    '<div class="panel-hd"><span class="panel-label norm">Normalized</span></div>' +
+    '<div class="panel-body">' + normHtml + truncNote + '</div>';
+}
+
+/* ---- init: build step cards ---- */
+var grid = document.getElementById('step-grid');
+for (var si = 0; si < STEPS.length; si++) {
+  (function(step) {
+    var card = document.createElement('label');
+    card.className = 'step-card on' + (step.preserve ? ' preserve' : '');
+    card.innerHTML =
+      '<input type="checkbox" class="step-cb" data-id="' + step.id + '" checked>' +
+      '<div class="step-body">' +
+        '<span class="step-num">STEP ' + step.num + '</span>' +
+        '<span class="step-name">' + esc(step.name) + '</span>' +
+        '<span class="step-desc">' + esc(step.desc) + '</span>' +
+        '<span class="step-badge" id="badge-' + step.id + '">—</span>' +
+      '</div>';
+    grid.appendChild(card);
+  })(STEPS[si]);
+}
+
+/* checkbox toggles */
+grid.addEventListener('change', function(e) {
+  if (!e.target.classList.contains('step-cb')) return;
+  var card = e.target.closest('.step-card');
+  if (e.target.checked) { card.classList.add('on'); }
+  else                  { card.classList.remove('on'); }
+  render();
+});
+
+/* select / clear all */
+var allOn = true;
+document.getElementById('toggle-btn').addEventListener('click', function() {
+  allOn = !allOn;
+  var cbs = document.querySelectorAll('.step-cb');
+  for (var i = 0; i < cbs.length; i++) {
+    cbs[i].checked = allOn;
+    var card = cbs[i].closest('.step-card');
+    if (allOn) { card.classList.add('on'); }
+    else       { card.classList.remove('on'); }
+  }
+  this.textContent = allOn ? 'Clear all' : 'Check all';
+  render();
+});
+
+/* article nav */
 document.getElementById('prev-btn').addEventListener('click', function() {
   if (state.idx > 0) { state.idx--; render(); }
 });
@@ -464,85 +615,70 @@ render();
 """
 
 
+# ---------------------------------------------------------------------------
+# HTML assembly  (plain string concatenation — no f-string brace issues)
+# ---------------------------------------------------------------------------
+
 def build_html(articles):
-    stages_meta = [{"id": s[0], "label": s[1]} for s in STAGES]
+    data_json = json.dumps(articles, ensure_ascii=False)
 
-    articles_json = json.dumps(articles,    ensure_ascii=False, indent=None)
-    stages_json   = json.dumps(stages_meta, ensure_ascii=False)
-
-    return f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Data Preview — India-First 40B</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<style>{CSS}</style>
-</head>
-<body>
-
-<script type="application/json" id="articles-data">{articles_json}</script>
-<script type="application/json" id="stages-data">{stages_json}</script>
-
-<div class="nav">
-  <div class="nav-in">
-    <span class="brand">India-First 40B</span>
-    <a href="#">Overview</a>
-    <a href="#">Data</a>
-    <a href="#">Cleaning</a>
-    <a href="#">Tokenizer</a>
-    <a href="#" class="active">Preview</a>
-  </div>
-</div>
-
-<div class="wrap">
-  <div class="phead">
-    <h1>Data Cleaning Preview</h1>
-    <p class="dek">
-      Raw (left) vs cleaning stage (right) — 30 sample Hindi Wikipedia articles.
-      <span class="del-example">highlighted</span> text on the left shows what each stage removes.
-    </p>
-  </div>
-
-  <div class="controls">
-    <div>
-      <span class="ctrl-label">Cleaning stage</span>
-      <select id="stage-select"></select>
-    </div>
-    <div>
-      <span class="ctrl-label">Article</span>
-      <div class="article-nav">
-        <button class="nav-btn" id="prev-btn">&#8592;</button>
-        <span class="article-counter" id="article-counter">1 of {N_SAMPLE}</span>
-        <button class="nav-btn" id="next-btn">&#8594;</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="title-bar">
-    <span class="t" id="article-title"></span>
-    <a id="article-url" href="#" target="_blank">&#8599; Wikipedia</a>
-  </div>
-
-  <div class="stat-strip">
-    <div class="stat"><div class="stat-n" id="s-raw-tok">—</div><div class="stat-l">Raw tokens</div></div>
-    <div class="stat"><div class="stat-n" id="s-stage-tok">—</div><div class="stat-l">Stage tokens</div></div>
-    <div class="stat"><div class="stat-n" id="s-delta">—</div><div class="stat-l">Token delta</div></div>
-    <div class="stat"><div class="stat-n" id="s-raw-chars">—</div><div class="stat-l">Raw chars</div></div>
-    <div class="stat" id="s-status-cell"><div class="stat-n" id="s-status">—</div><div class="stat-l">Status</div></div>
-  </div>
-
-  <div class="panels">
-    <div class="panel" id="panel-raw"></div>
-    <div class="panel" id="panel-stage"></div>
-  </div>
-</div>
-
-<script>{JS}</script>
-</body>
-</html>"""
+    return (
+        '<!DOCTYPE html>\n'
+        '<html lang="en">\n'
+        '<head>\n'
+        '<meta charset="UTF-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
+        '<title>Data Preview — India-First 40B</title>\n'
+        '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+        '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+        '<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600'
+        '&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">\n'
+        '<style>' + CSS + '</style>\n'
+        '</head>\n'
+        '<body>\n'
+        '<script type="application/json" id="articles-data">' + data_json + '</script>\n'
+        '<div class="nav"><div class="nav-in">\n'
+        '  <span class="brand">India-First 40B</span>\n'
+        '  <a href="#">Overview</a><a href="#">Data</a>\n'
+        '  <a href="#">Cleaning</a><a href="#">Tokenizer</a>\n'
+        '  <a href="#" class="active">Preview</a>\n'
+        '</div></div>\n'
+        '<div class="wrap">\n'
+        '  <div class="phead">\n'
+        '    <h1>Data Cleaning Preview</h1>\n'
+        '    <p class="dek">Check/uncheck steps from <em>Normalization_SKILLS.md</em> — '
+        '<span class="del-eg">rose highlights</span> show what each step removes from the raw text.</p>\n'
+        '  </div>\n'
+        '  <div class="art-controls">\n'
+        '    <span class="ctrl-label">Article</span>\n'
+        '    <div class="art-nav">\n'
+        '      <button class="nav-btn" id="prev-btn">&#8592;</button>\n'
+        '      <span class="art-counter" id="art-counter">1 of ' + str(N_SAMPLE) + '</span>\n'
+        '      <button class="nav-btn" id="next-btn">&#8594;</button>\n'
+        '    </div>\n'
+        '    <button class="toggle-btn" id="toggle-btn">Clear all</button>\n'
+        '  </div>\n'
+        '  <div class="step-grid" id="step-grid"></div>\n'
+        '  <div class="title-bar">\n'
+        '    <span class="t" id="art-title"></span>\n'
+        '    <a id="art-url" href="#" target="_blank">&#8599; Wikipedia</a>\n'
+        '  </div>\n'
+        '  <div class="stat-strip">\n'
+        '    <div class="stat"><div class="stat-n" id="s-raw">-</div><div class="stat-l">Raw tokens</div></div>\n'
+        '    <div class="stat"><div class="stat-n" id="s-norm">-</div><div class="stat-l">Normalized tokens</div></div>\n'
+        '    <div class="stat"><div class="stat-n" id="s-delta">-</div><div class="stat-l">Token delta</div></div>\n'
+        '    <div class="stat"><div class="stat-n" id="s-chars">-</div><div class="stat-l">Chars removed</div></div>\n'
+        '    <div class="stat"><div class="stat-n" id="s-steps">-</div><div class="stat-l">Steps active</div></div>\n'
+        '  </div>\n'
+        '  <div class="panels">\n'
+        '    <div class="panel" id="panel-raw"></div>\n'
+        '    <div class="panel" id="panel-norm"></div>\n'
+        '  </div>\n'
+        '</div>\n'
+        '<script>' + JS + '</script>\n'
+        '</body>\n'
+        '</html>\n'
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -550,21 +686,26 @@ def build_html(articles):
 # ---------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print(f"Loading {N_SAMPLE} articles from {JSONL_PATH}...")
+    print("Loading {} articles...".format(N_SAMPLE))
     raw = load_sample(JSONL_PATH, N_SAMPLE)
 
-    print("Applying cleaning stages...")
+    print("Processing...")
     processed = process_articles(raw)
 
-    print(f"Generating {OUTPUT_PATH}...")
+    print("Generating {}...".format(OUTPUT_PATH))
     html = build_html(processed)
     with open(OUTPUT_PATH, "w", encoding="utf-8") as f:
         f.write(html)
 
-    kept = sum(1 for a in processed if a["stages"]["stub_filter"]["status"] == "kept")
-    print(f"\nDone. {OUTPUT_PATH} written.")
-    print(f"  Articles                 : {len(processed)}")
-    print(f"  Kept after all stages    : {kept}/{len(processed)}")
-    print(f"\nServe with:")
-    print(f"  python3 -m http.server 8000")
-    print(f"  then open http://localhost:8000")
+    # Verify no literal control chars leaked into JS regex patterns
+    import re as _re
+    js_start = html.find('<script>') + len('<script>')
+    js_end   = html.rfind('</script>')
+    js_block = html[js_start:js_end]
+    bad = _re.findall(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', js_block)
+    if bad:
+        print("WARNING: control chars found in JS block:", [hex(ord(c)) for c in bad])
+    else:
+        print("OK: no raw control chars in JS block.")
+
+    print("\nDone. {} written ({} articles).".format(OUTPUT_PATH, len(processed)))
