@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deduplication — India-First 40B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8;
+  --marigold:#E0982B; --teal:#147D74; --rose:#B5476B; --line:#E3E4EE;
+  --muted:#656579; --panel:#F1F2F8;
+}
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.03em; color:var(--muted);
+  padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; }
+.nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:1280px; margin:0 auto; padding:0 24px 80px; }
+.phead { padding:34px 0 12px; border-bottom:2px solid var(--ink); }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(24px,3.6vw,38px); margin:8px 0 6px; }
+.phead .dek { font-size:13px; color:#33334a; margin:0; max-width:82ch; }
+.note { font-size:12px; color:var(--muted); margin-top:8px; max-width:82ch; }
+
+.explainer { margin:16px 0 0; border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.explainer > summary, .more > summary { cursor:pointer; list-style:none; padding:12px 16px; font-weight:600;
+  font-size:13.5px; color:var(--indigo); background:var(--panel); display:flex; align-items:center; gap:8px; }
+.explainer > summary::-webkit-details-marker, .more > summary::-webkit-details-marker { display:none; }
+.explainer > summary::before, .more > summary::before { content:"\25B8"; font-size:11px; transition:transform .15s; color:var(--marigold); }
+.explainer[open] > summary::before, .more[open] > summary::before { transform:rotate(90deg); }
+.explainer-bd { padding:14px 18px; font-size:13.5px; color:#33334a; line-height:1.7; }
+.explainer-bd .lead { margin:0 0 12px; } .explainer-bd b { color:var(--ink); }
+.verdict-key { display:flex; flex-direction:column; gap:6px; margin:10px 0 4px; }
+.vk-row { display:flex; align-items:center; gap:10px; font-size:13px; }
+.vk-badge { font-weight:700; font-size:11px; padding:2px 9px; border-radius:6px; min-width:150px; text-align:center; }
+.more { margin-top:13px; border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.more > summary { color:var(--muted); background:#fff; }
+.more[open] > summary { border-bottom:1px solid var(--line); }
+.more-bd { padding:15px; }
+
+.strict { margin:16px 0 0; border:1px solid var(--line); border-radius:12px; background:#fff; padding:16px 18px; }
+.strict-top { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.strict-top .lbl { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted); font-weight:600; }
+.strict-name { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:14px; color:var(--indigo); }
+.strict-desc { font-size:12.5px; color:var(--muted); margin-left:auto; }
+.strict input[type=range] { width:100%; margin:14px 0 4px; accent-color:var(--indigo); }
+.strict-ticks { display:flex; justify-content:space-between; font-family:"IBM Plex Mono",monospace;
+  font-size:10px; color:var(--muted); }
+.strict-ticks span { flex:1; text-align:center; }
+.strict-ticks span:first-child { text-align:left; } .strict-ticks span:last-child { text-align:right; }
+
+.art-controls { display:flex; align-items:center; gap:14px; padding:16px 0 0; flex-wrap:wrap; }
+.ctrl-label { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--muted); font-weight:600; }
+.art-nav { display:flex; align-items:center; gap:8px; }
+.nav-btn { font-family:"IBM Plex Mono",monospace; font-size:14px; border:1px solid var(--line);
+  border-radius:7px; padding:5px 13px; background:#fff; color:var(--indigo); cursor:pointer; }
+.nav-btn:hover { background:var(--panel); } .nav-btn:disabled { color:var(--muted); cursor:default; }
+.art-counter { font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); min-width:68px; text-align:center; }
+.art-select { font-family:"Inter",sans-serif; font-size:13px; padding:5px 10px; border:1px solid var(--line);
+  border-radius:7px; background:#fff; max-width:360px; }
+
+.title-bar { margin:16px 0 0; padding:12px 15px; background:#fff; border:1px solid var(--line);
+  border-radius:10px; display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
+.title-bar .t { font-family:"Spectral",serif; font-weight:600; font-size:19px; }
+.title-bar a { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); }
+.chip { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; letter-spacing:.04em; padding:2px 8px; border-radius:5px; }
+.chip.synthetic { background:#fbeada; color:#9a5a12; } .chip.real { background:#eef6f4; color:var(--teal); }
+.caption { margin:12px 0 0; padding:10px 14px; border-left:3px solid var(--marigold); background:#fdf9f1;
+  border-radius:0 8px 8px 0; font-size:13.5px; color:#5a4520; } .caption b { color:#8a5a12; }
+
+.verdict { margin:14px 0; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.verdict-hd { padding:14px 18px 6px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+.verdict-badge { font-weight:700; font-size:17px; padding:7px 15px; border-radius:9px; }
+.v-accept { background:#eef6f4; color:var(--teal); }
+.v-strip { background:#fdf3e3; color:#9a5a12; }
+.v-review { background:#fdf3e3; color:#9a5a12; }
+.v-exclude { background:#fceef2; color:var(--rose); }
+.verdict-code { font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted); }
+.verdict-why { padding:2px 18px 14px; font-size:14px; color:#26263c; line-height:1.55; }
+.gloss { border-bottom:1px dotted currentColor; cursor:help; }
+
+.card { border:1px solid var(--line); border-radius:12px; background:#fff; overflow:hidden; }
+.card-hd { padding:9px 15px; border-bottom:1px solid var(--line); background:var(--panel);
+  font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; letter-spacing:.09em;
+  text-transform:uppercase; color:var(--indigo); }
+.card-bd { padding:14px 15px; }
+
+.member { display:grid; grid-template-columns:26px 1fr 150px 96px; gap:10px; align-items:center;
+  padding:7px 0; border-bottom:1px dashed var(--line); font-size:13px; }
+.member:last-child { border-bottom:none; }
+.member.isrep { background:#f6faf8; margin:0 -15px; padding:8px 15px; border-radius:8px; border-bottom:none; }
+.m-ico { font-size:15px; text-align:center; }
+.m-title { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.m-bar { height:12px; background:var(--panel); border-radius:6px; overflow:hidden; }
+.m-fill { height:100%; background:var(--indigo-soft); }
+.m-sim { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); text-align:right; }
+.solo { font-size:13px; color:var(--teal); }
+
+.text-view { border:1px solid var(--line); border-radius:12px; background:#fff; margin-top:13px; }
+.text-body { padding:15px; max-height:240px; overflow-y:auto; font-size:13.5px; line-height:1.75;
+  white-space:pre-wrap; word-break:break-word; }
+
+.kv { font-size:12.5px; color:#33334a; margin:3px 0; }
+.kv code { background:var(--panel); padding:1px 5px; border-radius:4px; font-size:11px; }
+
+.acct-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+@media (max-width:860px){ .acct-grid { grid-template-columns:1fr; } }
+.acct-row { display:flex; align-items:center; gap:10px; font-size:13px; padding:5px 0; border-bottom:1px dashed var(--line); }
+.acct-row:last-child { border-bottom:none; }
+.acct-k { flex:1; } .acct-v { font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--indigo); }
+.acct-bar { height:10px; border-radius:5px; }
+.clist { font-size:12.5px; }
+.clist .crow { padding:6px 0; border-bottom:1px dashed var(--line); }
+.clist .crow:last-child { border-bottom:none; }
+.sweep { width:100%; border-collapse:collapse; font-size:12.5px; margin-top:6px; }
+.sweep th, .sweep td { padding:5px 8px; text-align:right; border-bottom:1px solid var(--line); font-family:"IBM Plex Mono",monospace; }
+.sweep th:first-child, .sweep td:first-child { text-align:left; }
+.sweep tr.here { background:#f5f6fd; }
+.trunc-note { font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--muted);
+  margin-top:12px; padding-top:9px; border-top:1px dashed var(--line); }
+</style>
+</head>
+<body>
+<script type="application/json" id="articles-data">[{"id": "d-orig", "title": "🧪 Mobile phones (original)", "caption": "The original article. Its exact/near copies below should be removed, keeping this one.", "expected": "KEEP_CANONICAL", "text": "मोबाइल फोन आज हमारे जीवन का एक अनिवार्य हिस्सा बन चुका है। यह न केवल बातचीत का साधन है बल्कि सूचना और मनोरंजन का भी बड़ा स्रोत है। इंटरनेट की सुविधा ने इसे और भी उपयोगी बना दिया है। आज छोटे बच्चों से लेकर बुजुर्गों तक सभी इसका उपयोग करते हैं। हालांकि इसके अधिक उपयोग से स्वास्थ्य पर बुरा असर भी पड़ सकता है। इसलिए हमें इसका संतुलित और समझदारी भरा उपयोग करना चाहिए। यह मूल लेख है।", "url": "#", "kind": "synthetic", "full_len": 379}, {"id": "d-exact", "title": "🧪 Mobile phones (exact copy)", "caption": "A byte-for-byte copy of the original — pure redundancy, drop it.", "expected": "EXCLUDE_EXACT", "text": "मोबाइल फोन आज हमारे जीवन का एक अनिवार्य हिस्सा बन चुका है। यह न केवल बातचीत का साधन है बल्कि सूचना और मनोरंजन का भी बड़ा स्रोत है। इंटरनेट की सुविधा ने इसे और भी उपयोगी बना दिया है। आज छोटे बच्चों से लेकर बुजुर्गों तक सभी इसका उपयोग करते हैं। हालांकि इसके अधिक उपयोग से स्वास्थ्य पर बुरा असर भी पड़ सकता है। इसलिए हमें इसका संतुलित और समझदारी भरा उपयोग करना चाहिए। यह मूल लेख है।", "url": "#", "kind": "synthetic", "full_len": 379}, {"id": "d-reformatted", "title": "🧪 Mobile phones (reformatted)", "caption": "Same words, only punctuation and spacing changed — identical once normalized.", "expected": "EXCLUDE_EXACT", "text": "मोबाइल फोन आज हमारे जीवन का एक अनिवार्य हिस्सा बन चुका है.\nयह न केवल बातचीत का साधन है बल्कि सूचना और मनोरंजन का भी बड़ा स्रोत है.\nइंटरनेट की सुविधा ने इसे और भी उपयोगी बना दिया है.\nआज छोटे बच्चों से लेकर बुजुर्गों तक सभी इसका उपयोग करते हैं.\nहालांकि इसके अधिक उपयोग से स्वास्थ्य पर बुरा असर भी पड़ सकता है.\nइसलिए हमें इसका संतुलित और समझदारी भरा उपयोग करना चाहिए.\nयह मूल लेख है।", "url": "#", "kind": "synthetic", "full_len": 379}, {"id": "d-near", "title": "🧪 Mobile phones (near-copy)", "caption": "One word swapped for a synonym — a lexical near-duplicate (~85% overlap).", "expected": "EXCLUDE_NEAR", "text": "मोबाइल फोन आज हमारे जीवन का एक ज़रूरी हिस्सा बन चुका है। यह न केवल बातचीत का साधन है बल्कि सूचना और मनोरंजन का भी बड़ा स्रोत है। इंटरनेट की सुविधा ने इसे और भी उपयोगी बना दिया है। आज छोटे बच्चों से लेकर बुजुर्गों तक सभी इसका उपयोग करते हैं। हालांकि इसके अधिक उपयोग से स्वास्थ्य पर बुरा असर भी पड़ सकता है। इसलिए हमें इसका संतुलित और समझदारी भरा उपयोग करना चाहिए। यह मूल लेख है।", "url": "#", "kind": "synthetic", "full_len": 377}, {"id": "d-near2", "title": "🧪 Mobile phones (loosely reworded)", "caption": "Several phrases reworded — lower overlap; only the aggressive setting removes it.", "expected": "KEEP_CANONICAL", "text": "मोबाइल फोन आज हमारे जीवन का एक ज़रूरी अंग बन गया है। यह न केवल बातचीत का साधन है बल्कि सूचना और मनोरंजन का भी बड़ा स्रोत है। इंटरनेट की सुविधा ने इसे और भी उपयोगी बना दिया है। आज छोटे बच्चों से लेकर बुजुर्गों तक सभी इसका उपयोग करते हैं। हालांकि इसके अधिक उपयोग से स्वास्थ्य पर बुरा असर भी पड़ सकता है। इसलिए हमें इसका सीमित और समझदारी भरा उपयोग करना चाहिए। यह मूल लेख है।", "url": "#", "kind": "synthetic", "full_len": 371}, {"id": "d-long", "title": "🧪 Climate of India (long)", "caption": "A longer article. A snippet of it was copied elsewhere.", "expected": "KEEP_CANONICAL", "text": "भारत की जलवायु मुख्यतः मानसून पर निर्भर करती है। गर्मी के मौसम में उत्तर भारत में तापमान काफी बढ़ जाता है। वर्षा ऋतु में जून से सितंबर के बीच अधिकांश वर्षा होती है। यह वर्षा कृषि के लिए बहुत महत्वपूर्ण मानी जाती है और फसलों को जीवन देती है। सर्दियों में हिमालय क्षेत्र में बर्फबारी होती है और मैदानी इलाकों में ठंड बढ़ जाती है। इस प्रकार भारत में विविध प्रकार की ऋतुएँ पाई जाती हैं।", "url": "#", "kind": "synthetic", "full_len": 382}, {"id": "d-snippet", "title": "🧪 Copied paragraph (snippet)", "caption": "One paragraph lifted verbatim from the long article — a partial copy (containment).", "expected": "STRIP_DUPLICATE_SPAN", "text": "वर्षा ऋतु में जून से सितंबर के बीच अधिकांश वर्षा होती है। यह वर्षा कृषि के लिए बहुत महत्वपूर्ण मानी जाती है और फसलों को जीवन देती है।", "url": "#", "kind": "synthetic", "full_len": 133}, {"id": "d-hi", "title": "🧪 Short note in Hindi", "caption": "A Hindi note. Its English translation is next — translations are NOT duplicates.", "expected": "KEEP_CANONICAL", "text": "कंप्यूटर आधुनिक युग का सबसे महत्वपूर्ण आविष्कार है। यह तेज़ी से गणना करता है और लाखों कार्यों को आसान बना देता है।", "url": "#", "kind": "synthetic", "full_len": 114}, {"id": "d-en", "title": "🧪 Same note in English (translation)", "caption": "The English translation of the Hindi note — kept, because it shares almost no words.", "expected": "KEEP_CANONICAL", "text": "The computer is the most important invention of the modern age. It calculates rapidly and makes millions of tasks easier.", "url": "#", "kind": "synthetic", "full_len": 121}, {"id": "d-unique", "title": "🧪 Unique article", "caption": "Shares no substantial text with anything else — kept as-is.", "expected": "KEEP_CANONICAL", "text": "योग भारत की प्राचीन पद्धति है जो शरीर और मन को स्वस्थ रखती है। नियमित अभ्यास से एकाग्रता बढ़ती है और तनाव कम होता है। आज पूरी दुनिया में योग को अपनाया जा रहा है।", "url": "#", "kind": "synthetic", "full_len": 161}, {"id": "10", "title": "हम होंगे कामयाब", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%AE%20%E0%A4%B9%E0%A5%8B%E0%A4%82%E0%A4%97%E0%A5%87%20%E0%A4%95%E0%A4%BE%E0%A4%AE%E0%A4%AF%E0%A4%BE%E0%A4%AC", "text": "हम होंगे कामयाब ( का गिरिजा कुमार माथुर द्वारा किया गया हिंदी भावानुवाद) एक प्रतिरोध गीत है। यह गीत बीसवीं सदी में नागरिक अधिकार आंदोलन का प्रधान स्वर बना। इस गीत को आमतौर पर \"I'll Overcome Some Day\" (\"आई विल ओवरकम सम डे\") से काव्यावतरित माना जाता है, जो चार्ल्स अल्बर्ट टिंडले द्वारा गाया गया था और जिसे 1900 में पहली बार प्रकाशित किया गया था।\n\nसन्दर्भ\nHum Honge Kamyab Lyrics \nनागरिक अधिकार आंदोलन\nदेशभक्ति के गीत\nआधार", "full_len": 420, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "14", "title": "दैनिक पूजा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%A6%E0%A5%88%E0%A4%A8%E0%A4%BF%E0%A4%95%20%E0%A4%AA%E0%A5%82%E0%A4%9C%E0%A4%BE", "text": "दैनिक पूजा विधि हिन्दू धर्म की कई उपासना पद्धतियों में से एक है। ये एक दैनिक कर्म है। विभिन्न देवताओं को प्रसन्न करने के लिये कई मन्त्र बताये गये हैं, जो लगभग सभी पुराणों से हैं। वैदिक मन्त्र यज्ञ और हवन के लिये होते हैं।\n\nपूजा की रीति इस तरह है : पहले कोई भी देवता चुनें, जिसकी पूजा करनी है। फ़िर विधिवत निम्नलिखित मन्त्रों (सभी संस्कृत में हैं) के साथ उसकी पूजा करें। पौराणिक देवताओं के मन्त्र इस प्रकार हैं :\n\n विनायक : ॐ सिद्धि विनायकाय नमः . \n सरस्वती : ॐ सरस्वत्यै नमः . \n लक्ष्मी : ॐ महा लक्ष्म्यै नमः . \n दुर्गा : ॐ दुर्गायै नमः . \n महाविष्णु : ॐ श्री विष्णवे नमः . or ॐ नमो नारायणाय .\n कृष्ण : ॐ श्री कृष्णाय नमः . or ॐ नमो भगवते वासुदेवाय .\n राम : ॐ श्री रामचन्द्राय नमः . \n नरसिंह : ॐ श्री नारसिंहाय नमः . \n शिव : ॐ शिवाय नमः या ॐ नमः शिवाय . \n\nनीचे लिखे मन्त्र गणेश के लिये हैं :\n\nदैनिक विनायक पूजा\n\nध्यान श्लोक \n\nशुक्लाम्बर धरं विष्णुं शशि वर्णम् चतुर्भुजम् . \nप्रसन्न वदनं ध्यायेत् सर्व विघ्नोपशान्तये ..\n\nषोडशोपचार पूजन \n\nॐ सिद्धि विनायकाय नमः . ध्यायामि . \nॐ सिद्धि विनायकाय नमः . आवाहयामि . \nॐ सिद्धि विनायकाय नमः . आसनं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . अर्घ्यं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पाद्यं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . आचमनीयं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . उप हारं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पंचामृत स्नानं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . वस्त्र युग्मं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . यज्ञोपवीतं धारयामि . \nॐ सिद्धि विनायकाय नमः . आभरणानि समर्पयामि . \nॐ सिद्धि विनायकाय नमः . गंधं धारयामि . \nॐ सिद्धि विनायकाय नमः . अक्षतान् समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पुष्पैः पूजयामि . \nॐ सिद्धि विनायकाय नमः . प्रतिष्ठापयामि .\n\nअथ अंग पूजा \nविनायक (गणेश) के पाँच नाम चुनें और ऐसा कहें :\nॐ महा गणपतये नमः . पादौ पूजयामि . \nॐ विघ्न राजाय नमः . उदरम् पूजयामि . \nॐ एक दन्ताय नमः . बाहुं पूजयामि . \nॐ गौरी पुत्राय नमः . हृदयं पूजयामि . \nॐ आदि वन्दिताय नमः . शिरः पूजयामि . \nॐ सिद्धि विनायकाय नमः . अंग पूजां समर्पयामि .\n\nअथ पत्र पूजा \nविनायक (गणेश) के पाँच नाम चुनें और ऐसा कहें :\nॐ महा गणपतये नमः . आम्र पत्रम् समर्पयामि . \nॐ विघ्न राजाय", "full_len": 3827, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "54", "title": "हिन्दी", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%80", "text": "हिन्दी जिसके मानकीकृत रूप को मानक हिन्दी कहा जाता है, विश्व की एक प्रमुख भाषा है और भारत की एक राजभाषा है। केन्द्रीय स्तर पर भारत में सह-आधिकारिक भाषा अंग्रेजी है। यह हिन्दुस्तानी भाषा की एक मानकीकृत रूप है जिसमें संस्कृत के तत्सम तथा तद्भव शब्दों का प्रयोग अधिक है और अरबी–फ़ारसी शब्द कम हैं। हिन्दी संवैधानिक रूप से भारत की राजभाषा और भारत की सबसे अधिक बोली और समझी जाने वाली भाषा है। हिन्दी भारत की राष्ट्रभाषा नहीं है क्योंकि भारत के संविधान में किसी भी भाषा को ऐसा दर्जा नहीं दिया गया है। एथनोलॉग के अनुसार हिन्दी विश्व की तीसरी सबसे अधिक बोली जाने वाली भाषा है। विश्व आर्थिक मंच की गणना के अनुसार यह विश्व की दस शक्तिशाली भाषाओं में से एक है।\n\nभारत की जनगणना २०११ में 57.1% भारतीय जनसंख्या हिन्दी जानती है जिसमें से 43.63% भारतीय लोगों ने हिन्दी को अपनी मूल भाषा या मातृभाषा घोषित किया था। इसके अतिरिक्त भारत, पाकिस्तान और अन्य देशों में 14 करोड़ 10 लाख लोगों द्वारा बोली जाने वाली उर्दू, व्याकरण के आधार पर हिन्दी के समान है, एवं दोनों ही हिन्दुस्तानी भाषा की परस्पर-सुबोध्य रूप हैं। एक विशाल संख्या में लोग हिन्दी और उर्दू दोनों को ही समझते हैं। भारत में हिन्दी, विभिन्न भारतीय राज्यों की 14 आधिकारिक भाषाओं और क्षेत्र की बोलियों का उपयोग करने वाले लगभग 1 अरब लोगों में से अधिकांश की दूसरी भाषा है। हिन्दी भारत में सम्पर्क भाषा का कार्य करती है  और कुछ हद तक पूरे भारत में सामान्यतः एक सरल रूप में समझी जानेवाली भाषा है। कभी-कभी 'हिन्दी' शब्द का प्रयोग नौ भारतीय राज्यों के सन्दर्भ में भी उपयोग किया जाता है, जिनकी आधिकारिक भाषा हिन्दी है और हिन्दी भाषी बहुमत है, अर्थात् बिहार, छत्तीसगढ़, हरियाणा, हिमाचल प्रदेश, झारखण्ड, मध्य प्रदेश, राजस्थान, उत्तराखण्ड, जम्मू और कश्मीर (२०२० से) उत्तर प्रदेश और राष्ट्रीय राजधानी क्षेत्र दिल्ली का।\n\nहिन्दी और इसकी बोलियाँ सम्पूर्ण भारत के विविध राज्यों में बोली जाती हैं। भारत और अन्य देशों में भी लोग हिन्दी बोलते, पढ़ते और लिखते हैं। फ़िजी, मॉरिशस, गयाना, सूरीनाम, नेपाल और संयुक्त अरब अमीरात में भी हिन्दी या इसकी मान्य बोलियों का उपयोग करने वाले लोगों की बड़ी संख्या मौजूद है। फरवरी 2019 में अबू धाबी में हिन्दी को न्यायालय की तीसरी भाषा के रूप में ", "full_len": 22266, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "56", "title": "फ़ारसी भाषा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AB%E0%A4%BC%E0%A4%BE%E0%A4%B0%E0%A4%B8%E0%A5%80%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE", "text": "फ़ारसी (), एक भाषा है जो ईरान, ताजिकिस्तान, अफ़गानिस्तान और उज़बेकिस्तान में बोली जाती है। यह ईरान, अफ़ग़ानिस्तान, ताजिकिस्तान की राजभाषा है और इसे ७.५ करोड़ लोग बोलते हैं। भाषाई परिवार के लिहाज़ से यह हिन्द यूरोपीय परिवार की हिन्द ईरानी (इंडो ईरानियन) शाखा की ईरानी उपशाखा का सदस्य है और हिन्दी की तरह इसमें क्रिया वाक्य के अंत में आती है। फ़ारसी संस्कृत से क़ाफ़ी मिलती-जुलती है और उर्दू (और हिन्दी) में इसके कई शब्द प्रयुक्त होते हैं। ये अरबी-फ़ारसी लिपि में लिखी जाती है। अंग्रेज़ों के आगमन से पहले भारतीय उपमहाद्वीप में फ़ारसी भाषा का प्रयोग दरबारी कामों तथा लेखन की भाषा के रूप में होता है। दरबार में प्रयुक्त होने के कारण ही अफ़गानिस्तान में इस दरी कहा जाता है।\n\nवर्गीकरण \nइसे हिन्द-यूरोपीय भाषा परिवार की हिन्द-ईरानी शाखा की ईरानी भाषाओं की उपशाखा के पश्चिमी विभाग में वर्गीकृत किया जाता है। हालाँकि भारतीय उपमहाद्वीप में फ़ारसी को ग़लती से अरबी भाषा के समीप समझा जाता है, भाषावैज्ञानिक दृष्टि से यह अरबी से बहुत भिन्न और संस्कृत के बहुत समीप है। संस्कृत और फ़ारसी में कई हज़ारों मिलते-जुलते सजातीय शब्द मिलते हैं जो दोनों भाषाओँ की सांझी धरोहर हैं, जैसे की सप्ताह/हफ़्ता, नर/नर (पुरुष), दूर/दूर, हस्त/दस्त (हाथ), शत/सद (सौ), आप/आब (पानी), हर/ज़र (फ़ारसी में पीला-सुनहरा, संस्कृत में पीला-हरा), मय/मद/मधु (शराब/शहद), अस्ति/अस्त (है), रोचन/रोशन (चमकीला), एक/येक, कपि/कपि (वानर), दन्त/दन्द (दाँत), मातृ/मादर, पितृ/पिदर, भ्रातृ/बिरादर (भाई), दुहितृ/दुख़्तर (बेटी), वंश/बच/बच्चा, शुकर/ख़ूक (सूअर), अश्व/अस्ब (घोड़ा), गौ/गऊ (गाय), जन/जान (संस्कृत में व्यक्ति/जीव, फ़ारसी में जीवन), भूत/बूद (था, अतीत), ददामि/दादन (देना), युवन/जवान, नव/नव (नया) और सम/हम (बराबर)।\n\nनाम \nभारत में इसे फ़ारसी कहा जाता है। इसका मूल नाम 'पारसी' है पर अरब लोग, जिन्होंने फ़ारस पर सातवीं सदी के अंत तक अधिकार कर लिया था, की वर्णमाला में 'प' अक्षर नहीं होता है। इस कारण से वे इसे फ़ारसी कहते थे और यही नाम भारत में भी प्रयुक्त होता है। यूनानी लोग फार्स को पर्सिया (पुरानी ग्रीक में पर्सिस, Πέρσις) कहते थे। जिसके कारण यहाँ की भाषा पर्सियन (Persian) कहलाई। यही नाम अंग्रेज़ी सहित अन्य यूरोपीय भाषाओं में प्रयुक्त होता है।\n\nइ", "full_len": 5557, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "58", "title": "देवनागरी", "url": "https://hi.wikipedia.org/wiki/%E0%A4%A6%E0%A5%87%E0%A4%B5%E0%A4%A8%E0%A4%BE%E0%A4%97%E0%A4%B0%E0%A5%80", "text": "देवनागरी भारतीय उपमहाद्वीप में प्रयुक्त प्राचीन ब्राह्मी लिपि पर आधारित बाएँ से दाएँ आबूगीदा है। यह प्राचीन भारत में पहली से चौथी शताब्दी ईस्वी तक विकसित किया गया था और ७वीं शताब्दी ईस्वी तक नियमित उपयोग में था।  देवनागरी लिपि, जिसमें १४ स्वर और ३३ व्यञ्जन सहित ४७ प्राथमिक वर्ण हैं, दुनिया में चौथी सबसे व्यापक रूप से अपनाई जाने वाली लेखन प्रणाली है, जिसका उपयोग १२० से अधिक भाषाओं के लिए किया जा रहा है। \n\nइस लिपि की शब्दावली भाषा के उच्चारण को दर्शाती है।  रोमन लिपि के विपरीत, इस लिपि में अक्षर केस की कोई अवधारणा नहीं है। यह बाएँ से दाएँ लिखा गया है, चौकोर रूपरेखा के भीतर सममित गोल आकृतियों के लिए एक दृढ़ प्राथमिकता है, और एक क्षैतिज रेखा द्वारा पहचाना जा सकता है, जिसे शिरोरेखा के रूप में जाना जाता है, जो पूर्ण अक्षरों के शीर्ष के साथ चलती है। एक सरसरी दृष्टि में, देवनागरी लिपि अन्य भारतीय लिपियों जैसे पूर्वी नागरी लिपि या गुरमुखी लिपि से अलग दिखाई देती है, लेकिन एक निकटतम अवलोकन से पता चलता है कि वे कोण और संरचनात्मक जोर को छोड़कर बहुत समान हैं।\n\nपरिचय \nअधिकतर भाषाओं की तरह देवनागरी भी बायें से दायें लिखी जाती है। प्रत्येक शब्द के ऊपर एक रेखा खिंची होती है (कुछ वर्णों के ऊपर रेखा नहीं होती है) जिसे शिरोरेखा कहते हैं। देवनागरी का विकास ब्राह्मी लिपि से हुआ है। यह एक ध्वन्यात्मक लिपि है जो प्रचलित लिपियों (रोमन, अरबी, चीनी आदि) में सबसे अधिक वैज्ञानिक है। इससे वैज्ञानिक और व्यापक लिपि शायद केवल अध्वव लिपि है। भारत की कई लिपियाँ देवनागरी से बहुत अधिक मिलती-जुलती हैं, जैसे- बांग्ला, गुजराती, गुरुमुखी आदि। कम्प्यूटर प्रोग्रामों की सहायता से भारतीय लिपियों को परस्पर परिवर्तन बहुत आसान हो गया है।\n\nभारतीय भाषाओं के किसी भी शब्द या ध्वनि को देवनागरी लिपि में ज्यों का त्यों लिखा जा सकता है और फिर लिखे पाठ को लगभग 'हू-ब-हू' उच्चारण किया जा सकता है, जो कि रोमन लिपि और अन्य कई लिपियों में सम्भव नहीं है, जब तक कि उनका विशेष मानकीकरण न किया जाये, जैसे आइट्रांस या IAST ।\n\nइसमें कुल ५२ अक्षर हैं, जिसमें १४ स्वर और ३८ व्यंजन हैं। अक्षरों की क्रम व्यवस्था (विन्यास) भी बहुत ही वैज्ञानिक है। स्वर-व्यंजन, कोमल-कठोर, अल्पप्राण-महाप्राण, अनुनासिक्य-अन्तस्थ-उष्म इत्यादि वर्गीकरण भी वैज्ञानि", "full_len": 27584, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "59", "title": "भारत", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4", "text": "{{Infobox country\n| conventional_long_name = भारत गणराज्य\n| common_name            = भारत\n| native_name            =  Republic of India (अंग्रेजी में)\n| image_flag             = Flag of India.svg\n| alt_flag               = क्षैतिज तिरंगे झंडे में ऊपर से नीचे तक गहरी केसरिया, सफेद और हरी क्षैतिज पट्टियाँ हैं। सफेद पट्टी के केंद्र में 24 तीलियों वाला एक नेवी-ब्लू पहिया है।\n| image_coat             = Emblem of India.svg\n| symbol_width           = 60px\n| alt_coat               = तीन शेर बाएं, दाएं और दर्शक की ओर मुख किए हुए हैं, एक फ्रिज़ के ऊपर एक सरपट दौड़ता घोड़ा, एक 24-स्पोक पहिया और एक हाथी है। नीचे एक आदर्श वाक्य है: \"सत्यमेव जयते\"।\n| symbol_type            = राज्य प्रतीक\n| other_symbol_type      = राष्ट्रीय गीत: \n| other_symbol           = जन गण मन भारत का राष्ट्रीय गान है, जिसके शब्दों में सरकार अवसर पड़ने पर परिवर्तन कर सकती है; और गीत वंदे मातरम, जिसने भारतीय स्वतंत्रता के संघर्ष में एक ऐतिहासिक भूमिका निभाई है, को जन गण मन के साथ समान रूप से सम्मानित किया जाएगा और इसके साथ समान दर्जा दिया जाएगा।}}}}\n\n| national_motto         = \"सत्यमेव जयते\" (संस्कृत\n| national_anthem        = \n\n| national_languages     =कोई नहीं (भारत की कोई राष्ट्रभाषा नहीं है)\n| image_map              = India (orthographic projection).svg\n| map_width              = 250px\n| alt_map                = भारत पर केन्द्रित ग्लोब की छवि, जिसमें भारत पर प्रकाश डाला गया है।\n| map_caption            = भारत द्वारा नियंत्रित क्षेत्र को गहरे हरे रंग में दिखाया गया है; दावा किया गया लेकिन नियंत्रित नहीं किया गया क्षेत्र हल्के हरे रंग में दिखाया गया है\n| capital                = नयी दिल्ली\n| coordinates            = \n| largest_city           = \n| official_languages     = \n| languages_type = स्थानीय भाषाएँ\n| languages = 447 बोली\n| regional_languages     = \n| demonym                = भारतीय\n| government_type        = संघीय संसदीय संवैधानिक गणराज्य\n| leader_title1          = राष्ट्रपति\n| leader_name1           = द्रौपदी मुर्मू\n| leader_title2          = उपराष्ट्रपति\n| leader_name2           = जगदीप धनखड़\n| le", "full_len": 47507, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "74", "title": "संस्कृत भाषा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B8%E0%A4%82%E0%A4%B8%E0%A5%8D%E0%A4%95%E0%A5%83%E0%A4%A4%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE", "text": "संस्कृत (संस्कृतम्, ) भारत की एक भाषा है। संस्कृत एक हिंद-आर्य भाषा है जो हिंद-यूरोपीय भाषा परिवार की एक शाखा है। संस्कृत दिव्य एवं समृद्ध भाषा है। ऐतिहासिकता की दृष्टि में यह संसार की सभी भाषाओं की जननी है। संस्कृत संसार की प्राचीनतम एवं प्रथम भाषा है। भारतीय आर्ष ग्रंथ का समस्त ज्ञान इसी भाषा में लिपिबद्ध है। संस्कृत ज्ञान की अभिव्यक्ति की भाषा है। आधुनिक भारतीय भाषाएँ जैसे, हिंदी, बांग्ला, मराठी, सिन्धी, पंजाबी, नेपाली, आदि इसी से उत्पन्न हुई हैं। इन सभी भाषाओं में यूरोपीय बंजारों की रोमानी भाषा भी शामिल है। संस्कृत में वैदिक धर्म से संबंधित लगभग सभी धर्मग्रंथ लिखे गए हैं। बौद्ध धर्म (विशेषकर महायान) तथा जैन मत के भी कई महत्त्वपूर्ण ग्रंथ संस्कृत में लिखे गए हैं। आज भी हिंदू धर्म के अधिकतर यज्ञ और पूजा संस्कृत में ही होते हैं। \n\nसंस्कृत का अर्थ है \"संस्कार की गयी \" अर्थात \"बदलाव की गयी\", संस्कृत भाषा देवनागरी लिपि मे लिखी गयी है, धम्म लिपि में समय के साथ थोड़ा- थोड़ा सुधार (बदलाव) होता रहा उदाहरण के लिए मौर्य का व गुप्त काल के शिलालेखों व अभिलेखों में शब्दो मे थोड़ा फर्क दिखायी पड़ता है। अनेक शताब्दियों तक यह चलता गया तथा पाली प्राकृत भाषा (  धम्म लिपि मे ) से अनेक लिपियों का उदय हुआ जैसे दक्षिण मे तमिल, तेलुगु व उत्तर मे बांगला, नागरी  शारदा । 10000 ईसा पूर्व में इंग्लिश लिपि का प्रचलन शुरू हुआ व 11 शताब्दी तक आते आते देवनागरी लिपि पूर्ण से विकसित हो गयी , अगर बात करे संस्कृत भाषा की चूंकि संस्कृत की लिपि देवनागरी है अत: यह भी 10 वीं शताब्दी के मध्य आयी है, इससे पहले संस्कृत भाषा का कोई पुरातात्विक प्रमाण नही मिला व ना ही कही इसका जिक्र है। अत: इससे सिद्ध होता है की भारत (जिसका प्राचीन नाम हिंदुस्तान है) की  सबसे पुरानी भाषा  प्राकृत पाली है व सबसे प्राचीन लिपि धम्म लिपि (आजकल ब्राह्मी लिपि) है। अगर देखा जाए सबसे प्राचीन भाषा व लिपि सिंधु घाटी सभ्यता की भाषा जो अब तक नही पढ़ी गयी है । \n\nसंस्कृत आमतौर पर कई पुरानी इंडो-आर्यन किस्मों को जोड़ती है। इनमें से सबसे पुरातन ऋग्वेद में पाया जाने वाला वैदिक संस्कृत है, जो 9 वीं शताब्दी के बाद रचित 1000 भजनों का एक संग्रह है, जो इंडो-आर्यन जनजातियों द्वारा आज के उत्तरी अफगानिस्तान और उत्तरी भारत में अफगानिस्तान से पूर्व की", "full_len": 16262, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}, {"id": "76", "title": "हिन्दू", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%82", "text": "हिंदू ( ; /ˈ h ɪ n d uː z / ) वे लोग हैं जो धार्मिक रूप से हिंदू धर्म का पालन करते हैं।   ऐतिहासिक रूप से, इस शब्द का उपयोग भारतीय उपमहाद्वीप में रहने वाले लोगों के लिए भौगोलिक, सांस्कृतिक और बाद में धार्मिक पहचानकर्ता के रूप में भी किया गया है।  \n\n\"हिन्दू\" शब्द की उत्पत्ति पुरानी फ़ारसी से हुई है जिसने इन नामों को संस्कृत नाम सिंधु , सिंधु नदी का जिक्र करते हुए। समान शब्दों के ग्रीक सजातीय शब्द \" इंडस \" (नदी के लिए) और \" इंडिया \" (नदी की भूमि के लिए) हैं।    \" हिंदू \" शब्द का तात्पर्य सिंधु (सिंधु) नदी के आसपास या उससे परे भारतीय उपमहाद्वीप में रहने वाले लोगों के लिए एक भौगोलिक, जातीय या सांस्कृतिक पहचानकर्ता भी है।  16वीं शताब्दी ईस्वी तक, यह शब्द उपमहाद्वीप के उन निवासियों को संदर्भित करने लगा जो तुर्क या मुस्लिम नहीं थे।    हिंदू एक पुरातन वर्तनी संस्करण है, जिसका उपयोग आज अपमानजनक माना जाता है।  \n\nधार्मिक या सांस्कृतिक अर्थ में, स्थानीय भारतीय आबादी के भीतर हिंदू आत्म-पहचान का ऐतिहासिक विकास अस्पष्ट है।   प्रतिस्पर्धी सिद्धांतों में कहा गया है कि हिंदू पहचान ब्रिटिश औपनिवेशिक युग में विकसित हुई, या यह मुस्लिम आक्रमणों और मध्ययुगीन हिंदू-मुस्लिम युद्धों के बाद 8वीं शताब्दी ईस्वी के बाद विकसित हुई होगी।    हिंदू पहचान की भावना और हिंदू शब्द 13वीं और 18वीं शताब्दी के बीच संस्कृत और बंगाली के कुछ ग्रंथों में दिखाई देता है।   14वीं और 18वीं सदी के भारतीय कवियों जैसे विद्यापति, कबीर, तुलसीदास और एकनाथ ने हिंदू धर्म (हिंदू धर्म) वाक्यांश का इस्तेमाल किया और इसकी तुलना तुरक धर्म ( इस्लाम ) से की।   ईसाई भिक्षु सेबेस्टियाओ मैनरिक ने 1649 में एक धार्मिक संदर्भ में 'हिंदू' शब्द का इस्तेमाल किया था।  18वीं शताब्दी में, यूरोपीय व्यापारियों और उपनिवेशवादियों ने सामूहिक रूप से भारतीय धर्मों के अनुयायियों को हिंदू के रूप में संदर्भित करना शुरू कर दिया था। तुर्क, मुगल और अरब जैसे समूहों के लिए मुसलमानों के विपरीत, जो इस्लाम के अनुयायी थे।   19वीं सदी के मध्य तक, औपनिवेशिक प्राच्यवादी ग्रंथों ने हिंदुओं को बौद्ध, सिख और जैन से अलग कर दिया,  लेकिन औपनिवेशिक कानून लगभग 20वीं सदी के मध्य तक उन सभी को हिंदू शब्द के दायरे में मानते रहे।  विद्वानों का कहना है कि हिंदू, बौद्ध, जैन और स", "full_len": 21412, "kind": "real", "caption": "A real Hindi Wikipedia article — unique, kept.", "expected": null}]</script>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="#">Overview</a><a href="#">Data</a>
+  <a href="index.html">Cleaning</a>
+  <a href="language.html">Language</a>
+  <a href="quality.html">Quality</a>
+  <a href="dedup.html" class="active">Dedup</a>
+  <a href="#">Tokenizer</a>
+</div></div>
+<div class="wrap">
+  <div class="phead">
+    <h1>Deduplication</h1>
+    <p class="dek">Per <em>Deduplication.md</em>: remove redundant <b>copies</b> so the model doesn’t waste compute or memorize repeated text — while protecting real diversity (translations and independent articles are <b>not</b> duplicates).</p>
+  </div>
+  <details class="explainer" open>
+    <summary>How to read this page</summary>
+    <div class="explainer-bd">
+      <p class="lead">Documents are compared by their <b>word-shingles</b> (5-word windows). Overlap is scored with <b>Jaccard</b> similarity; matching documents form a <b>cluster</b>; one representative is kept and the rest are routed:</p>
+      <div class="verdict-key">
+        <div class="vk-row"><span class="vk-badge v-accept">👑 KEEP (canonical)</span><span>Unique, or the one copy kept from a duplicate group.</span></div>
+        <div class="vk-row"><span class="vk-badge v-exclude">✂️ DROP (exact)</span><span>Identical once normalized — pure redundancy.</span></div>
+        <div class="vk-row"><span class="vk-badge v-exclude">✂️ DROP (near-copy)</span><span>High word-overlap with the kept copy.</span></div>
+        <div class="vk-row"><span class="vk-badge v-strip">✂️ STRIP (span)</span><span>A passage copied out of a longer kept article.</span></div>
+      </div>
+      <p class="note" style="margin-top:12px">No single cut-off is right, so the <b>strictness slider</b> selects a named policy bundle (from <em>threshold-calibration.md</em>): drag it and watch which near-copies get removed. MinHash/LSH (in the details) is how these matches are found cheaply at scale. Semantic paraphrase and same-event dedup need embeddings — a documented offline tier, not run here. Hover any underlined term.</p>
+    </div>
+  </details>
+  <div class="strict">
+    <div class="strict-top">
+      <span class="lbl">Strictness</span>
+      <span class="strict-name" id="strict-name"></span>
+      <span class="strict-desc" id="strict-desc"></span>
+    </div>
+    <input type="range" min="0" max="4" step="1" value="3" id="strict-slider">
+    <div class="strict-ticks"><span>0 off</span><span>1 exact</span><span>2 conservative</span><span>3 balanced</span><span>4 aggressive</span></div>
+  </div>
+  <div class="art-controls">
+    <span class="ctrl-label">Document</span>
+    <div class="art-nav">
+      <button class="nav-btn" id="prev-btn">&#8592;</button>
+      <span class="art-counter" id="art-counter"></span>
+      <button class="nav-btn" id="next-btn">&#8594;</button>
+    </div>
+    <select class="art-select" id="art-select"></select>
+  </div>
+  <div class="title-bar">
+    <span class="t" id="art-title"></span>
+    <span class="chip" id="art-kind"></span>
+    <a id="art-url" href="#" target="_blank">&#8599; Wikipedia</a>
+  </div>
+  <div class="caption" id="caption"></div>
+  <div class="verdict" id="verdict">
+    <div class="verdict-hd">
+      <span class="verdict-badge" id="verdict-badge"></span>
+      <span class="verdict-code gloss" id="verdict-code"></span>
+    </div>
+    <div class="verdict-why" id="verdict-sub"></div>
+  </div>
+  <div class="card">
+    <div class="card-hd">Its duplicate cluster — who it matches, and which one is kept</div>
+    <div class="card-bd"><div id="cluster"></div></div>
+  </div>
+  <div class="text-view">
+    <div class="card-hd" style="border-bottom:1px solid var(--line)">The document</div>
+    <div class="text-body" id="text-body"></div>
+  </div>
+  <details class="more">
+    <summary>Show the matching machinery — fingerprint, shingles, MinHash / LSH</summary>
+    <div class="more-bd"><div id="mech"></div></div>
+  </details>
+  <details class="more">
+    <summary>Show corpus accounting — clusters &amp; removal across all 18 documents</summary>
+    <div class="more-bd">
+      <div class="acct-grid">
+        <div class="card"><div class="card-hd">Decisions at current strictness</div><div class="card-bd" id="acct-disp"></div></div>
+        <div class="card"><div class="card-hd">Summary</div><div class="card-bd" id="acct-summary"></div></div>
+      </div>
+      <div class="card" style="margin-top:13px"><div class="card-hd">Duplicate clusters found</div><div class="card-bd clist" id="acct-clusters"></div></div>
+      <div class="card" style="margin-top:13px"><div class="card-hd">Removal across every strictness bundle</div><div class="card-bd" id="sweep"></div></div>
+    </div>
+  </details>
+</div>
+<script>
+var RAW = JSON.parse(document.getElementById('articles-data').textContent);
+var state = { idx: 0, strictness: 3 };
+
+var SHINGLE=5, NPERM=112, BANDS=14, ROWS=8;
+
+/* ---------- fingerprint + shingles (mirror of the verified Python) ---------- */
+function fingerprint(text){
+  var t = text.toLowerCase();
+  t = t.replace(/[^A-Za-z0-9ऀ-ॣ०-ॿ\s]/g, ' ');
+  t = t.replace(/\s+/g, ' ').trim();
+  return t;
+}
+function shingleSet(fp){
+  var words = fp.split(' ').filter(function(w){ return w.length; });
+  var s = {};
+  if (words.length < SHINGLE){ if (words.length) s[words.join(' ')]=1; return s; }
+  for (var i=0;i<=words.length-SHINGLE;i++) s[words.slice(i,i+SHINGLE).join(' ')]=1;
+  return s;
+}
+function strHash(s){ var h=2166136261>>>0; for (var i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619)>>>0; } return h>>>0; }
+function keys(o){ return Object.keys(o); }
+function jaccard(A,B){
+  var ka=keys(A), kb=keys(B);
+  if (!ka.length && !kb.length) return 1; if (!ka.length || !kb.length) return 0;
+  var small=ka.length<kb.length?A:B, big=ka.length<kb.length?B:A, inter=0;
+  for (var k in small){ if (big[k]) inter++; }
+  var uni = ka.length+kb.length-inter;
+  return uni ? inter/uni : 0;
+}
+function containment(A,B){
+  var ka=keys(A).length, kb=keys(B).length; if (!ka||!kb) return 0;
+  var small=ka<kb?A:B, big=ka<kb?B:A, inter=0;
+  for (var k in small){ if (big[k]) inter++; }
+  return inter/Math.min(ka,kb);
+}
+function minhash(sh){
+  var ks=keys(sh); if (!ks.length) return new Array(NPERM).fill(0);
+  var sig=[];
+  for (var p=0;p<NPERM;p++){ var m=0xffffffff;
+    for (var i=0;i<ks.length;i++){ var h=strHash(p+'|'+ks[i]); if (h<m) m=h; }
+    sig.push(m); }
+  return sig;
+}
+function lshKeys(sig){ var out=[]; for (var b=0;b<BANDS;b++){ out.push(b+':'+sig.slice(b*ROWS,(b+1)*ROWS).join('_')); } return out; }
+
+/* precompute per document */
+var DOCS = RAW.map(function(a){
+  var fp = fingerprint(a.text), sh = shingleSet(fp);
+  return { raw:a, fp:fp, sh:sh, nsh:keys(sh).length,
+           rawhash:strHash(a.text), fphash:strHash(fp), sig:minhash(sh) };
+});
+
+/* ---------- policy bundles ---------- */
+var BUNDLES = {
+  0:{name:'OFF', desc:'No deduplication — every copy is kept. A baseline to compare against.'},
+  1:{name:'EXACT_ONLY', desc:'Remove only byte- or normalization-identical copies.', jac:1.01, cont:2.0},
+  2:{name:'CONSERVATIVE_NEAR', desc:'Also remove very close near-copies (≥90% word overlap).', jac:0.90, cont:0.95},
+  3:{name:'BALANCED_NEAR', desc:'Remove clear near-copies (≥80% overlap) and copied spans.', jac:0.80, cont:0.90},
+  4:{name:'AGGRESSIVE_LEXICAL', desc:'Remove looser near-copies too (≥70% overlap).', jac:0.70, cont:0.80}
+};
+
+/* ---------- cluster + route (mirror of Python) ---------- */
+var _cache = {};
+function clusterAll(strictness){
+  if (_cache[strictness]) return _cache[strictness];
+  var n=DOCS.length, parent=[]; for (var i=0;i<n;i++) parent.push(i);
+  function find(x){ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; }
+  function union(x,y){ parent[find(x)]=find(y); }
+  var edges={};
+  if (strictness!==0){ var b=BUNDLES[strictness];
+    for (var i2=0;i2<n;i2++){ for (var j=i2+1;j<n;j++){
+      if (DOCS[i2].rawhash===DOCS[j].rawhash || DOCS[i2].fphash===DOCS[j].fphash){ edges[i2+'-'+j]={kind:'exact'}; union(i2,j); continue; }
+      if (strictness===1) continue;
+      var jac=jaccard(DOCS[i2].sh,DOCS[j].sh);
+      if (jac>=b.jac){ edges[i2+'-'+j]={kind:'near',jac:jac}; union(i2,j); continue; }
+      var cont=containment(DOCS[i2].sh,DOCS[j].sh);
+      var lo=Math.min(DOCS[i2].nsh,DOCS[j].nsh), hi=Math.max(DOCS[i2].nsh,DOCS[j].nsh);
+      if (cont>=b.cont && lo<0.7*hi){ edges[i2+'-'+j]={kind:'containment',cont:cont}; union(i2,j); }
+    }}
+  }
+  var comps={}; for (var k=0;k<n;k++){ var r=find(k); (comps[r]=comps[r]||[]).push(k); }
+  var disp=new Array(n), rep=new Array(n);
+  for (var root in comps){ var mem=comps[root];
+    if (mem.length===1){ disp[mem[0]]='KEEP_CANONICAL'; rep[mem[0]]=mem[0]; continue; }
+    var repIdx=mem[0];
+    for (var mi=0;mi<mem.length;mi++){ var m=mem[mi];
+      if (DOCS[m].raw.text.length>DOCS[repIdx].raw.text.length ||
+         (DOCS[m].raw.text.length===DOCS[repIdx].raw.text.length && m<repIdx)) repIdx=m; }
+    for (var mj=0;mj<mem.length;mj++){ var mm=mem[mj]; rep[mm]=repIdx;
+      if (mm===repIdx){ disp[mm]='KEEP_CANONICAL'; continue; }
+      if (DOCS[mm].rawhash===DOCS[repIdx].rawhash || DOCS[mm].fphash===DOCS[repIdx].fphash){ disp[mm]='EXCLUDE_EXACT'; continue; }
+      var cont2=containment(DOCS[mm].sh,DOCS[repIdx].sh);
+      if (DOCS[mm].nsh<0.7*DOCS[repIdx].nsh && cont2>=(BUNDLES[strictness].cont||0.9)) disp[mm]='STRIP_DUPLICATE_SPAN';
+      else disp[mm]='EXCLUDE_NEAR';
+    }
+  }
+  _cache[strictness]={disp:disp, rep:rep, comps:comps, edges:edges, find:function(x){var p=[];for(var i=0;i<n;i++)p.push(i);/*noop*/} };
+  /* store component lookup by member */
+  var compOf={}; for (var rt in comps){ comps[rt].forEach(function(m){ compOf[m]=comps[rt]; }); }
+  _cache[strictness].compOf=compOf;
+  return _cache[strictness];
+}
+
+/* ---------- plain labels + glosses ---------- */
+var PLAIN = {
+  KEEP_CANONICAL:{emoji:'👑', word:'KEEP (canonical)', cls:'v-accept'},
+  EXCLUDE_EXACT:{emoji:'✂️', word:'DROP (exact copy)', cls:'v-exclude'},
+  EXCLUDE_NEAR:{emoji:'✂️', word:'DROP (near-copy)', cls:'v-exclude'},
+  STRIP_DUPLICATE_SPAN:{emoji:'✂️', word:'STRIP (copied span)', cls:'v-strip'},
+  REVIEW_CLUSTER:{emoji:'🟠', word:'REVIEW', cls:'v-review'}
+};
+var GLOSS = {
+  KEEP_CANONICAL:'Kept — either unique, or chosen as the single representative of a group of duplicates.',
+  EXCLUDE_EXACT:'Dropped — identical to the kept copy once punctuation and spacing are normalized.',
+  EXCLUDE_NEAR:'Dropped — a lexical near-duplicate of the kept copy (high word overlap).',
+  STRIP_DUPLICATE_SPAN:'The whole document is a passage copied out of a longer kept article (containment).',
+  fingerprint:'A normalized view (lowercased, punctuation stripped) used only for comparison — the training text is untouched.',
+  shingle:'A 5-word sliding window. Two documents are compared by how many shingles they share.',
+  jaccard:'Shared shingles ÷ total distinct shingles. 1.0 = identical word-sets, 0 = nothing in common.',
+  containment:'Shared shingles ÷ the SMALLER document’s shingles. High = the short doc sits inside the long one.',
+  minhash:'A short fixed-length signature that estimates Jaccard without comparing full shingle sets.',
+  lsh:'Locality-sensitive hashing: buckets signatures so likely matches collide, avoiding all-pairs comparison at scale.',
+  canonical:'The one representative kept from a duplicate cluster (here: the longest / most complete copy).'
+};
+function glossOf(c){ return GLOSS[c]||c; }
+function gloss(term,key){ return '<span class="gloss" title="'+escAttr(GLOSS[key]||key)+'">'+esc(term)+'</span>'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s){ return esc(s).replace(/"/g,'&quot;'); }
+function pct(x){ return Math.round(x*100)+'%'; }
+
+/* ---------- render ---------- */
+function render(){
+  var C = clusterAll(state.strictness);
+  var i = state.idx, d = DOCS[i], art = d.raw;
+  var disp = C.disp[i], repIdx = C.rep[i], members = C.compOf[i];
+
+  document.getElementById('art-title').textContent = art.title;
+  var kindEl=document.getElementById('art-kind');
+  kindEl.textContent = art.kind==='synthetic'?'SYNTHETIC':'REAL — Wikipedia';
+  kindEl.className='chip '+(art.kind==='synthetic'?'synthetic':'real');
+  var urlEl=document.getElementById('art-url'); urlEl.href=art.url; urlEl.style.display=art.kind==='synthetic'?'none':'';
+  document.getElementById('art-counter').textContent=(i+1)+' of '+DOCS.length;
+  document.getElementById('prev-btn').disabled=i===0;
+  document.getElementById('next-btn').disabled=i===DOCS.length-1;
+  document.getElementById('art-select').value=i;
+
+  var capEl=document.getElementById('caption');
+  if (art.caption){ capEl.innerHTML='<b>What this example shows:</b> '+esc(art.caption); capEl.style.display=''; }
+  else capEl.style.display='none';
+
+  var pv=PLAIN[disp]||{emoji:'',word:disp,cls:''};
+  var badge=document.getElementById('verdict-badge'); badge.className='verdict-badge '+pv.cls; badge.textContent=pv.emoji+' '+pv.word;
+  var codeEl=document.getElementById('verdict-code'); codeEl.textContent=disp; codeEl.title=glossOf(disp);
+  document.getElementById('verdict-sub').textContent = whyText(disp, i, repIdx, members);
+
+  /* cluster card */
+  var host=document.getElementById('cluster');
+  if (members.length===1){
+    host.innerHTML='<div class="solo">✓ No duplicates found at this strictness — this document is unique and kept as-is.</div>';
+  } else {
+    var rows='';
+    var order=members.slice().sort(function(a,b){
+      if (a===repIdx) return -1; if (b===repIdx) return 1;
+      return jaccard(DOCS[b].sh,DOCS[repIdx].sh)-jaccard(DOCS[a].sh,DOCS[repIdx].sh);
+    });
+    for (var o=0;o<order.length;o++){ var m=order[o], md=C.disp[m], mp=PLAIN[md]||{emoji:''};
+      var isrep=(m===repIdx);
+      var simTxt, simW;
+      if (isrep){ simTxt='representative'; simW=0; }
+      else { var jc=jaccard(DOCS[m].sh,DOCS[repIdx].sh);
+             if (DOCS[m].fphash===DOCS[repIdx].fphash){ simTxt='identical'; simW=100; }
+             else { simW=Math.round(jc*100); simTxt=simW+'% overlap'; } }
+      rows += '<div class="member'+(isrep?' isrep':'')+(m===i?'':'')+'">'+
+        '<div class="m-ico">'+mp.emoji+'</div>'+
+        '<div class="m-title">'+(m===i?'<b>':'')+esc(DOCS[m].raw.title)+(m===i?'</b> ← viewing':'')+'</div>'+
+        '<div class="m-bar">'+(isrep?'':'<div class="m-fill" style="width:'+simW+'%"></div>')+'</div>'+
+        '<div class="m-sim">'+simTxt+'</div></div>';
+    }
+    host.innerHTML=rows;
+  }
+
+  /* details: fingerprint / shingles / minhash / lsh */
+  var cand = lshCandidateCount(i);
+  document.getElementById('mech').innerHTML =
+    '<div class="kv">'+gloss('Fingerprint','fingerprint')+' (compared, not trained on): <code>'+esc(d.fp.slice(0,90))+(d.fp.length>90?'…':'')+'</code></div>'+
+    '<div class="kv">'+gloss('Shingles','shingle')+': <b>'+d.nsh+'</b> distinct 5-word windows</div>'+
+    '<div class="kv">'+gloss('MinHash','minhash')+' signature: <b>'+NPERM+'</b> values &nbsp;·&nbsp; '+
+      gloss('LSH','lsh')+': <b>'+BANDS+'</b> bands × <b>'+ROWS+'</b> rows → <b>'+cand+'</b> candidate match(es) for this doc</div>'+
+    '<div class="kv" style="color:#999">Candidate probability at similarity s: 1 − (1 − s^'+ROWS+')^'+BANDS+' — LSH finds likely pairs so we never compare all pairs at scale.</div>';
+
+  var isTrunc=art.full_len>art.text.length;
+  document.getElementById('text-body').innerHTML=esc(art.text)+
+    (isTrunc?'<div class="trunc-note">Showing first '+art.text.length+' of '+art.full_len+' chars</div>':'');
+
+  accounting();
+}
+
+function whyText(disp, i, repIdx, members){
+  if (state.strictness===0) return 'Deduplication is OFF — every document is kept so you can see the corpus before any removal.';
+  if (disp==='KEEP_CANONICAL'){
+    if (members.length===1) return 'No substantial word-overlap with any other document — kept as a unique original. (Translations count as unique here: they share almost no words with their source.)';
+    return 'The most complete copy in a group of '+members.length+' near-identical documents — kept as the single representative; the rest are removed.';
+  }
+  var rep=DOCS[repIdx];
+  if (disp==='EXCLUDE_EXACT') return 'Identical to “'+rep.raw.title+'” once punctuation and spacing are normalized — pure redundancy, so it is dropped and that copy is kept.';
+  if (disp==='STRIP_DUPLICATE_SPAN'){ var c=Math.round(containment(DOCS[i].sh,rep.sh)*100);
+    return 'This whole document appears as a passage inside the longer article “'+rep.raw.title+'” ('+c+'% contained) — the copied span is redundant.'; }
+  var jc=Math.round(jaccard(DOCS[i].sh,rep.sh)*100);
+  return jc+'% word-overlap with the kept copy “'+rep.raw.title+'” — a near-duplicate, dropped so the model does not see the same text twice.';
+}
+
+function lshCandidateCount(i){
+  var mine={}; lshKeys(DOCS[i].sig).forEach(function(k){ mine[k]=1; });
+  var c=0;
+  for (var j=0;j<DOCS.length;j++){ if (j===i) continue;
+    var hit=false; var kj=lshKeys(DOCS[j].sig);
+    for (var b=0;b<kj.length;b++){ if (mine[kj[b]]){ hit=true; break; } }
+    if (hit) c++; }
+  return c;
+}
+
+/* ---------- corpus accounting ---------- */
+var DISP_COLOR={ KEEP_CANONICAL:'#147D74', EXCLUDE_EXACT:'#B5476B', EXCLUDE_NEAR:'#B5476B',
+  STRIP_DUPLICATE_SPAN:'#E0982B', REVIEW_CLUSTER:'#E0982B' };
+function countsAt(s){ var C=clusterAll(s), c={}; for (var i=0;i<C.disp.length;i++){ c[C.disp[i]]=(c[C.disp[i]]||0)+1; } return c; }
+function keptOf(c){ return c.KEEP_CANONICAL||0; }
+function removedOf(c){ return (c.EXCLUDE_EXACT||0)+(c.EXCLUDE_NEAR||0)+(c.STRIP_DUPLICATE_SPAN||0); }
+
+function accounting(){
+  var total=DOCS.length, c=countsAt(state.strictness);
+  var order=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; }), rows='';
+  for (var i=0;i<order.length;i++){ var k=order[i], n=c[k], w=(n/total)*100, pv=PLAIN[k]||{word:k,emoji:''};
+    rows+='<div class="acct-row"><span class="acct-k">'+pv.emoji+' '+pv.word+' <span style="color:#999;font-size:11px">'+k+'</span></span>'+
+      '<span style="width:120px"><span class="acct-bar" style="display:block;width:'+w+'%;background:'+(DISP_COLOR[k]||'#6169B8')+'"></span></span>'+
+      '<span class="acct-v">'+n+'</span></div>'; }
+  document.getElementById('acct-disp').innerHTML=rows;
+
+  var C=clusterAll(state.strictness), cl='';
+  var comps=C.comps, shown=0;
+  for (var rt in comps){ var mem=comps[rt]; if (mem.length<2) continue; shown++;
+    var repIdx=C.rep[mem[0]];
+    var names=mem.map(function(m){ var mp=PLAIN[C.disp[m]]||{emoji:''}; return mp.emoji+' '+esc(DOCS[m].raw.title); });
+    cl+='<div class="crow">Cluster of '+mem.length+': '+names.join(' &nbsp; ')+'</div>'; }
+  if (!shown) cl='<div class="solo">No duplicate clusters at this strictness — every document is unique.</div>';
+  document.getElementById('acct-clusters').innerHTML=cl;
+
+  var kept=keptOf(c), rem=removedOf(c);
+  document.getElementById('acct-summary').innerHTML=
+    '<div class="acct-row"><span class="acct-k">Kept</span><span class="acct-v">'+kept+' / '+total+'  ('+pct(kept/total)+')</span></div>'+
+    '<div class="acct-row"><span class="acct-k">Removed (exact + near + span)</span><span class="acct-v">'+rem+'</span></div>'+
+    '<div class="acct-row"><span class="acct-k">Active policy</span><span class="acct-v">'+BUNDLES[state.strictness].name+'</span></div>';
+
+  var sw='<table class="sweep"><tr><th>strictness</th><th>kept</th><th>removed</th></tr>';
+  for (var s=0;s<5;s++){ var cc=countsAt(s);
+    sw+='<tr'+(s===state.strictness?' class="here"':'')+'><td>'+s+' '+BUNDLES[s].name+'</td><td>'+keptOf(cc)+'</td><td>'+removedOf(cc)+'</td></tr>'; }
+  sw+='</table>'; document.getElementById('sweep').innerHTML=sw;
+}
+
+/* ---------- wiring ---------- */
+var sel=document.getElementById('art-select');
+for (var i=0;i<DOCS.length;i++){ var o=document.createElement('option'); o.value=i; o.textContent=(i+1)+'. '+DOCS[i].raw.title; sel.appendChild(o); }
+sel.addEventListener('change', function(){ state.idx=parseInt(this.value,10); render(); });
+document.getElementById('prev-btn').addEventListener('click', function(){ if (state.idx>0){ state.idx--; render(); } });
+document.getElementById('next-btn').addEventListener('click', function(){ if (state.idx<DOCS.length-1){ state.idx++; render(); } });
+document.addEventListener('keydown', function(e){ if (e.key==='ArrowLeft'&&state.idx>0){ state.idx--; render(); } if (e.key==='ArrowRight'&&state.idx<DOCS.length-1){ state.idx++; render(); } });
+var slider=document.getElementById('strict-slider');
+function updateStrict(){ state.strictness=parseInt(slider.value,10);
+  document.getElementById('strict-name').textContent=state.strictness+' · '+BUNDLES[state.strictness].name;
+  document.getElementById('strict-desc').textContent=BUNDLES[state.strictness].desc; render(); }
+slider.addEventListener('input', updateStrict);
+updateStrict();
+</script>
+</body>
+</html>
