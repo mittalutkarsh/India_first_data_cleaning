@@ -1,0 +1,677 @@
+{
+  "syn-hi-clean": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.994
+      },
+      {
+        "lang": "el",
+        "score": 0.0018
+      },
+      {
+        "lang": "bh",
+        "score": 0.001
+      },
+      {
+        "lang": "new",
+        "score": 0.0007
+      },
+      {
+        "lang": "ta",
+        "score": 0.0006
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9921
+  },
+  "syn-hi-en-codemix": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9637
+      },
+      {
+        "lang": "el",
+        "score": 0.0119
+      },
+      {
+        "lang": "en",
+        "score": 0.0065
+      },
+      {
+        "lang": "ta",
+        "score": 0.0061
+      },
+      {
+        "lang": "zh",
+        "score": 0.0035
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9518
+  },
+  "syn-hi-romanized": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "en",
+        "score": 0.2277
+      },
+      {
+        "lang": "fi",
+        "score": 0.083
+      },
+      {
+        "lang": "et",
+        "score": 0.0699
+      },
+      {
+        "lang": "de",
+        "score": 0.0417
+      },
+      {
+        "lang": "nl",
+        "score": 0.0351
+      }
+    ],
+    "top1": "en",
+    "margin": 0.1446
+  },
+  "syn-en-mislabeled": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "en",
+        "score": 0.968
+      },
+      {
+        "lang": "de",
+        "score": 0.0027
+      },
+      {
+        "lang": "nl",
+        "score": 0.0023
+      },
+      {
+        "lang": "th",
+        "score": 0.0023
+      },
+      {
+        "lang": "ru",
+        "score": 0.0018
+      }
+    ],
+    "top1": "en",
+    "margin": 0.9653
+  },
+  "syn-ur-arabic": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "ur",
+        "score": 0.9849
+      },
+      {
+        "lang": "pnb",
+        "score": 0.0084
+      },
+      {
+        "lang": "es",
+        "score": 0.0011
+      },
+      {
+        "lang": "nah",
+        "score": 0.0007
+      },
+      {
+        "lang": "sd",
+        "score": 0.0007
+      }
+    ],
+    "top1": "ur",
+    "margin": 0.9765
+  },
+  "syn-sa-shloka": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "sa",
+        "score": 0.5332
+      },
+      {
+        "lang": "hi",
+        "score": 0.3264
+      },
+      {
+        "lang": "new",
+        "score": 0.0547
+      },
+      {
+        "lang": "ne",
+        "score": 0.0518
+      },
+      {
+        "lang": "en",
+        "score": 0.0053
+      }
+    ],
+    "top1": "sa",
+    "margin": 0.2068
+  },
+  "syn-ta-mislabeled": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "ta",
+        "score": 0.9999
+      },
+      {
+        "lang": "sr",
+        "score": 0.0001
+      },
+      {
+        "lang": "en",
+        "score": 0.0001
+      },
+      {
+        "lang": "ms",
+        "score": 0.0
+      },
+      {
+        "lang": "zh",
+        "score": 0.0
+      }
+    ],
+    "top1": "ta",
+    "margin": 0.9997
+  },
+  "syn-zxx-symbols": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "en",
+        "score": 0.198
+      },
+      {
+        "lang": "fr",
+        "score": 0.0747
+      },
+      {
+        "lang": "hu",
+        "score": 0.0572
+      },
+      {
+        "lang": "el",
+        "score": 0.0473
+      },
+      {
+        "lang": "zh",
+        "score": 0.0396
+      }
+    ],
+    "top1": "en",
+    "margin": 0.1233
+  },
+  "10": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9729
+      },
+      {
+        "lang": "mr",
+        "score": 0.0073
+      },
+      {
+        "lang": "new",
+        "score": 0.0049
+      },
+      {
+        "lang": "bh",
+        "score": 0.0044
+      },
+      {
+        "lang": "ne",
+        "score": 0.0032
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9656
+  },
+  "59": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9468
+      },
+      {
+        "lang": "new",
+        "score": 0.0093
+      },
+      {
+        "lang": "mr",
+        "score": 0.0084
+      },
+      {
+        "lang": "bh",
+        "score": 0.0073
+      },
+      {
+        "lang": "ne",
+        "score": 0.0052
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9375
+  },
+  "77": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.8337
+      },
+      {
+        "lang": "mr",
+        "score": 0.0916
+      },
+      {
+        "lang": "ne",
+        "score": 0.0406
+      },
+      {
+        "lang": "new",
+        "score": 0.0148
+      },
+      {
+        "lang": "mai",
+        "score": 0.0063
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.7421
+  },
+  "104": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9646
+      },
+      {
+        "lang": "bh",
+        "score": 0.0064
+      },
+      {
+        "lang": "sa",
+        "score": 0.006
+      },
+      {
+        "lang": "new",
+        "score": 0.0049
+      },
+      {
+        "lang": "en",
+        "score": 0.0041
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9582
+  },
+  "130": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9764
+      },
+      {
+        "lang": "bh",
+        "score": 0.0048
+      },
+      {
+        "lang": "mr",
+        "score": 0.0047
+      },
+      {
+        "lang": "new",
+        "score": 0.0043
+      },
+      {
+        "lang": "mai",
+        "score": 0.0019
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9715
+  },
+  "178": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9604
+      },
+      {
+        "lang": "new",
+        "score": 0.0063
+      },
+      {
+        "lang": "bh",
+        "score": 0.0062
+      },
+      {
+        "lang": "mr",
+        "score": 0.005
+      },
+      {
+        "lang": "sa",
+        "score": 0.0045
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9542
+  },
+  "187": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9825
+      },
+      {
+        "lang": "sa",
+        "score": 0.0035
+      },
+      {
+        "lang": "bh",
+        "score": 0.0029
+      },
+      {
+        "lang": "gom",
+        "score": 0.002
+      },
+      {
+        "lang": "new",
+        "score": 0.0019
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.979
+  },
+  "912": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.989
+      },
+      {
+        "lang": "bh",
+        "score": 0.0019
+      },
+      {
+        "lang": "new",
+        "score": 0.0016
+      },
+      {
+        "lang": "mr",
+        "score": 0.0013
+      },
+      {
+        "lang": "gom",
+        "score": 0.001
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9871
+  },
+  "14": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.8819
+      },
+      {
+        "lang": "sa",
+        "score": 0.0552
+      },
+      {
+        "lang": "new",
+        "score": 0.0178
+      },
+      {
+        "lang": "ne",
+        "score": 0.0111
+      },
+      {
+        "lang": "mr",
+        "score": 0.01
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.8267
+  },
+  "54": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9893
+      },
+      {
+        "lang": "bh",
+        "score": 0.002
+      },
+      {
+        "lang": "new",
+        "score": 0.0019
+      },
+      {
+        "lang": "sa",
+        "score": 0.0013
+      },
+      {
+        "lang": "gom",
+        "score": 0.0008
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9874
+  },
+  "56": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9885
+      },
+      {
+        "lang": "bh",
+        "score": 0.0023
+      },
+      {
+        "lang": "new",
+        "score": 0.0016
+      },
+      {
+        "lang": "el",
+        "score": 0.0013
+      },
+      {
+        "lang": "sa",
+        "score": 0.0013
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9862
+  },
+  "58": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9892
+      },
+      {
+        "lang": "bh",
+        "score": 0.0019
+      },
+      {
+        "lang": "new",
+        "score": 0.0018
+      },
+      {
+        "lang": "sa",
+        "score": 0.0012
+      },
+      {
+        "lang": "mr",
+        "score": 0.001
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9873
+  },
+  "74": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.985
+      },
+      {
+        "lang": "mr",
+        "score": 0.0033
+      },
+      {
+        "lang": "bh",
+        "score": 0.0028
+      },
+      {
+        "lang": "new",
+        "score": 0.0027
+      },
+      {
+        "lang": "sa",
+        "score": 0.0011
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9817
+  },
+  "76": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9868
+      },
+      {
+        "lang": "bh",
+        "score": 0.0028
+      },
+      {
+        "lang": "new",
+        "score": 0.0019
+      },
+      {
+        "lang": "mr",
+        "score": 0.0014
+      },
+      {
+        "lang": "el",
+        "score": 0.0013
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.984
+  },
+  "78": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9893
+      },
+      {
+        "lang": "mr",
+        "score": 0.0027
+      },
+      {
+        "lang": "ne",
+        "score": 0.0026
+      },
+      {
+        "lang": "new",
+        "score": 0.0014
+      },
+      {
+        "lang": "bh",
+        "score": 0.0008
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9866
+  },
+  "79": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9902
+      },
+      {
+        "lang": "bh",
+        "score": 0.002
+      },
+      {
+        "lang": "new",
+        "score": 0.0016
+      },
+      {
+        "lang": "mr",
+        "score": 0.0011
+      },
+      {
+        "lang": "sa",
+        "score": 0.001
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9882
+  },
+  "98": {
+    "model": "fasttext/lid.176",
+    "candidates": [
+      {
+        "lang": "hi",
+        "score": 0.9789
+      },
+      {
+        "lang": "mr",
+        "score": 0.0056
+      },
+      {
+        "lang": "bh",
+        "score": 0.0035
+      },
+      {
+        "lang": "new",
+        "score": 0.0033
+      },
+      {
+        "lang": "sa",
+        "score": 0.0016
+      }
+    ],
+    "top1": "hi",
+    "margin": 0.9732
+  }
+}

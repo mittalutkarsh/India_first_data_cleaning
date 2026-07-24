@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Language ID — India-First 40B</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8;
+  --marigold:#E0982B; --teal:#147D74; --teal-soft:#3aa89c;
+  --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8;
+  --sc-latn:#C7761B; --sc-arab:#B5476B; --sc-drav:#147D74;
+  --sc-beng:#7A3FB0; --sc-other:#8a1a3a;
+}
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+a { color:var(--indigo); text-decoration:none; }
+a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96);
+       border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex;
+          align-items:center; gap:18px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo);
+         font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px;
+         letter-spacing:.03em; color:var(--muted); padding:3px 2px;
+         border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; }
+.nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:1280px; margin:0 auto; padding:0 24px 80px; }
+.phead { padding:34px 0 12px; border-bottom:2px solid var(--ink); }
+.phead h1 { font-family:"Spectral",serif; font-weight:700;
+            font-size:clamp(24px,3.6vw,38px); margin:8px 0 6px; }
+.phead .dek { font-size:13px; color:#33334a; margin:0; max-width:80ch; }
+.note { font-size:12px; color:var(--muted); margin-top:8px; max-width:80ch; }
+.art-controls { display:flex; align-items:center; gap:14px; padding:16px 0 0;
+                flex-wrap:wrap; }
+.ctrl-label { font-family:"IBM Plex Mono",monospace; font-size:10px;
+              letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+              font-weight:600; }
+.art-nav { display:flex; align-items:center; gap:8px; }
+.nav-btn { font-family:"IBM Plex Mono",monospace; font-size:14px;
+           border:1px solid var(--line); border-radius:7px; padding:5px 13px;
+           background:#fff; color:var(--indigo); cursor:pointer; }
+.nav-btn:hover { background:var(--panel); }
+.nav-btn:disabled { color:var(--muted); cursor:default; }
+.art-counter { font-family:"IBM Plex Mono",monospace; font-size:12px;
+               color:var(--muted); min-width:68px; text-align:center; }
+.art-select { font-family:"Inter",sans-serif; font-size:13px; padding:5px 10px;
+              border:1px solid var(--line); border-radius:7px; background:#fff;
+              max-width:340px; }
+.title-bar { margin:16px 0 0; padding:12px 15px; background:#fff;
+             border:1px solid var(--line); border-radius:10px; display:flex;
+             align-items:baseline; gap:12px; flex-wrap:wrap; }
+.title-bar .t { font-family:"Spectral",serif; font-weight:600; font-size:19px; }
+.title-bar a { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); }
+.chip { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600;
+        letter-spacing:.04em; padding:2px 8px; border-radius:5px; }
+.chip.claim { background:var(--panel); color:var(--muted); }
+.chip.synthetic { background:#fbeada; color:#9a5a12; }
+.chip.real { background:#eef6f4; color:var(--teal); }
+
+.verdict { margin:14px 0; border:1px solid var(--line); border-radius:12px;
+           overflow:hidden; }
+.verdict-hd { padding:14px 18px; display:flex; align-items:center; gap:14px;
+              flex-wrap:wrap; }
+.verdict-badge { font-family:"IBM Plex Mono",monospace; font-weight:700;
+                 font-size:15px; letter-spacing:.02em; padding:6px 14px;
+                 border-radius:8px; }
+.v-accept   { background:#eef6f4; color:var(--teal); }
+.v-review   { background:#fdf3e3; color:#9a5a12; }
+.v-exclude  { background:var(--panel); color:var(--muted); }
+.v-quarantine { background:#fceef2; color:var(--rose); }
+.verdict-sub { font-size:13px; color:#33334a; }
+.reason-row { padding:0 18px 14px; display:flex; gap:6px; flex-wrap:wrap; }
+.reason { font-family:"IBM Plex Mono",monospace; font-size:10.5px; font-weight:600;
+          padding:2px 8px; border-radius:5px; background:#fff5f7; color:var(--rose);
+          border:1px solid #f3d3dd; }
+.reason.ok { background:#eef6f4; color:var(--teal); border-color:#cfe6e1; }
+.reason.warn { background:#fdf3e3; color:#9a5a12; border-color:#f0dcb8; }
+
+.grid2 { display:grid; grid-template-columns:1fr 1fr; gap:13px; }
+@media (max-width:860px){ .grid2 { grid-template-columns:1fr; } }
+.card { border:1px solid var(--line); border-radius:12px; background:#fff;
+        overflow:hidden; }
+.card-hd { padding:9px 15px; border-bottom:1px solid var(--line);
+           background:var(--panel); font-family:"IBM Plex Mono",monospace;
+           font-size:10px; font-weight:600; letter-spacing:.09em;
+           text-transform:uppercase; color:var(--indigo); }
+.card-bd { padding:14px 15px; }
+
+.dist-bar { display:flex; height:22px; border-radius:6px; overflow:hidden;
+            border:1px solid var(--line); margin-bottom:10px; }
+.dist-seg { height:100%; }
+.legend { display:flex; flex-direction:column; gap:5px; }
+.legend-row { display:flex; align-items:center; gap:8px; font-size:12.5px; }
+.legend-sw { width:12px; height:12px; border-radius:3px; flex-shrink:0; }
+.legend-pct { font-family:"IBM Plex Mono",monospace; font-size:11px;
+              color:var(--muted); margin-left:auto; }
+.cand { font-family:"IBM Plex Mono",monospace; font-size:12px; }
+.cand b { color:var(--indigo); }
+.amb { font-size:12px; color:#9a5a12; background:#fdf3e3; border-radius:6px;
+       padding:6px 9px; margin-top:8px; }
+
+.spans { display:flex; flex-direction:column; gap:6px; }
+.span-row { display:flex; align-items:center; gap:10px; font-size:12px; }
+.span-idx { font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--muted);
+            width:26px; flex-shrink:0; }
+.span-txt { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+            color:#33334a; }
+.span-tag { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600;
+            padding:1px 7px; border-radius:4px; flex-shrink:0; }
+
+.model-row { display:flex; align-items:center; gap:10px; margin-bottom:7px; }
+.model-lang { font-family:"IBM Plex Mono",monospace; font-size:13px; font-weight:600;
+              color:var(--indigo); width:56px; }
+.model-track { flex:1; height:12px; background:var(--panel); border-radius:6px; overflow:hidden; }
+.model-fill { height:100%; background:var(--indigo-soft); }
+.model-score { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted);
+               width:52px; text-align:right; }
+.model-none { font-size:12.5px; color:var(--muted); }
+.model-none code { background:var(--panel); padding:1px 5px; border-radius:4px;
+                   font-size:11px; }
+
+.text-view { border:1px solid var(--line); border-radius:12px; background:#fff;
+             margin-top:13px; }
+.text-body { padding:15px; max-height:300px; overflow-y:auto; font-size:14px;
+             line-height:1.85; white-space:pre-wrap; word-break:break-word; }
+.sc-latn { color:var(--sc-latn); background:#fbf1e3; border-radius:2px; }
+.sc-arab { color:var(--sc-arab); background:#fceef2; border-radius:2px; }
+.sc-drav { color:var(--sc-drav); background:#eef6f4; border-radius:2px; }
+.sc-beng { color:var(--sc-beng); background:#f3edfa; border-radius:2px; }
+.sc-other{ color:var(--sc-other); background:#fceef2; border-radius:2px; }
+
+.acct { margin-top:18px; }
+.acct h2 { font-family:"Spectral",serif; font-size:22px; margin:0 0 4px;
+           border-bottom:2px solid var(--ink); padding-bottom:8px; }
+.acct-grid { display:grid; grid-template-columns:1fr 1fr; gap:13px; margin-top:14px; }
+@media (max-width:860px){ .acct-grid { grid-template-columns:1fr; } }
+.acct-row { display:flex; align-items:center; gap:10px; font-size:13px;
+            padding:5px 0; border-bottom:1px dashed var(--line); }
+.acct-row:last-child { border-bottom:none; }
+.acct-k { flex:1; }
+.acct-v { font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--indigo); }
+.acct-bar { height:10px; border-radius:5px; background:var(--indigo-soft); }
+.trunc-note { font-family:"IBM Plex Mono",monospace; font-size:10.5px;
+              color:var(--muted); margin-top:12px; padding-top:9px;
+              border-top:1px dashed var(--line); }
+</style>
+</head>
+<body>
+<script type="application/json" id="articles-data">[{"id": "syn-hi-clean", "title": "🧪 Clean Hindi (monolingual)", "text": "भारत एक विशाल और विविधतापूर्ण देश है। यहाँ अनेक भाषाएँ, धर्म और संस्कृतियाँ सदियों से एक साथ फलती-फूलती रही हैं। हिन्दी देश की सबसे अधिक बोली जाने वाली भाषाओं में से एक है और इसे देवनागरी लिपि में लिखा जाता है। यह अनुच्छेद पूरी तरह से हिन्दी में है।", "expected": "ACCEPT_MONOLINGUAL", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 249, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.994}, {"lang": "el", "score": 0.0018}, {"lang": "bh", "score": 0.001}, {"lang": "new", "score": 0.0007}, {"lang": "ta", "score": 0.0006}], "top1": "hi", "margin": 0.9921}}, {"id": "syn-hi-en-codemix", "title": "🧪 Hindi–English code-mix", "text": "आज हम machine learning के बारे में बात करेंगे। यह एक powerful technology है जो training data से patterns सीखती है। Neural networks और deep learning ने natural language processing को बदल दिया है। इस tutorial में हम पूरी pipeline को step by step समझेंगे। सबसे पहले dataset को clean करेंगे, फिर model को train करेंगे और अंत में accuracy और loss को validation set पर measure करेंगे। यह पूरी तरह hands-on approach है।", "expected": "ACCEPT_CODE_MIXED", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 412, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9637}, {"lang": "el", "score": 0.0119}, {"lang": "en", "score": 0.0065}, {"lang": "ta", "score": 0.0061}, {"lang": "zh", "score": 0.0035}], "top1": "hi", "margin": 0.9518}}, {"id": "syn-hi-romanized", "title": "🧪 Romanized Hindi (Latin script)", "text": "Namaste doston! Aaj ke is video mein hum baat karenge ki kaise aap apni Hindi ko behtar bana sakte hain. Yeh bahut aasan hai aur koi bhi ise seekh sakta hai. Agar aapko yeh pasand aaye toh like aur subscribe zaroor karein. Dhanyavaad!", "expected": "REVIEW", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 234, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "en", "score": 0.2277}, {"lang": "fi", "score": 0.083}, {"lang": "et", "score": 0.0699}, {"lang": "de", "score": 0.0417}, {"lang": "nl", "score": 0.0351}], "top1": "en", "margin": 0.1446}}, {"id": "syn-en-mislabeled", "title": "🧪 English mislabeled as Hindi", "text": "The Indus Valley Civilisation was one of the earliest urban cultures in the world. Its well-planned cities, advanced drainage systems, and standardized weights reflect a highly organized society. This entire paragraph is written in English, yet it was filed under the Hindi corpus folder.", "expected": "EXCLUDE_NON_TARGET", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 288, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "en", "score": 0.968}, {"lang": "de", "score": 0.0027}, {"lang": "nl", "score": 0.0023}, {"lang": "th", "score": 0.0023}, {"lang": "ru", "score": 0.0018}], "top1": "en", "margin": 0.9653}}, {"id": "syn-ur-arabic", "title": "🧪 Urdu (Perso-Arabic script)", "text": "اردو جنوبی ایشیا کی ایک اہم زبان ہے جو نستعلیق رسم الخط میں لکھی جاتی ہے۔ یہ عبارت مکمل طور پر اردو میں ہے، حالانکہ اسے ہندی فولڈر میں رکھا گیا تھا۔ یہ اسکرپٹ اور زبان کے تضاد کی مثال ہے۔", "expected": "QUARANTINE_MISMATCH", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 187, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "ur", "score": 0.9849}, {"lang": "pnb", "score": 0.0084}, {"lang": "es", "score": 0.0011}, {"lang": "nah", "score": 0.0007}, {"lang": "sd", "score": 0.0007}], "top1": "ur", "margin": 0.9765}}, {"id": "syn-sa-shloka", "title": "🧪 Sanskrit shloka (shared Devanagari)", "text": "सर्वे भवन्तु सुखिनः सर्वे सन्तु निरामयाः। सर्वे भद्राणि पश्यन्तु मा कश्चिद्दुःखभाग्भवेत्॥ ॐ शान्तिः शान्तिः शान्तिः॥ एषा संस्कृतभाषायाः प्रसिद्धा प्रार्थना अस्ति, या देवनागरीलिप्यां लिखिता।", "expected": "REVIEW", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 189, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "sa", "score": 0.5332}, {"lang": "hi", "score": 0.3264}, {"lang": "new", "score": 0.0547}, {"lang": "ne", "score": 0.0518}, {"lang": "en", "score": 0.0053}], "top1": "sa", "margin": 0.2068}}, {"id": "syn-ta-mislabeled", "title": "🧪 Tamil mislabeled as Hindi", "text": "தமிழ் ஒரு தொன்மையான மொழி. இது தமிழ்நாடு, இலங்கை மற்றும் சிங்கப்பூர் உள்ளிட்ட பல இடங்களில் பேசப்படுகிறது. இந்த பத்தி முழுவதும் தமிழில் உள்ளது, ஆனால் இது இந்தி கோப்பகத்தில் வைக்கப்பட்டது.", "expected": "QUARANTINE_MISMATCH", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 185, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "ta", "score": 0.9999}, {"lang": "sr", "score": 0.0001}, {"lang": "en", "score": 0.0001}, {"lang": "ms", "score": 0.0}, {"lang": "zh", "score": 0.0}], "top1": "ta", "margin": 0.9997}}, {"id": "syn-zxx-symbols", "title": "🧪 Symbols / numbers only (no language)", "text": "123 456 789 | 2024-07-24 | ₹ 12,499.00 | 45% | +91-98765-43210 | #### **** ---- | () [] {} <> | $$$ €€€ | 3.14159 | 0xFF 0b1010 | ::: ;;; ,,, ... | ▲ ● ■ ◆ | 100/100", "expected": "EXCLUDE_NON_LINGUISTIC", "url": "#", "claimed_lang": "hi", "claimed_script": "Deva", "kind": "synthetic", "full_len": 165, "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "en", "score": 0.198}, {"lang": "fr", "score": 0.0747}, {"lang": "hu", "score": 0.0572}, {"lang": "el", "score": 0.0473}, {"lang": "zh", "score": 0.0396}], "top1": "en", "margin": 0.1233}}, {"id": "10", "title": "हम होंगे कामयाब", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%AE%20%E0%A4%B9%E0%A5%8B%E0%A4%82%E0%A4%97%E0%A5%87%20%E0%A4%95%E0%A4%BE%E0%A4%AE%E0%A4%AF%E0%A4%BE%E0%A4%AC", "text": "हम होंगे कामयाब ( का गिरिजा कुमार माथुर द्वारा किया गया हिंदी भावानुवाद) एक प्रतिरोध गीत है। यह गीत बीसवीं सदी में नागरिक अधिकार आंदोलन का प्रधान स्वर बना। इस गीत को आमतौर पर \"I'll Overcome Some Day\" (\"आई विल ओवरकम सम डे\") से काव्यावतरित माना जाता है, जो चार्ल्स अल्बर्ट टिंडले द्वारा गाया गया था और जिसे 1900 में पहली बार प्रकाशित किया गया था।\n\nसन्दर्भ\nHum Honge Kamyab Lyrics \nनागरिक अधिकार आंदोलन\nदेशभक्ति के गीत\nआधार", "full_len": 420, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9729}, {"lang": "mr", "score": 0.0073}, {"lang": "new", "score": 0.0049}, {"lang": "bh", "score": 0.0044}, {"lang": "ne", "score": 0.0032}], "top1": "hi", "margin": 0.9656}}, {"id": "59", "title": "भारत", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4", "text": "{{Infobox country\n| conventional_long_name = भारत गणराज्य\n| common_name            = भारत\n| native_name            =  Republic of India (अंग्रेजी में)\n| image_flag             = Flag of India.svg\n| alt_flag               = क्षैतिज तिरंगे झंडे में ऊपर से नीचे तक गहरी केसरिया, सफेद और हरी क्षैतिज पट्टियाँ हैं। सफेद पट्टी के केंद्र में 24 तीलियों वाला एक नेवी-ब्लू पहिया है।\n| image_coat             = Emblem of India.svg\n| symbol_width           = 60px\n| alt_coat               = तीन शेर बाएं, दाएं और दर्शक की ओर मुख किए हुए हैं, एक फ्रिज़ के ऊपर एक सरपट दौड़ता घोड़ा, एक 24-स्पोक पहिया और एक हाथी है। नीचे एक आदर्श वाक्य है: \"सत्यमेव जयते\"।\n| symbol_type            = राज्य प्रतीक\n| other_symbol_type      = राष्ट्रीय गीत: \n| other_symbol           = जन गण मन भारत का राष्ट्रीय गान है, जिसके शब्दों में सरकार अवसर पड़ने पर परिवर्तन कर सकती है; और गीत वंदे मातरम, जिसने भारतीय स्वतंत्रता के संघर्ष में एक ऐतिहासिक भूमिका निभाई है, को जन गण मन के साथ समान रूप से सम्मानित किया जाएगा और इसके साथ समान दर्जा दिया जाएगा।}}}}\n\n| national_motto         = \"सत्यमेव जयते\" (संस्कृत\n| national_anthem        = \n\n| national_languages     =कोई नहीं (भारत की कोई राष्ट्रभाषा नहीं है)\n| image_map              = India (orthographic projection).svg\n| map_width              = 250px\n| alt_map                = भारत पर केन्द्रित ग्लोब की छवि, जिसमें भारत पर प्रकाश डाला गया है।\n| map_caption            = भारत द्वारा नियंत्रित क्षेत्र को गहरे हरे रंग में दिखाया गया है; दावा किया गया लेकिन नियंत्रित नहीं किया गया क्षेत्र हल्के हरे रंग में दिखाया गया है\n| capital                = नयी दिल्ली\n| coordinates            = \n| largest_city           = \n| official_languages     = \n| languages_type = स्थानीय भाषाएँ\n| languages = 447 बोली\n| regional_languages     = \n| demonym                = भारतीय\n| government_type        = संघीय संसदीय संवैधानिक गणराज्य\n| leader_title1          = राष्ट्रपति\n| leader_name1           = द्रौपदी मुर्मू\n| leader_title2          = उपराष्ट्रपति\n| leader_name2           = जगदीप धनखड़\n| le", "full_len": 47507, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9468}, {"lang": "new", "score": 0.0093}, {"lang": "mr", "score": 0.0084}, {"lang": "bh", "score": 0.0073}, {"lang": "ne", "score": 0.0052}], "top1": "hi", "margin": 0.9375}}, {"id": "77", "title": "भक्त कवियों की सूची", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%95%E0%A5%8D%E0%A4%A4%20%E0%A4%95%E0%A4%B5%E0%A4%BF%E0%A4%AF%E0%A5%8B%E0%A4%82%20%E0%A4%95%E0%A5%80%20%E0%A4%B8%E0%A5%82%E0%A4%9A%E0%A5%80", "text": "आलवार सन्त\n नयनार\nरविदास (रैदास)\nसूरदास\n तुलसीदास\n मीरा बाई\n कबीर\n रहीम\n त्यागराज\n आण्डाल\n नरसिंह महेता\n\nज्ञानेश्वर \n पुरंदरदास\n चैतन्य महाप्रभु\n जनाबाई\n तुकाराम\n मलिक मोहम्मद जायसी\n महिपति\n रामकृष्ण परमहंस\n Harivansh mahaprabhu\n\nइन्हें भी देखें \nहिंदी साहित्य\nभक्ति काल\nहिन्दी कवि\n\nहिन्दी साहित्य", "full_len": 297, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.8337}, {"lang": "mr", "score": 0.0916}, {"lang": "ne", "score": 0.0406}, {"lang": "new", "score": 0.0148}, {"lang": "mai", "score": 0.0063}], "top1": "hi", "margin": 0.7421}}, {"id": "104", "title": "भारत के राज्य तथा केन्द्र-शासित प्रदेश", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4%20%E0%A4%95%E0%A5%87%20%E0%A4%B0%E0%A4%BE%E0%A4%9C%E0%A5%8D%E0%A4%AF%20%E0%A4%A4%E0%A4%A5%E0%A4%BE%20%E0%A4%95%E0%A5%87%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%8D%E0%A4%B0-%E0%A4%B6%E0%A4%BE%E0%A4%B8%E0%A4%BF%E0%A4%A4%20%E0%A4%AA%E0%A5%8D%E0%A4%B0%E0%A4%A6%E0%A5%87%E0%A4%B6", "text": "भारत राज्यों का एक संघ है। इसमें 28 राज्य और 8 केन्द्र शासित प्रदेश हैं। ये राज्य और केन्द्र शासित प्रदेश पुनः जिलों और अन्य क्षेत्रों में बाँटे गये हैं।\n\nभारत के राज्य और केन्द्र-शासित प्रदेश \n\n28 राज्यों की पूरी सूची :\n\n8 केंद्र शासित प्रदेशों की पूरी सूची :\n\nJammu and Kashmir has 42,241 km2 of area administered by India and 78,114 km2 of area controlled by Pakistan under Azad Kashmir and Gilgit-Baltistan, which is claimed by India as part of Jammu and Kashmir. Additionally, it has 5,180 km2 of area controlled by the People's Republic of China under Trans-Karakoram Tract, which is also claimed by India as part of Jammu and Kashmir.\n\nLadakh has 59,146 km2 of area administered by India and 37,555 km2 of area controlled by the People's Republic of China under Aksai Chin, which is claimed by India as part of Ladakh.\n\n१९५६ से पूर्व \n\nभारत के इतिहास में भारतीय उपमहाद्वीप पर विभिन्न जातीय समूहों ने शासन किया और इसे अलग-अलग प्रशासन-संबन्धी भागों में विभाजित किया। आधुनिक भारत के वर्तमान प्रशासनिक प्रभाग नए घटनाक्रम हैं, जो ब्रिटिश औपनिवेशिक काल के दौरान विकसित हुए। ब्रिटिश भारत में, वर्तमान भारत, पाकिस्तान और बंगलादेश, साथ ही अफ़्गानिस्तान प्रांत और उससे जुड़े संरक्षित प्रांत, बाद में उपनिवेश बना, बर्मा (म्यांमार) आदि, सभी राज्य समाहित थे। इस अवधि के दौरान, भारत के क्षेत्रों में या तो ब्रिटिशों का शासन था या उन पर स्थानीय राजाओं का नियंत्रण था। १९४७ में स्वतन्त्रता के बाद इन विभागों को संरक्षित किया गया और पंजाब तथा बंगाल के प्रांतों को भारत और पाकिस्तान के बीच विभाजित किया गया। नए राष्ट्र के लिए पहली चुनौती थी राजसी राज्यों का संघों में विलय।\n\nस्वतन्त्रता के बाद, हालांकि, भारत में अस्थिरता आ गई। कई प्रांत औपनिवेशिकरण के उद्देश्य से ब्रिटिशों द्वारा बनाए गए, पर इन पर भारतीय नागरिकों की या राजसी राज्यों की कोई इच्छा दिखाई नहीं दी। १९५६ में जातीय तनाव ने संसद का दरवाजा खटखटाया और राज्य पुनर्गठन अधिनियम के आधार पर देश को जातीय और भाषाई आधार पर पुनर्निर्माण करने के लिए अधिनियम लाया गया।\n\n१९५६ के बाद \nभारत में जिस प्रकार पूर्व में फ़्रांसीसी और पुर्तगाली उपनिवेशों को गणराज्य मे", "full_len": 3745, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9646}, {"lang": "bh", "score": 0.0064}, {"lang": "sa", "score": 0.006}, {"lang": "new", "score": 0.0049}, {"lang": "en", "score": 0.0041}], "top1": "hi", "margin": 0.9582}}, {"id": "130", "title": "भारत की भाषाएँ", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%BE%E0%A4%B0%E0%A4%A4%20%E0%A4%95%E0%A5%80%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE%E0%A4%8F%E0%A4%81", "text": "भारत बहुत सारी भाषाओं का देश है, परन्तु सरकारी कामकाज में व्यवहार में लायी जाने वाली दो भाषाऍँ हैं, हिन्दी और अंग्रेज़ी। भारत में द्विभाषी वक्ताओं की संख्या 31.49 करोड़ है, जो 2011 में जनसंख्या का 26% है।\n\nहिन्द-आर्य भाषाएँ\nपालि, प्राकृत, मारवाड़ी/मेवाड़ी, अपभ्रंश, हिंदी, उर्दू, पंजाबी, राजस्थानी, सिंधी, कश्मीरी, मैथिली, भोजपुरी, नेपाली, मराठी, डोगरी, कुरमाली, नागपुरी, कोंकणी, गुजराती, बंगाली, ओड़िआ, असमिया, गुजरी\n\nद्रविड़ भाषाएँ \nतमिल, तेलुगु, मलयालम, कन्नड़, तुलू, गोंडी, कुड़ुख\n\nऑस्ट्रो-एशियाई भाषाएँ \nसंथाली, हो, मुंडारी, खासी, भूमिज\n\nतिब्बती-बर्मी भाषाएँ \nनेपाल भाषा, मणिपुरी, खासी, मिज़ो, आओ, म्हार, नागा\n\nमातृभाषा के अनुसार बड़ी भारतीय भाषाओं की सूची \nयहाँ यह ध्यान रखने योग्य बात है कि भारत में द्विभाषिकता एवं बहुभाषिकता का प्रचलन है इसलिए यह सँख्या उन लोगों की है जिन्होंने ने हिन्दी को अपनी प्रथम भाषा के तौर पर १९९१ की जनगणना में दर्ज़ किया था।\n\nमान्यता प्राप्त भाषाएं\nहिंदी भारत के उत्तरी हिस्सों में सबसे व्यापक बोली जाने वाली भाषा है। भारतीय जनगणना \"हिंदी\" की व्यापक विविधता के रूप में \"हिंदी\" की व्यापक संभव परिभाषा लेती है। 2011 की जनगणना के अनुसार, 43.63% भारतीय लोगों ने हिंदी को अपनी मूल भाषा या मातृभाषा घोषित कर दिया है। भाषा डेटा 26 जून 2018 को जारी किया गया था। भिली / भिलोदी 1.04 करोड़ वक्ताओं के साथ सबसे ज्यादा बोली जाने वाली गैर अनुसूचित भाषा थी, इसके बाद गोंडी 29 लाख वक्ताओं के साथ थीं। भारत की जनगणना २०११ में भारत की आबादी का 96.71% 22 अनुसूचित भाषाओं में से एक अपनी मातृभाषा के रूप में बोलता है।\n\nदस लाख  से कम व्यक्तियों द्वारा बोली जाने वाली भाषाएँ\n\nसंक्षिप्त चिह्न \n Ang अंग या अंगिका लिपि,\n Ass. असमिया लिपि, \n Ben. बंगाली लिपि,\n Dev. देवनागरी लिपि,\n Guj. गुजराती लिपि,\n Gur. गुरमुखी लिपि,\n Kan. कन्नड़ लिपि,\n Lat. लैटिन लिपि,\n Mai. मैथिली लिपि, मिथिलाक्षर, कैथी\n Mal. मलयालम लिपि,\n Nep. नेपाली,\n Ori. ओड़िआ लिपि,\n Sin. सिंहल लिपि,\n Tam. तमिल लिपि,\n Tel. तेलुगु लिपि.\n\nसन्दर्भ\n\nइन्हें भी देखें \n भारत का भाषाई इतिहास\n भारत के भाषा परिवार\n भारत की आधिकारिक भाषाओं में भारत गणराज्य के नाम\n भारतीय लिपियाँ\n भारत की बोलियाँ\n हिंदी की विभिन्न बोलियाँ और उनका साहित", "full_len": 2494, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9764}, {"lang": "bh", "score": 0.0048}, {"lang": "mr", "score": 0.0047}, {"lang": "new", "score": 0.0043}, {"lang": "mai", "score": 0.0019}], "top1": "hi", "margin": 0.9715}}, {"id": "178", "title": "मानस शास्त्र", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AE%E0%A4%BE%E0%A4%A8%E0%A4%B8%20%E0%A4%B6%E0%A4%BE%E0%A4%B8%E0%A5%8D%E0%A4%A4%E0%A5%8D%E0%A4%B0", "text": "साइकोलोजी या मनोविज्ञान (प्राचीन यूनानी भाषा : Ψυχολογία, लिट.\"मस्तिष्क का अध्ययन\",साइके\"शवसन, आत्मा, जीव\" और -लोजिया (-logia) \"का अध्ययन \") एक अकादमिक (academic) और प्रयुक्त अनुशासन है जिसमें मानव के मानसिक कार्यों और व्यवहार (mental function) का वैज्ञानिक अध्ययन (behavior) शामिल है कभी कभी यह प्रतीकात्मक (symbol) व्याख्या (interpretation) और जटिल विश्लेषण (critical analysis) पर भी निर्भर करता है, हालाँकि ये परम्पराएँ अन्य सामाजिक विज्ञान (social science) जैसे समाजशास्त्र (sociology) की तुलना में कम स्पष्ट हैं। मनोवैज्ञानिक ऐसी घटनाओं को धारणा (perception), अनुभूति (cognition), भावना (emotion), व्यक्तित्व (personality), व्यवहार (behavior) और पारस्परिक संबंध (interpersonal relationships) के रूप में अध्ययन करते हैं। कुछ विशेष रूप से गहरे मनोवैज्ञानिक (depth psychologists) अचेत मस्तिष्क (unconscious mind) का भी अध्ययन करते हैं।\n\nमनोवैज्ञानिक ज्ञान मानव क्रिया (human activity) के भिन्न क्षेत्रों पर लागू होता है, जिसमें दैनिक जीवन के मुद्दे शामिल हैं और -; जैसे परिवार, शिक्षा (education) और रोजगार और - और मानसिक स्वास्थ्य (treatment) समस्याओं का उपचार (mental health). मनोविज्ञानवेत्ता व्यक्तिगत और सामाजिक व्यवहार में मानसिक कार्य की भूमिका को समझने का प्रयास करते हैं, जबकि इसके तहत आने वाले शरीर कार्यिकी (physiological) तथा तंत्रिका (neurological) प्रक्रियाओं पर भी कार्य करते हैं। मनोविज्ञान में अध्ययन और अनुप्रयोग के कई उपक्षेत्र भी शामिल हैं जैसे मानव विकास (human development), खेल (sports), स्वास्थ्य (health), उद्योग (industry), मीडिया (media) और कानून (law).मनोविज्ञान में प्राकृतिक विज्ञान (natural sciences), सामाजिक विज्ञान और मानविकी (humanities) के अनुसंधान भी शामिल हैं। हजककसक सोसकन्सकZ बस स्वU8E दीदी डॉ स9 स\n\nइतिहास\n\nदार्शनिक और वैज्ञानिक जड़ें \nदार्शनिक संदर्भ में मनोविज्ञान का अध्ययन मिस्र, ग्रीस (Greece), चीन और भारत की प्राचीन सभ्यताओं से सन्दर्भ रखता है। मनोविज्ञान ने मध्यकाल में अधिक नैदानिक (clinical) और प्रयोगात्मक (experimental) दृष्टिकोण अपना लिया जब मुस्लिम मनोवैज्ञानिकों (Muslim psychologists) और चिकित्सकों (physicians) ने ऐसे उद्देश्यों के लिए मनोर", "full_len": 56030, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9604}, {"lang": "new", "score": 0.0063}, {"lang": "bh", "score": 0.0062}, {"lang": "mr", "score": 0.005}, {"lang": "sa", "score": 0.0045}], "top1": "hi", "margin": 0.9542}}, {"id": "187", "title": "साहित्य", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B8%E0%A4%BE%E0%A4%B9%E0%A4%BF%E0%A4%A4%E0%A5%8D%E0%A4%AF", "text": "किसी भाषा के वाचिक और लिखित (शास्त्रसमूह) को साहित्य कह सकते हैं। दुनिया में सबसे पुराना वाचिक साहित्य हमें आदिवासी भाषाओं में मिलता है। इस दृष्टि से आदिवासी साहित्य सभी साहित्य का मूल स्रोत है। साहित्य - स+हित+य के योग से बना है। सुप्रसिद्ध साहित्यकार गोलेन्द्र पटेल ने साहित्य के संदर्भ में कहा है कि \"आदिकाल में दर्शन और कविता के बीच द्वंद्व था, आज साइंस और साहित्य के बीच द्वंद्व है लेकिन साइंस तन को स्वस्थ करता है और साहित्य मन को\" \n\nकवि-   नवीन पांडेय\n\nप्रयागराज\n\nभारतीय साहित्य \nभारतीय वाङ्मय को काल की दृष्टि से निम्नलिखित भागों में विभक्त किया गया है -\n\nभारत का संस्कृत साहित्य ऋग्वेद से आरम्भ होता है। व्यास, वाल्मीकि जैसे पौराणिक ऋषियों ने महाभारत एवं रामायण जैसे महाकाव्यों की रचना की। भास, कालिदास एवं अन्य कवियों ने संस्कृत में नाटक लिखे।\n\nभक्ति साहित्य में अवधी में गोस्वामी तुलसीदास, ब्रज भाषा में सूरदास तथा रैदास, मारवाड़ी में मीराबाई, खड़ीबोली में  कबीर, रसखान, मैथिली में विद्यापति आदि प्रमुख हैं। अवधी के प्रमुख कवियों में रमई काका सुप्रसिद्ध कवि हैं।\n\nहिन्दी साहित्य में कथा, कहानी और उपन्यास के लेखन में प्रेमचन्द का महान योगदान है।\n\nग्रीक साहित्य में होमर के इलियड और ऑडसी विश्वप्रसिद्ध हैं। अंग्रेज़ी साहित्य में शेक्स्पियर का नाम कौन नहीं जानता।\n\nइन्हें भी देखें \n हिन्दी साहित्य\n आदिवासी साहित्य\n भारतीय साहित्य\n पाश्चात्य साहित्य\n साहित्य का इतिहास\n\nबाहरी कड़ियाँ \n साहित्यिक निबन्ध (गूगल पुस्तक ; लेखक - गणपतिचन्द्र गुप्त)\n साहित्य सिद्धान्त (गूगल पुस्तक)\n साहित्यानुशीलन (गूगल पुस्तक ; लेखक - डॉ दयाशंकर शुक्ल)\n समकालीन हिंदी साहित्य की जाल-पत्रिका 'अभिव्यक्ति'\n साहित्य, संस्कृति और भाषा अंतराष्ट्रीय मंच सृजनगाथा\n हिन्दी काव्य\n हिन्दी साहित्य प्रश्नोत्तरी (गूगल पुस्तक ; लेखिका - विभा देवसरे)\n Google's category on literature in Hindi\n Wikisource\n Indan English Literature \n भारतीय साहित्य का जाल-पुस्तकालय एवं लेखकों और कवियों के बारे में जानकारी के लिए संपूर्ण स्रोत 'पुस्तक'\n साहित्य में मूल्यबोध - डॉ॰ हरेकृष्ण मेहेर\n\nसाहित्य\nमई २०१३ के लेख जिनमें स्रोत नहीं हैं", "full_len": 1899, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9825}, {"lang": "sa", "score": 0.0035}, {"lang": "bh", "score": 0.0029}, {"lang": "gom", "score": 0.002}, {"lang": "new", "score": 0.0019}], "top1": "hi", "margin": 0.979}}, {"id": "912", "title": "जापान", "url": "https://hi.wikipedia.org/wiki/%E0%A4%9C%E0%A4%BE%E0%A4%AA%E0%A4%BE%E0%A4%A8", "text": "जापान (जापानी भाषा में जापान को ऐसे \"日本\" लिखा जाता है जिसका उच्चारण 'निप्पोन या निहोन' होता है,परंतु औपचारिक रूप से जापानी में जापान को ऐसे \"日本国\" लिखते हैं। \n\nऔपचारिक रूप: जापान राज्य) , एशिया महाद्वीप के पूर्व में स्थित एक द्वीप देश है। जापान चार बड़े और अनेक छोटे द्वीपों का एक समूह है। ये द्वीप एशिया के पूर्वी समुद्रतट, यानी उत्तर पश्चिम प्रशांत महासागर में स्थित हैं।  यह पश्चिम में जापान सागर(Sea of Japan/East Sea) से घिरा है, और उत्तर में ओखोटस्क सागर(Sea of Okhotsk) से लेकर दक्षिण में पूर्वी चीन सागर(East China Sea) और  ताइवान तक फैला हुआ है। \n\nइसके निकटतम पड़ोसी चीन, कोरिया(उत्तर और दक्षिण कोरिया)  तथा रूस हैं। जापान में वहाँ के मूल निवासियों की जनसंख्या ९८.५% है। बाकी ०.५% कोरियाई, ०.४ % चाइनीज़ तथा ०.६% अन्य लोग है। जापानी लोग अपने देश को 'निप्पोन या निहोन कहते हैं, \n\nजिसका मतलब सूर्योदय है। रिंग ऑफ फायर का हिस्सा, जापान ६८५२ द्वीपों का एक द्वीपसमूह है, जो ३७७,९७५ वर्ग किलोमीटर (१४५,९३७ वर्ग मील)में फैला  हुआ है ;  जापान के  पांच मुख्य द्वीप होक्काइडो, होंशू (जिसे जापान की मुख्य भूमि भी कहा जाता है) , शिकोकू, क्यूशू और ओकिनावा हैं। जापान की राजधानी टोक्यो है और उसके अन्य बड़े महानगर योकोहामा, ओसाका, नागोया, साप्पोरो, फुकुओका, कोबे और क्योटो (जापान की पूर्ववर्ती राजधानी) हैं।\n\nजापान दुनिया का ग्यारहवां सबसे अधिक जनसंख्या वाला देश है, साथ ही सबसे घनी जनसंख्या वाले और शहरीकृत देशों में से भी  एक है। देश का लगभग तीन-चौथाई भूभाग पहाड़ी है, जिस कारण इसकी १२५.३६ मिलियन की जनसंख्या संकीर्ण तटीय मैदानों पर केंद्रित है। जापान को ४७ प्रशासनिक प्रान्तों और आठ पारंपरिक क्षेत्रों में विभाजित किया गया है। ग्रेटर टोक्यो क्षेत्र ३७.४ मिलियन से अधिक निवासियों के साथ दुनिया का सबसे अधिक आबादी वाला महानगरीय क्षेत्र है। \n\nजापान ऊपरी पुरापाषाण काल (३०,००० BC) से ही बसा हुआ है लेकिन जापान देश के बारे में पहला लिखित उल्लेख एक चीनी वृत्तांत (the 'Book of Han' यानी 'हान की किताब') में मिलता है जोकि द्वितीय शताब्दी में पूर्ण हुई थी। दूसरी और नौंवीं सदी के बीच कईं जापानी साम्राज्य एक सम्राट के अंदर एकीकृत हो गये जिन्होंने हेइआन-क्यो(आज के समय में जिसे 'क्योटो' कहा जाता है) को अपनी राजध", "full_len": 18074, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.989}, {"lang": "bh", "score": 0.0019}, {"lang": "new", "score": 0.0016}, {"lang": "mr", "score": 0.0013}, {"lang": "gom", "score": 0.001}], "top1": "hi", "margin": 0.9871}}, {"id": "14", "title": "दैनिक पूजा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%A6%E0%A5%88%E0%A4%A8%E0%A4%BF%E0%A4%95%20%E0%A4%AA%E0%A5%82%E0%A4%9C%E0%A4%BE", "text": "दैनिक पूजा विधि हिन्दू धर्म की कई उपासना पद्धतियों में से एक है। ये एक दैनिक कर्म है। विभिन्न देवताओं को प्रसन्न करने के लिये कई मन्त्र बताये गये हैं, जो लगभग सभी पुराणों से हैं। वैदिक मन्त्र यज्ञ और हवन के लिये होते हैं।\n\nपूजा की रीति इस तरह है : पहले कोई भी देवता चुनें, जिसकी पूजा करनी है। फ़िर विधिवत निम्नलिखित मन्त्रों (सभी संस्कृत में हैं) के साथ उसकी पूजा करें। पौराणिक देवताओं के मन्त्र इस प्रकार हैं :\n\n विनायक : ॐ सिद्धि विनायकाय नमः . \n सरस्वती : ॐ सरस्वत्यै नमः . \n लक्ष्मी : ॐ महा लक्ष्म्यै नमः . \n दुर्गा : ॐ दुर्गायै नमः . \n महाविष्णु : ॐ श्री विष्णवे नमः . or ॐ नमो नारायणाय .\n कृष्ण : ॐ श्री कृष्णाय नमः . or ॐ नमो भगवते वासुदेवाय .\n राम : ॐ श्री रामचन्द्राय नमः . \n नरसिंह : ॐ श्री नारसिंहाय नमः . \n शिव : ॐ शिवाय नमः या ॐ नमः शिवाय . \n\nनीचे लिखे मन्त्र गणेश के लिये हैं :\n\nदैनिक विनायक पूजा\n\nध्यान श्लोक \n\nशुक्लाम्बर धरं विष्णुं शशि वर्णम् चतुर्भुजम् . \nप्रसन्न वदनं ध्यायेत् सर्व विघ्नोपशान्तये ..\n\nषोडशोपचार पूजन \n\nॐ सिद्धि विनायकाय नमः . ध्यायामि . \nॐ सिद्धि विनायकाय नमः . आवाहयामि . \nॐ सिद्धि विनायकाय नमः . आसनं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . अर्घ्यं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पाद्यं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . आचमनीयं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . उप हारं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पंचामृत स्नानं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . वस्त्र युग्मं समर्पयामि . \nॐ सिद्धि विनायकाय नमः . यज्ञोपवीतं धारयामि . \nॐ सिद्धि विनायकाय नमः . आभरणानि समर्पयामि . \nॐ सिद्धि विनायकाय नमः . गंधं धारयामि . \nॐ सिद्धि विनायकाय नमः . अक्षतान् समर्पयामि . \nॐ सिद्धि विनायकाय नमः . पुष्पैः पूजयामि . \nॐ सिद्धि विनायकाय नमः . प्रतिष्ठापयामि .\n\nअथ अंग पूजा \nविनायक (गणेश) के पाँच नाम चुनें और ऐसा कहें :\nॐ महा गणपतये नमः . पादौ पूजयामि . \nॐ विघ्न राजाय नमः . उदरम् पूजयामि . \nॐ एक दन्ताय नमः . बाहुं पूजयामि . \nॐ गौरी पुत्राय नमः . हृदयं पूजयामि . \nॐ आदि वन्दिताय नमः . शिरः पूजयामि . \nॐ सिद्धि विनायकाय नमः . अंग पूजां समर्पयामि .\n\nअथ पत्र पूजा \nविनायक (गणेश) के पाँच नाम चुनें और ऐसा कहें :\nॐ महा गणपतये नमः . आम्र पत्रम् समर्पयामि . \nॐ विघ्न राजाय", "full_len": 3827, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.8819}, {"lang": "sa", "score": 0.0552}, {"lang": "new", "score": 0.0178}, {"lang": "ne", "score": 0.0111}, {"lang": "mr", "score": 0.01}], "top1": "hi", "margin": 0.8267}}, {"id": "54", "title": "हिन्दी", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%80", "text": "हिन्दी जिसके मानकीकृत रूप को मानक हिन्दी कहा जाता है, विश्व की एक प्रमुख भाषा है और भारत की एक राजभाषा है। केन्द्रीय स्तर पर भारत में सह-आधिकारिक भाषा अंग्रेजी है। यह हिन्दुस्तानी भाषा की एक मानकीकृत रूप है जिसमें संस्कृत के तत्सम तथा तद्भव शब्दों का प्रयोग अधिक है और अरबी–फ़ारसी शब्द कम हैं। हिन्दी संवैधानिक रूप से भारत की राजभाषा और भारत की सबसे अधिक बोली और समझी जाने वाली भाषा है। हिन्दी भारत की राष्ट्रभाषा नहीं है क्योंकि भारत के संविधान में किसी भी भाषा को ऐसा दर्जा नहीं दिया गया है। एथनोलॉग के अनुसार हिन्दी विश्व की तीसरी सबसे अधिक बोली जाने वाली भाषा है। विश्व आर्थिक मंच की गणना के अनुसार यह विश्व की दस शक्तिशाली भाषाओं में से एक है।\n\nभारत की जनगणना २०११ में 57.1% भारतीय जनसंख्या हिन्दी जानती है जिसमें से 43.63% भारतीय लोगों ने हिन्दी को अपनी मूल भाषा या मातृभाषा घोषित किया था। इसके अतिरिक्त भारत, पाकिस्तान और अन्य देशों में 14 करोड़ 10 लाख लोगों द्वारा बोली जाने वाली उर्दू, व्याकरण के आधार पर हिन्दी के समान है, एवं दोनों ही हिन्दुस्तानी भाषा की परस्पर-सुबोध्य रूप हैं। एक विशाल संख्या में लोग हिन्दी और उर्दू दोनों को ही समझते हैं। भारत में हिन्दी, विभिन्न भारतीय राज्यों की 14 आधिकारिक भाषाओं और क्षेत्र की बोलियों का उपयोग करने वाले लगभग 1 अरब लोगों में से अधिकांश की दूसरी भाषा है। हिन्दी भारत में सम्पर्क भाषा का कार्य करती है  और कुछ हद तक पूरे भारत में सामान्यतः एक सरल रूप में समझी जानेवाली भाषा है। कभी-कभी 'हिन्दी' शब्द का प्रयोग नौ भारतीय राज्यों के सन्दर्भ में भी उपयोग किया जाता है, जिनकी आधिकारिक भाषा हिन्दी है और हिन्दी भाषी बहुमत है, अर्थात् बिहार, छत्तीसगढ़, हरियाणा, हिमाचल प्रदेश, झारखण्ड, मध्य प्रदेश, राजस्थान, उत्तराखण्ड, जम्मू और कश्मीर (२०२० से) उत्तर प्रदेश और राष्ट्रीय राजधानी क्षेत्र दिल्ली का।\n\nहिन्दी और इसकी बोलियाँ सम्पूर्ण भारत के विविध राज्यों में बोली जाती हैं। भारत और अन्य देशों में भी लोग हिन्दी बोलते, पढ़ते और लिखते हैं। फ़िजी, मॉरिशस, गयाना, सूरीनाम, नेपाल और संयुक्त अरब अमीरात में भी हिन्दी या इसकी मान्य बोलियों का उपयोग करने वाले लोगों की बड़ी संख्या मौजूद है। फरवरी 2019 में अबू धाबी में हिन्दी को न्यायालय की तीसरी भाषा के रूप में ", "full_len": 22266, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9893}, {"lang": "bh", "score": 0.002}, {"lang": "new", "score": 0.0019}, {"lang": "sa", "score": 0.0013}, {"lang": "gom", "score": 0.0008}], "top1": "hi", "margin": 0.9874}}, {"id": "56", "title": "फ़ारसी भाषा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AB%E0%A4%BC%E0%A4%BE%E0%A4%B0%E0%A4%B8%E0%A5%80%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE", "text": "फ़ारसी (), एक भाषा है जो ईरान, ताजिकिस्तान, अफ़गानिस्तान और उज़बेकिस्तान में बोली जाती है। यह ईरान, अफ़ग़ानिस्तान, ताजिकिस्तान की राजभाषा है और इसे ७.५ करोड़ लोग बोलते हैं। भाषाई परिवार के लिहाज़ से यह हिन्द यूरोपीय परिवार की हिन्द ईरानी (इंडो ईरानियन) शाखा की ईरानी उपशाखा का सदस्य है और हिन्दी की तरह इसमें क्रिया वाक्य के अंत में आती है। फ़ारसी संस्कृत से क़ाफ़ी मिलती-जुलती है और उर्दू (और हिन्दी) में इसके कई शब्द प्रयुक्त होते हैं। ये अरबी-फ़ारसी लिपि में लिखी जाती है। अंग्रेज़ों के आगमन से पहले भारतीय उपमहाद्वीप में फ़ारसी भाषा का प्रयोग दरबारी कामों तथा लेखन की भाषा के रूप में होता है। दरबार में प्रयुक्त होने के कारण ही अफ़गानिस्तान में इस दरी कहा जाता है।\n\nवर्गीकरण \nइसे हिन्द-यूरोपीय भाषा परिवार की हिन्द-ईरानी शाखा की ईरानी भाषाओं की उपशाखा के पश्चिमी विभाग में वर्गीकृत किया जाता है। हालाँकि भारतीय उपमहाद्वीप में फ़ारसी को ग़लती से अरबी भाषा के समीप समझा जाता है, भाषावैज्ञानिक दृष्टि से यह अरबी से बहुत भिन्न और संस्कृत के बहुत समीप है। संस्कृत और फ़ारसी में कई हज़ारों मिलते-जुलते सजातीय शब्द मिलते हैं जो दोनों भाषाओँ की सांझी धरोहर हैं, जैसे की सप्ताह/हफ़्ता, नर/नर (पुरुष), दूर/दूर, हस्त/दस्त (हाथ), शत/सद (सौ), आप/आब (पानी), हर/ज़र (फ़ारसी में पीला-सुनहरा, संस्कृत में पीला-हरा), मय/मद/मधु (शराब/शहद), अस्ति/अस्त (है), रोचन/रोशन (चमकीला), एक/येक, कपि/कपि (वानर), दन्त/दन्द (दाँत), मातृ/मादर, पितृ/पिदर, भ्रातृ/बिरादर (भाई), दुहितृ/दुख़्तर (बेटी), वंश/बच/बच्चा, शुकर/ख़ूक (सूअर), अश्व/अस्ब (घोड़ा), गौ/गऊ (गाय), जन/जान (संस्कृत में व्यक्ति/जीव, फ़ारसी में जीवन), भूत/बूद (था, अतीत), ददामि/दादन (देना), युवन/जवान, नव/नव (नया) और सम/हम (बराबर)।\n\nनाम \nभारत में इसे फ़ारसी कहा जाता है। इसका मूल नाम 'पारसी' है पर अरब लोग, जिन्होंने फ़ारस पर सातवीं सदी के अंत तक अधिकार कर लिया था, की वर्णमाला में 'प' अक्षर नहीं होता है। इस कारण से वे इसे फ़ारसी कहते थे और यही नाम भारत में भी प्रयुक्त होता है। यूनानी लोग फार्स को पर्सिया (पुरानी ग्रीक में पर्सिस, Πέρσις) कहते थे। जिसके कारण यहाँ की भाषा पर्सियन (Persian) कहलाई। यही नाम अंग्रेज़ी सहित अन्य यूरोपीय भाषाओं में प्रयुक्त होता है।\n\nइ", "full_len": 5557, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9885}, {"lang": "bh", "score": 0.0023}, {"lang": "new", "score": 0.0016}, {"lang": "el", "score": 0.0013}, {"lang": "sa", "score": 0.0013}], "top1": "hi", "margin": 0.9862}}, {"id": "58", "title": "देवनागरी", "url": "https://hi.wikipedia.org/wiki/%E0%A4%A6%E0%A5%87%E0%A4%B5%E0%A4%A8%E0%A4%BE%E0%A4%97%E0%A4%B0%E0%A5%80", "text": "देवनागरी भारतीय उपमहाद्वीप में प्रयुक्त प्राचीन ब्राह्मी लिपि पर आधारित बाएँ से दाएँ आबूगीदा है। यह प्राचीन भारत में पहली से चौथी शताब्दी ईस्वी तक विकसित किया गया था और ७वीं शताब्दी ईस्वी तक नियमित उपयोग में था।  देवनागरी लिपि, जिसमें १४ स्वर और ३३ व्यञ्जन सहित ४७ प्राथमिक वर्ण हैं, दुनिया में चौथी सबसे व्यापक रूप से अपनाई जाने वाली लेखन प्रणाली है, जिसका उपयोग १२० से अधिक भाषाओं के लिए किया जा रहा है। \n\nइस लिपि की शब्दावली भाषा के उच्चारण को दर्शाती है।  रोमन लिपि के विपरीत, इस लिपि में अक्षर केस की कोई अवधारणा नहीं है। यह बाएँ से दाएँ लिखा गया है, चौकोर रूपरेखा के भीतर सममित गोल आकृतियों के लिए एक दृढ़ प्राथमिकता है, और एक क्षैतिज रेखा द्वारा पहचाना जा सकता है, जिसे शिरोरेखा के रूप में जाना जाता है, जो पूर्ण अक्षरों के शीर्ष के साथ चलती है। एक सरसरी दृष्टि में, देवनागरी लिपि अन्य भारतीय लिपियों जैसे पूर्वी नागरी लिपि या गुरमुखी लिपि से अलग दिखाई देती है, लेकिन एक निकटतम अवलोकन से पता चलता है कि वे कोण और संरचनात्मक जोर को छोड़कर बहुत समान हैं।\n\nपरिचय \nअधिकतर भाषाओं की तरह देवनागरी भी बायें से दायें लिखी जाती है। प्रत्येक शब्द के ऊपर एक रेखा खिंची होती है (कुछ वर्णों के ऊपर रेखा नहीं होती है) जिसे शिरोरेखा कहते हैं। देवनागरी का विकास ब्राह्मी लिपि से हुआ है। यह एक ध्वन्यात्मक लिपि है जो प्रचलित लिपियों (रोमन, अरबी, चीनी आदि) में सबसे अधिक वैज्ञानिक है। इससे वैज्ञानिक और व्यापक लिपि शायद केवल अध्वव लिपि है। भारत की कई लिपियाँ देवनागरी से बहुत अधिक मिलती-जुलती हैं, जैसे- बांग्ला, गुजराती, गुरुमुखी आदि। कम्प्यूटर प्रोग्रामों की सहायता से भारतीय लिपियों को परस्पर परिवर्तन बहुत आसान हो गया है।\n\nभारतीय भाषाओं के किसी भी शब्द या ध्वनि को देवनागरी लिपि में ज्यों का त्यों लिखा जा सकता है और फिर लिखे पाठ को लगभग 'हू-ब-हू' उच्चारण किया जा सकता है, जो कि रोमन लिपि और अन्य कई लिपियों में सम्भव नहीं है, जब तक कि उनका विशेष मानकीकरण न किया जाये, जैसे आइट्रांस या IAST ।\n\nइसमें कुल ५२ अक्षर हैं, जिसमें १४ स्वर और ३८ व्यंजन हैं। अक्षरों की क्रम व्यवस्था (विन्यास) भी बहुत ही वैज्ञानिक है। स्वर-व्यंजन, कोमल-कठोर, अल्पप्राण-महाप्राण, अनुनासिक्य-अन्तस्थ-उष्म इत्यादि वर्गीकरण भी वैज्ञानि", "full_len": 27584, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9892}, {"lang": "bh", "score": 0.0019}, {"lang": "new", "score": 0.0018}, {"lang": "sa", "score": 0.0012}, {"lang": "mr", "score": 0.001}], "top1": "hi", "margin": 0.9873}}, {"id": "74", "title": "संस्कृत भाषा", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B8%E0%A4%82%E0%A4%B8%E0%A5%8D%E0%A4%95%E0%A5%83%E0%A4%A4%20%E0%A4%AD%E0%A4%BE%E0%A4%B7%E0%A4%BE", "text": "संस्कृत (संस्कृतम्, ) भारत की एक भाषा है। संस्कृत एक हिंद-आर्य भाषा है जो हिंद-यूरोपीय भाषा परिवार की एक शाखा है। संस्कृत दिव्य एवं समृद्ध भाषा है। ऐतिहासिकता की दृष्टि में यह संसार की सभी भाषाओं की जननी है। संस्कृत संसार की प्राचीनतम एवं प्रथम भाषा है। भारतीय आर्ष ग्रंथ का समस्त ज्ञान इसी भाषा में लिपिबद्ध है। संस्कृत ज्ञान की अभिव्यक्ति की भाषा है। आधुनिक भारतीय भाषाएँ जैसे, हिंदी, बांग्ला, मराठी, सिन्धी, पंजाबी, नेपाली, आदि इसी से उत्पन्न हुई हैं। इन सभी भाषाओं में यूरोपीय बंजारों की रोमानी भाषा भी शामिल है। संस्कृत में वैदिक धर्म से संबंधित लगभग सभी धर्मग्रंथ लिखे गए हैं। बौद्ध धर्म (विशेषकर महायान) तथा जैन मत के भी कई महत्त्वपूर्ण ग्रंथ संस्कृत में लिखे गए हैं। आज भी हिंदू धर्म के अधिकतर यज्ञ और पूजा संस्कृत में ही होते हैं। \n\nसंस्कृत का अर्थ है \"संस्कार की गयी \" अर्थात \"बदलाव की गयी\", संस्कृत भाषा देवनागरी लिपि मे लिखी गयी है, धम्म लिपि में समय के साथ थोड़ा- थोड़ा सुधार (बदलाव) होता रहा उदाहरण के लिए मौर्य का व गुप्त काल के शिलालेखों व अभिलेखों में शब्दो मे थोड़ा फर्क दिखायी पड़ता है। अनेक शताब्दियों तक यह चलता गया तथा पाली प्राकृत भाषा (  धम्म लिपि मे ) से अनेक लिपियों का उदय हुआ जैसे दक्षिण मे तमिल, तेलुगु व उत्तर मे बांगला, नागरी  शारदा । 10000 ईसा पूर्व में इंग्लिश लिपि का प्रचलन शुरू हुआ व 11 शताब्दी तक आते आते देवनागरी लिपि पूर्ण से विकसित हो गयी , अगर बात करे संस्कृत भाषा की चूंकि संस्कृत की लिपि देवनागरी है अत: यह भी 10 वीं शताब्दी के मध्य आयी है, इससे पहले संस्कृत भाषा का कोई पुरातात्विक प्रमाण नही मिला व ना ही कही इसका जिक्र है। अत: इससे सिद्ध होता है की भारत (जिसका प्राचीन नाम हिंदुस्तान है) की  सबसे पुरानी भाषा  प्राकृत पाली है व सबसे प्राचीन लिपि धम्म लिपि (आजकल ब्राह्मी लिपि) है। अगर देखा जाए सबसे प्राचीन भाषा व लिपि सिंधु घाटी सभ्यता की भाषा जो अब तक नही पढ़ी गयी है । \n\nसंस्कृत आमतौर पर कई पुरानी इंडो-आर्यन किस्मों को जोड़ती है। इनमें से सबसे पुरातन ऋग्वेद में पाया जाने वाला वैदिक संस्कृत है, जो 9 वीं शताब्दी के बाद रचित 1000 भजनों का एक संग्रह है, जो इंडो-आर्यन जनजातियों द्वारा आज के उत्तरी अफगानिस्तान और उत्तरी भारत में अफगानिस्तान से पूर्व की", "full_len": 16262, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.985}, {"lang": "mr", "score": 0.0033}, {"lang": "bh", "score": 0.0028}, {"lang": "new", "score": 0.0027}, {"lang": "sa", "score": 0.0011}], "top1": "hi", "margin": 0.9817}}, {"id": "76", "title": "हिन्दू", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B9%E0%A4%BF%E0%A4%A8%E0%A5%8D%E0%A4%A6%E0%A5%82", "text": "हिंदू ( ; /ˈ h ɪ n d uː z / ) वे लोग हैं जो धार्मिक रूप से हिंदू धर्म का पालन करते हैं।   ऐतिहासिक रूप से, इस शब्द का उपयोग भारतीय उपमहाद्वीप में रहने वाले लोगों के लिए भौगोलिक, सांस्कृतिक और बाद में धार्मिक पहचानकर्ता के रूप में भी किया गया है।  \n\n\"हिन्दू\" शब्द की उत्पत्ति पुरानी फ़ारसी से हुई है जिसने इन नामों को संस्कृत नाम सिंधु , सिंधु नदी का जिक्र करते हुए। समान शब्दों के ग्रीक सजातीय शब्द \" इंडस \" (नदी के लिए) और \" इंडिया \" (नदी की भूमि के लिए) हैं।    \" हिंदू \" शब्द का तात्पर्य सिंधु (सिंधु) नदी के आसपास या उससे परे भारतीय उपमहाद्वीप में रहने वाले लोगों के लिए एक भौगोलिक, जातीय या सांस्कृतिक पहचानकर्ता भी है।  16वीं शताब्दी ईस्वी तक, यह शब्द उपमहाद्वीप के उन निवासियों को संदर्भित करने लगा जो तुर्क या मुस्लिम नहीं थे।    हिंदू एक पुरातन वर्तनी संस्करण है, जिसका उपयोग आज अपमानजनक माना जाता है।  \n\nधार्मिक या सांस्कृतिक अर्थ में, स्थानीय भारतीय आबादी के भीतर हिंदू आत्म-पहचान का ऐतिहासिक विकास अस्पष्ट है।   प्रतिस्पर्धी सिद्धांतों में कहा गया है कि हिंदू पहचान ब्रिटिश औपनिवेशिक युग में विकसित हुई, या यह मुस्लिम आक्रमणों और मध्ययुगीन हिंदू-मुस्लिम युद्धों के बाद 8वीं शताब्दी ईस्वी के बाद विकसित हुई होगी।    हिंदू पहचान की भावना और हिंदू शब्द 13वीं और 18वीं शताब्दी के बीच संस्कृत और बंगाली के कुछ ग्रंथों में दिखाई देता है।   14वीं और 18वीं सदी के भारतीय कवियों जैसे विद्यापति, कबीर, तुलसीदास और एकनाथ ने हिंदू धर्म (हिंदू धर्म) वाक्यांश का इस्तेमाल किया और इसकी तुलना तुरक धर्म ( इस्लाम ) से की।   ईसाई भिक्षु सेबेस्टियाओ मैनरिक ने 1649 में एक धार्मिक संदर्भ में 'हिंदू' शब्द का इस्तेमाल किया था।  18वीं शताब्दी में, यूरोपीय व्यापारियों और उपनिवेशवादियों ने सामूहिक रूप से भारतीय धर्मों के अनुयायियों को हिंदू के रूप में संदर्भित करना शुरू कर दिया था। तुर्क, मुगल और अरब जैसे समूहों के लिए मुसलमानों के विपरीत, जो इस्लाम के अनुयायी थे।   19वीं सदी के मध्य तक, औपनिवेशिक प्राच्यवादी ग्रंथों ने हिंदुओं को बौद्ध, सिख और जैन से अलग कर दिया,  लेकिन औपनिवेशिक कानून लगभग 20वीं सदी के मध्य तक उन सभी को हिंदू शब्द के दायरे में मानते रहे।  विद्वानों का कहना है कि हिंदू, बौद्ध, जैन और स", "full_len": 21412, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9868}, {"lang": "bh", "score": 0.0028}, {"lang": "new", "score": 0.0019}, {"lang": "mr", "score": 0.0014}, {"lang": "el", "score": 0.0013}], "top1": "hi", "margin": 0.984}}, {"id": "78", "title": "भक्त", "url": "https://hi.wikipedia.org/wiki/%E0%A4%AD%E0%A4%95%E0%A5%8D%E0%A4%A4", "text": "आराधना करने वाले को भक्त कहा जाता है। और भक्त समूह को भक्तों की संज्ञा दी जाती है। किसी धार्मिक स्थान पर सामूहिक रूप से इकट्ठा होना ही भक्तों की श्रेणी मे गिना जाता है। \n नरसिंह महेता\n चैतन्य महाप्रभु\n आण्डाल\n\nधर्म\nधार्मिक शब्दावली", "full_len": 231, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9893}, {"lang": "mr", "score": 0.0027}, {"lang": "ne", "score": 0.0026}, {"lang": "new", "score": 0.0014}, {"lang": "bh", "score": 0.0008}], "top1": "hi", "margin": 0.9866}}, {"id": "79", "title": "शब्दकोश", "url": "https://hi.wikipedia.org/wiki/%E0%A4%B6%E0%A4%AC%E0%A5%8D%E0%A4%A6%E0%A4%95%E0%A5%8B%E0%A4%B6", "text": "पुनर्निर्देशित हिन्दू धर्म की शब्दावली \n\nशब्दकोश (अन्य वर्तनी: शब्दकोष) एक बडी सूची या ऐसा ग्रन्थ जिसमें शब्दों की वर्तनी, उनकी व्युत्पत्ति, व्याकरणनिर्देश, अर्थ, परिभाषा, प्रयोग और पदार्थ आदि का सन्निवेश हो। शब्दकोश एकभाषीय हो सकते हैं, द्विभाषिक हो सकते हैं या बहुभाषिक हो सकते हैं। अधिकतर शब्दकोशों में शब्दों के उच्चारण के लिये भी व्यवस्था होती है, जैसे - अन्तरराष्ट्रीय ध्वन्यात्मक लिपि में, देवनागरी में या आडियो संचिका के रूप में। कुछ शब्दकोशों में चित्रों का सहारा भी लिया जाता है। अलग-अलग कार्य-क्षेत्रों के लिये अलग-अलग शब्दकोश हो सकते हैं; जैसे - विज्ञान शब्दकोश, चिकित्सा शब्दकोश, विधिक (कानूनी) शब्दकोश, गणित का शब्दकोश आदि।\n\nसभ्यता और संस्कृति के उदय से ही मानव जान गया था कि भाव के सही सम्प्रेषण के लिए सही अभिव्यक्ति आवश्यक है। सही अभिव्यक्ति के लिए सही शब्द का चयन आवश्यक है। सही शब्द के चयन के लिए शब्दों के संकलन आवश्यक हैं। शब्दों और भाषा के मानकीकरण की आवश्यकता समझ कर आरम्भिक लिपियों के उदय से बहुत पहले ही आदमी ने शब्दों का लेखाजोखा रखना शुरू कर दिया था। इस के लिए उस ने कोश बनाना शुरू किया। कोश में शब्दों को इकट्ठा किया जाता है।\n\nइतिहास \n\nसब से पहले शब्द संकलन भारत में बने। भारत की यह शानदार परम्परा वेदों जितनी—कम से कम पाँच हजार वर्ष—पुरानी है। प्रजापति कश्यप का निघण्टु संसार का प्राचीनतम शब्द संकलन है। इस में 18 सौ वैदिक शब्दों को इकट्ठा किया गया है। निघण्टु पर महर्षि यास्क की व्याख्या निरुक्त संसार का पहला शब्दार्थ कोश (डिक्शनरी) एवं विश्वकोश (ऐनसाइक्लोपीडिया) है। इस महान शृंखला की सशक्त कड़ी है छठी या सातवीं सदी में लिखा अमर सिंह कृत नामलिंगानुशासन या त्रिकाण्ड जिसे सारा संसार 'अमरकोश' के नाम से जानता है। अमरकोश को विश्व का सर्वप्रथम समान्तर कोश (थेसेरस) कहा जा सकता है।\n\nभारत के बाहर संसार में शब्द संकलन का एक प्राचीन प्रयास अक्कादियाई संस्कृति की शब्द सूची है। यह शायद ईसा पूर्व सातवीं सदी की रचना है। ईसा से तीसरी सदी पहले की चीनी भाषा का कोश है 'ईर्या'।\n\nआधुनिक कोशों की नींव डाली इंग्लैंड में 1755 में सैमुएल जानसन ने। उन की डिक्शनरी सैमुएल जॉन्संस डिक्शनरी ऑफ़ इंग्लिश लैंग्वेज ने कोशकारिता को नए आयाम दिए। इस में परिभाषाएँ भी दी गई थीं। असली आधुनिक कोश ", "full_len": 17483, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9902}, {"lang": "bh", "score": 0.002}, {"lang": "new", "score": 0.0016}, {"lang": "mr", "score": 0.0011}, {"lang": "sa", "score": 0.001}], "top1": "hi", "margin": 0.9882}}, {"id": "98", "title": "जन गण मन", "url": "https://hi.wikipedia.org/wiki/%E0%A4%9C%E0%A4%A8%20%E0%A4%97%E0%A4%A3%20%E0%A4%AE%E0%A4%A8", "text": "जन गण मन, भारत का राष्ट्रगान है जो मूलतः बंगाली में गुरुदेव रवीन्द्रनाथ टैगोर द्वारा लिखा गया था। भारत का राष्ट्रीय गीत वन्दे मातरम्‌ है।\n\nराष्ट्रगान के गायन की अवधि लगभग ५२ सेकेण्ड है। कुछ अवसरों पर राष्ट्रगान संक्षिप्त रूप में भी गाया जाता है, इसमें प्रथम तथा अन्तिम पंक्तियाँ ही बोलते हैं जिसमें लगभग २० सेकेण्ड का समय लगता है। संविधान सभा ने जन-गण-मन हिन्दुस्तान के राष्ट्रगान के रूप में २४ जनवरी १९५० को अपनाया था। इसे सर्वप्रथम २७ दिसम्बर १९११ को कांग्रेस के कलकत्ता अब दोनों भाषाओं में (बंगाली और हिन्दी) अधिवेशन में गाया गया था। पूरे गान में ५ पद हैं।\n\nगीत के बोल\n\nबंगाली और देवनागरी लिप्यन्तरण के साथ\n\nआधिकारिक हिन्दी संस्करण\n\nवाक्य-दर-वाक्य अर्थ\nजन गण मन अधिनायक जय हे भारत भाग्य विधाता!\nजनगणमन:जनगण के मन/सारे लोगों के मन; अधिनायक:शासक; जय हे:की जय हो; भारतभाग्यविधाता:भारत के भाग्य-विधाता(भाग्य निर्धारक) अर्थात् भगवान</small>जन गण के मनों के उस अधिनायक की जय हो, जो भारत के भाग्यविधाता हैं!पंजाब सिन्ध गुजरात मराठा द्राविड़ उत्कल बंगविंध्य हिमाचल यमुना गंगा उच्छल जलधि तरंग\nपंजाब:पंजाब/पंजाब के लोग; सिन्ध:सिन्ध/सिन्धु नदी/सिन्धु के किनारे बसे लोग; गुजरात:गुजरात व उसके लोग; मराठा:महाराष्ट्र/मराठी लोग; द्राविड़:दक्षिण भारत/द्राविड़ी लोग; उत्कल:उडीशा/उड़िया लोग; बंग:बंगाल/बंगाली लोगविन्ध्य:विन्ध्यांचल पर्वत; हिमाचल:हिमालय/हिमाचल पर्वत श्रिंखला; यमुना गंगा:दोनों नदियाँ व गंगा-यमुना दोआब; उच्छल-जलधि-तरंग:मनमोहक/हृदयजाग्रुतकारी-समुद्री-तरंग या मनजागृतकारी तरंगेंउनका नाम सुनते ही पंजाब सिन्ध गुजरात और मराठा, द्राविड़ उत्कल व बंगालएवं विन्ध्या हिमाचल व यमुना और गंगा पे बसे लोगों के हृदयों में मनजागृतकारी तरंगें भर उठती हैंतव शुभ नामे जागे, तव शुभाशीष मागेगाहे तव जय गाथा\n<small>तव:आपके/तुम्हारे; शुभ:पवित्र; नामे:नाम पे(भारतवर्ष); जागे:जागते हैं; आशिष:आशीर्वाद; मागे:मांगते हैंगाहे:गाते हैं; तव:आपकी ही/तेरी ही; जयगाथा:वजयगाथा(विजयों की कहानियां)\nसब तेरे पवित्र नाम पर जाग उठने हैं, सब तेरी पवित्र आशीर्वाद पाने की अभिलाशा रखते हैंऔर सब तेरे ही जयगाथाओं का गान करते हैं\n\nजन गण मंगलदायक जय हे भारत भाग्य विधाता!जय हे, जय हे, जय हे, जय जय जय जय हे।।\nजनगणमंगलदायक:जनगण के मंगल-दाता/जनगण ", "full_len": 9156, "claimed_lang": "hi", "claimed_script": "Deva", "kind": "real", "lid": {"model": "fasttext/lid.176", "candidates": [{"lang": "hi", "score": 0.9789}, {"lang": "mr", "score": 0.0056}, {"lang": "bh", "score": 0.0035}, {"lang": "new", "score": 0.0033}, {"lang": "sa", "score": 0.0016}], "top1": "hi", "margin": 0.9732}}]</script>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="#">Overview</a><a href="#">Data</a>
+  <a href="index.html">Cleaning</a>
+  <a href="language.html" class="active">Language</a>
+  <a href="#">Tokenizer</a>
+</div></div>
+<div class="wrap">
+  <div class="phead">
+    <h1>Language Identification</h1>
+    <p class="dek">Per <em>Language_Skill.md</em>: language ID is a corpus <b>admission &amp; accounting</b> system, not one classifier call. Every article is claimed <code>hi / Deva</code> (as if from the Hindi dump); the audit tests that claim against detected evidence and routes each document.</p>
+    <p class="note">The browser runs the dependency-free <b>script tier</b> (Unicode-block distribution, code-mix, claimed-vs-detected, routing + reason codes). Script alone cannot separate Hindi from Marathi/Sanskrit, nor romanized Hindi from English — that is exactly why a model tier exists. Model tier: <b>fastText</b> verdicts baked in.</p>
+  </div>
+  <div class="art-controls">
+    <span class="ctrl-label">Document</span>
+    <div class="art-nav">
+      <button class="nav-btn" id="prev-btn">&#8592;</button>
+      <span class="art-counter" id="art-counter"></span>
+      <button class="nav-btn" id="next-btn">&#8594;</button>
+    </div>
+    <select class="art-select" id="art-select"></select>
+  </div>
+  <div class="title-bar">
+    <span class="t" id="art-title"></span>
+    <span class="chip" id="art-kind"></span>
+    <span class="chip claim" id="art-claim"></span>
+    <a id="art-url" href="#" target="_blank">&#8599; Wikipedia</a>
+  </div>
+  <div class="verdict" id="verdict">
+    <div class="verdict-hd">
+      <span class="verdict-badge" id="verdict-badge"></span>
+      <span class="verdict-sub" id="verdict-sub"></span>
+    </div>
+    <div class="reason-row" id="reason-row"></div>
+  </div>
+  <div class="grid2">
+    <div class="card">
+      <div class="card-hd">Script distribution (Step 04)</div>
+      <div class="card-bd">
+        <div class="dist-bar" id="dist-bar"></div>
+        <div class="legend" id="legend"></div>
+        <div class="note" id="nonling" style="margin-top:10px"></div>
+        <div class="cand" id="cands" style="margin-top:12px"></div>
+        <div class="amb" id="amb"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hd">Model LID — fastText (Steps 05/12)</div>
+      <div class="card-bd"><div id="model-panel"></div></div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:13px">
+    <div class="card-hd">Paragraph / span breakdown (Step 06)</div>
+    <div class="card-bd"><div class="spans" id="spans"></div></div>
+  </div>
+  <div class="text-view">
+    <div class="card-hd" style="border-bottom:1px solid var(--line)">Document text — coloured by script</div>
+    <div class="text-body" id="text-body"></div>
+  </div>
+  <div class="acct">
+    <h2>Corpus accounting (Step 14)</h2>
+    <p class="note">Rolled up across all 25 documents in the sample.</p>
+    <div class="acct-grid">
+      <div class="card"><div class="card-hd">By final disposition</div><div class="card-bd" id="acct-disp"></div></div>
+      <div class="card"><div class="card-hd">By dominant script</div><div class="card-bd" id="acct-script"></div></div>
+    </div>
+    <div class="card" style="margin-top:13px"><div class="card-hd">Summary</div><div class="card-bd" id="acct-summary"></div></div>
+  </div>
+</div>
+<script>
+var ARTICLES = JSON.parse(document.getElementById('articles-data').textContent);
+var state = { idx: 0 };
+
+/* ---------- script classification (Language_Skill Step 04) ---------- */
+/* Returns a script family key for a code point, or a non-linguistic class. */
+function scriptOf(cp) {
+  if (cp >= 0x0900 && cp <= 0x097F) return 'Deva';
+  if (cp >= 0xA8E0 && cp <= 0xA8FF) return 'Deva';   /* Devanagari Extended */
+  if (cp >= 0x1CD0 && cp <= 0x1CFF) return 'Deva';   /* Vedic Extensions   */
+  if (cp >= 0x0980 && cp <= 0x09FF) return 'Beng';
+  if (cp >= 0x0A00 && cp <= 0x0A7F) return 'Guru';
+  if (cp >= 0x0A80 && cp <= 0x0AFF) return 'Gujr';
+  if (cp >= 0x0B00 && cp <= 0x0B7F) return 'Orya';
+  if (cp >= 0x0B80 && cp <= 0x0BFF) return 'Taml';
+  if (cp >= 0x0C00 && cp <= 0x0C7F) return 'Telu';
+  if (cp >= 0x0C80 && cp <= 0x0CFF) return 'Knda';
+  if (cp >= 0x0D00 && cp <= 0x0D7F) return 'Mlym';
+  if ((cp >= 0x0600 && cp <= 0x06FF) || (cp >= 0x0750 && cp <= 0x077F) ||
+      (cp >= 0x08A0 && cp <= 0x08FF) || (cp >= 0xFB50 && cp <= 0xFDFF) ||
+      (cp >= 0xFE70 && cp <= 0xFEFF)) return 'Arab';
+  if ((cp >= 0x0041 && cp <= 0x005A) || (cp >= 0x0061 && cp <= 0x007A) ||
+      (cp >= 0x00C0 && cp <= 0x024F)) return 'Latn';
+  /* non-linguistic classes */
+  if (cp >= 0x0030 && cp <= 0x0039) return 'digit';
+  if (cp === 0x20 || cp === 0x09 || cp === 0x0A || cp === 0x0D) return 'space';
+  return 'other';   /* punctuation, symbols, digits of other scripts, emoji */
+}
+
+/* script family -> colour class + candidate languages (shared-script aware) */
+var SCRIPT_META = {
+  Deva: { css:'',        cands:['hi','mr','sa','ne'], name:'Devanagari' },
+  Beng: { css:'sc-beng', cands:['bn','as'],           name:'Bengali'    },
+  Guru: { css:'sc-beng', cands:['pa'],                name:'Gurmukhi'   },
+  Gujr: { css:'sc-beng', cands:['gu'],                name:'Gujarati'   },
+  Orya: { css:'sc-beng', cands:['or'],                name:'Odia'       },
+  Taml: { css:'sc-drav', cands:['ta'],                name:'Tamil'      },
+  Telu: { css:'sc-drav', cands:['te'],                name:'Telugu'     },
+  Knda: { css:'sc-drav', cands:['kn'],                name:'Kannada'    },
+  Mlym: { css:'sc-drav', cands:['ml'],                name:'Malayalam'  },
+  Arab: { css:'sc-arab', cands:['ur','fa','ar'],      name:'Perso-Arabic' },
+  Latn: { css:'sc-latn', cands:['en','(romanized)'],  name:'Latin'      }
+};
+var SCRIPT_COLOR = {
+  Deva:'#2E357E', Beng:'#7A3FB0', Guru:'#7A3FB0', Gujr:'#7A3FB0', Orya:'#7A3FB0',
+  Taml:'#147D74', Telu:'#147D74', Knda:'#147D74', Mlym:'#147D74',
+  Arab:'#B5476B', Latn:'#C7761B'
+};
+
+/* weak signal: romanized-Hindi function words (Latin != English) */
+var ROMAN_HI = ['aap','hai','hain','kya','nahi','nahin','mein','hum','kaise',
+  'kaisa','kyun','kyon','aaj','doston','dhanyavaad','karein','karenge','raha',
+  'rahe','rahi','yeh','woh','apni','apna','bahut','accha','achha','theek',
+  'namaste','bhai','zaroor','pasand','seekh','sakta','sakte','sakti','ke','ki',
+  'ko','hum','baat','naya'];
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function pct(x) { return (x * 100).toFixed(1) + '%'; }
+
+/* ---------- analyse one text: script distribution + spans ---------- */
+function analyse(text) {
+  var counts = {}, linguistic = 0, nonling = 0, total = 0;
+  for (var i = 0; i < text.length; i++) {
+    var s = scriptOf(text.charCodeAt(i));
+    total++;
+    if (s === 'space' || s === 'digit' || s === 'other') { nonling++; }
+    else { linguistic++; counts[s] = (counts[s] || 0) + 1; }
+  }
+  var shares = {};
+  var keys = Object.keys(counts);
+  for (var k = 0; k < keys.length; k++) shares[keys[k]] = counts[keys[k]] / linguistic;
+
+  var ordered = keys.slice().sort(function(a,b){ return counts[b]-counts[a]; });
+  var dom = ordered.length ? ordered[0] : null;
+
+  var lingRatio = total ? linguistic / total : 0;
+
+  /* romanized-Hindi weak signal */
+  var romanHits = 0, words = text.toLowerCase().split(/[^a-z]+/);
+  for (var w = 0; w < words.length; w++) {
+    if (words[w] && ROMAN_HI.indexOf(words[w]) !== -1) romanHits++;
+  }
+
+  return {
+    counts: counts, shares: shares, ordered: ordered, dom: dom,
+    linguistic: linguistic, nonling: nonling, total: total,
+    lingRatio: lingRatio, romanHits: romanHits
+  };
+}
+
+/* ---------- per-paragraph script breakdown (Step 06) ---------- */
+function paragraphs(text) {
+  var raw = text.split(/\n+/), out = [];
+  for (var i = 0; i < raw.length; i++) {
+    var p = raw[i].trim();
+    if (p.length < 2) continue;
+    var a = analyse(p);
+    out.push({ text: p, dom: a.dom, shares: a.shares, lingRatio: a.lingRatio });
+  }
+  return out;
+}
+
+/* ---------- decision engine: script tier (Steps 09/11/13) ---------- */
+function scriptDecision(a, claimedScript) {
+  var reasons = [], disp, langNote = '';
+  var latn = a.shares['Latn'] || 0;
+  var deva = a.shares['Deva'] || 0;
+
+  if (a.linguistic < 20 || a.lingRatio < 0.20) {
+    return { disp:'EXCLUDE_NON_LINGUISTIC',
+             reasons:[{c:'NO_LINGUISTIC_CONTENT', t:'warn'}],
+             langNote:'Mostly digits/punctuation/symbols — route to zxx.' };
+  }
+  if (!a.dom) {
+    return { disp:'QUARANTINE_UNKNOWN', reasons:[{c:'INSUFFICIENT_EVIDENCE',t:'warn'}],
+             langNote:'' };
+  }
+
+  /* code-mix: Devanagari + Latin both significant, regardless of which leads */
+  if (deva >= 0.15 && latn >= 0.15) {
+    reasons.push({c:'CODE_MIXED_HI_EN', t:'ok'});
+    reasons.push({c:'MIXED_SCRIPT', t:'warn'});
+    return { disp:'ACCEPT_CODE_MIXED', reasons:reasons,
+             langNote:'Devanagari ' + pct(deva) + ' + Latin ' + pct(latn) +
+                      ' — Hindi+English code-mix (allowed mixture).' };
+  }
+
+  if (a.dom === 'Deva') {
+    disp = 'ACCEPT_MONOLINGUAL';
+    reasons.push({c:'SCRIPT_MATCHES_CLAIM', t:'ok'});
+    reasons.push({c:'SHARED_SCRIPT_AMBIGUITY', t:'warn'});
+    langNote = 'Devanagari is shared by hi/mr/sa/ne — script alone cannot confirm Hindi. Needs model LID.';
+  } else if (a.dom === 'Latn') {
+    disp = 'REVIEW';
+    if (a.romanHits >= 2) {
+      reasons.push({c:'ROMANIZED_CANDIDATE', t:'warn'});
+      langNote = 'Latin script with ' + a.romanHits + ' romanized-Hindi cue word(s) — likely romanized Indic, NOT English. Needs romanized-capable LID.';
+    } else {
+      reasons.push({c:'FOREIGN_LATIN', t:'warn'});
+      langNote = 'Latin script, no romanized-Hindi cues — likely English (non-target). Needs model LID to confirm.';
+    }
+    reasons.push({c:'SCRIPT_LANGUAGE_CONFLICT', t:'warn'});
+  } else {
+    /* a non-Devanagari, non-Latin Indic/Arabic script under a hi/Deva claim */
+    disp = 'QUARANTINE_MISMATCH';
+    reasons.push({c:'SCRIPT_LANGUAGE_CONFLICT', t:'bad'});
+    reasons.push({c:'CLAIM_PREDICTION_MISMATCH', t:'bad'});
+    var meta = SCRIPT_META[a.dom];
+    langNote = 'Claimed ' + claimedScript + ' but detected ' + (meta ? meta.name : a.dom) +
+               ' (' + (meta ? meta.cands.join('/') : '?') + ') — script/claim conflict.';
+  }
+  return { disp: disp, reasons: reasons, langNote: langNote };
+}
+
+/* ---------- reconcile script tier with baked-in model LID ---------- */
+function combine(scriptDisp, lid) {
+  if (!lid || !lid.top1) return { disp: scriptDisp.disp, note: 'Model LID not run — script-tier verdict only.' };
+  var TARGET = 'hi', LOW = 0.50;   /* below LOW, the model abstains (Step 12) */
+  var top = lid.top1, conf = lid.candidates && lid.candidates[0] ? lid.candidates[0].score : 0;
+
+  /* Deva monolingual: model disambiguates hi vs mr/sa/ne */
+  if (scriptDisp.disp === 'ACCEPT_MONOLINGUAL') {
+    if (top === TARGET) return { disp:'ACCEPT_MONOLINGUAL', note:'Model confirms Hindi ('+pct(conf)+').' };
+    if (conf < LOW)     return { disp:'ACCEPT_MONOLINGUAL', note:'Model top-1 "'+top+'" but low confidence ('+pct(conf)+') — script ACCEPT stands, flagged.' };
+    return { disp:'REVIEW', note:'Model says "'+top+'" ('+pct(conf)+'), not Hindi — shared-script (hi/mr/sa) disambiguation needed.' };
+  }
+  /* Latin: model separates romanized-Hindi from English — if it is confident */
+  if (scriptDisp.disp === 'REVIEW') {
+    if (top === TARGET && conf >= LOW) return { disp:'ACCEPT_MONOLINGUAL', note:'Model recovers Hindi ('+pct(conf)+') from Latin — romanized Hindi.' };
+    if (conf < LOW)                    return { disp:'REVIEW', note:'Model top-1 "'+top+'" at low confidence ('+pct(conf)+') — abstain; needs a romanized-capable detector (e.g. IndicLID).' };
+    return { disp:'EXCLUDE_NON_TARGET', note:'Model says "'+top+'" ('+pct(conf)+') with confidence — treated as non-target.' };
+  }
+  return { disp: scriptDisp.disp, note: 'Model top-1 "'+top+'" ('+pct(conf)+').' };
+}
+
+/* ---------- render text coloured by script run ---------- */
+function colourText(text) {
+  var html = '', run = '', runScript = null;
+  function flush() {
+    if (!run) return;
+    var meta = SCRIPT_META[runScript];
+    if (meta && meta.css) html += '<span class="' + meta.css + '">' + esc(run) + '</span>';
+    else html += esc(run);
+    run = '';
+  }
+  for (var i = 0; i < text.length; i++) {
+    var s = scriptOf(text.charCodeAt(i));
+    var grp = (s === 'space' || s === 'digit' || s === 'other') ? 'plain' : s;
+    if (grp !== runScript) { flush(); runScript = grp; }
+    run += text[i];
+  }
+  flush();
+  return html;
+}
+
+/* ---------- verdict styling ---------- */
+function vClass(disp) {
+  if (disp.indexOf('ACCEPT') === 0)      return 'v-accept';
+  if (disp === 'REVIEW')                 return 'v-review';
+  if (disp.indexOf('EXCLUDE') === 0)     return 'v-exclude';
+  return 'v-quarantine';
+}
+
+/* ================= MAIN RENDER ================= */
+function render() {
+  var art = ARTICLES[state.idx];
+  var a   = analyse(art.text);
+  var sd  = scriptDecision(a, art.claimed_script);
+  var fin = combine(sd, art.lid);
+
+  /* header */
+  document.getElementById('art-title').textContent = art.title;
+  var kindEl = document.getElementById('art-kind');
+  kindEl.textContent = art.kind === 'synthetic' ? 'SYNTHETIC' : 'REAL — Wikipedia';
+  kindEl.className = 'chip ' + (art.kind === 'synthetic' ? 'synthetic' : 'real');
+  document.getElementById('art-claim').textContent =
+    'claimed: ' + art.claimed_lang + ' / ' + art.claimed_script;
+  var urlEl = document.getElementById('art-url');
+  urlEl.href = art.url; urlEl.style.display = art.kind === 'synthetic' ? 'none' : '';
+  document.getElementById('art-counter').textContent = (state.idx+1) + ' of ' + ARTICLES.length;
+  document.getElementById('prev-btn').disabled = state.idx === 0;
+  document.getElementById('next-btn').disabled = state.idx === ARTICLES.length-1;
+  document.getElementById('art-select').value = state.idx;
+
+  /* verdict */
+  document.getElementById('verdict').className = 'verdict';
+  document.getElementById('verdict-badge').className = 'verdict-badge ' + vClass(fin.disp);
+  document.getElementById('verdict-badge').textContent = fin.disp;
+  document.getElementById('verdict-sub').textContent = fin.note;
+  var rr = document.getElementById('reason-row'); rr.innerHTML = '';
+  for (var i = 0; i < sd.reasons.length; i++) {
+    var r = sd.reasons[i];
+    var cls = r.t === 'ok' ? 'reason ok' : r.t === 'warn' ? 'reason warn' : 'reason';
+    rr.innerHTML += '<span class="' + cls + '">' + r.c + '</span>';
+  }
+
+  /* script distribution bar + legend */
+  var bar = '', leg = '';
+  for (var j = 0; j < a.ordered.length; j++) {
+    var k = a.ordered[j], sh = a.shares[k], col = SCRIPT_COLOR[k] || '#999';
+    bar += '<div class="dist-seg" style="width:' + (sh*100) + '%;background:' + col + '"></div>';
+    var meta = SCRIPT_META[k];
+    leg += '<div class="legend-row"><span class="legend-sw" style="background:' + col + '"></span>' +
+           '<span>' + (meta?meta.name:k) + ' <span style="color:#999">(' + k + ')</span></span>' +
+           '<span class="legend-pct">' + pct(sh) + '</span></div>';
+  }
+  document.getElementById('dist-bar').innerHTML = bar || '<div class="dist-seg" style="width:100%;background:#ddd"></div>';
+  document.getElementById('legend').innerHTML = leg || '<div class="legend-row"><span>no linguistic characters</span></div>';
+  document.getElementById('nonling').textContent =
+    'Linguistic ' + pct(a.lingRatio) + '  ·  non-linguistic ' + pct(a.total ? a.nonling/a.total : 0) +
+    ' (' + a.nonling + ' of ' + a.total + ' chars)';
+
+  /* candidate languages */
+  var candHtml = '';
+  if (a.dom && SCRIPT_META[a.dom]) {
+    candHtml = 'Dominant script <b>' + SCRIPT_META[a.dom].name + '</b> → candidate languages: <b>' +
+               SCRIPT_META[a.dom].cands.join(', ') + '</b>';
+  } else candHtml = 'No dominant linguistic script.';
+  document.getElementById('cands').innerHTML = candHtml;
+  document.getElementById('amb').textContent = sd.langNote;
+  document.getElementById('amb').style.display = sd.langNote ? '' : 'none';
+
+  /* paragraph spans */
+  var ps = paragraphs(art.text), sp = '';
+  for (var p = 0; p < ps.length && p < 12; p++) {
+    var pr = ps[p], col2 = SCRIPT_COLOR[pr.dom] || '#999';
+    sp += '<div class="span-row"><span class="span-idx">#' + (p+1) + '</span>' +
+          '<span class="span-txt">' + esc(pr.text.slice(0,80)) + '</span>' +
+          '<span class="span-tag" style="background:' + col2 + '22;color:' + col2 + '">' +
+          (pr.dom || 'zxx') + '</span></div>';
+  }
+  document.getElementById('spans').innerHTML = sp || '<div class="model-none">No paragraph-level spans.</div>';
+
+  /* model LID panel */
+  var mp = document.getElementById('model-panel');
+  if (art.lid && art.lid.candidates && art.lid.candidates.length) {
+    var mh = '';
+    for (var m = 0; m < art.lid.candidates.length && m < 4; m++) {
+      var c = art.lid.candidates[m];
+      mh += '<div class="model-row"><span class="model-lang">' + esc(c.lang) + '</span>' +
+            '<span class="model-track"><span class="model-fill" style="width:' + (c.score*100) + '%"></span></span>' +
+            '<span class="model-score">' + pct(c.score) + '</span></div>';
+    }
+    var margin = art.lid.margin != null ? '  ·  top-1/top-2 margin ' + pct(art.lid.margin) : '';
+    mh += '<div class="model-none" style="margin-top:8px">model: <code>' + esc(art.lid.model || 'unknown') + '</code>' + margin + '</div>';
+    mp.innerHTML = mh;
+  } else {
+    mp.innerHTML = '<div class="model-none">Model LID not run for this article. ' +
+      'Run <code>python3 run_lid.py</code> to score with fastText and regenerate.</div>';
+  }
+
+  /* coloured text */
+  var isTrunc = art.full_len > art.text.length;
+  document.getElementById('text-body').innerHTML = colourText(art.text) +
+    (isTrunc ? '<div class="trunc-note">Showing first ' + art.text.length + ' of ' + art.full_len + ' chars</div>' : '');
+}
+
+/* ================= CORPUS ACCOUNTING (Step 14) ================= */
+function accounting() {
+  var byDisp = {}, byScript = {}, mismatch = 0, codemix = 0, total = ARTICLES.length;
+  for (var i = 0; i < ARTICLES.length; i++) {
+    var art = ARTICLES[i], a = analyse(art.text);
+    var sd = scriptDecision(a, art.claimed_script), fin = combine(sd, art.lid);
+    byDisp[fin.disp] = (byDisp[fin.disp] || 0) + 1;
+    var dom = a.dom || 'zxx';
+    byScript[dom] = (byScript[dom] || 0) + 1;
+    if (fin.disp.indexOf('QUARANTINE') === 0 || fin.disp === 'EXCLUDE_NON_TARGET') mismatch++;
+    if (fin.disp === 'ACCEPT_CODE_MIXED') codemix++;
+  }
+  function rows(obj, colorMap) {
+    var keys = Object.keys(obj).sort(function(a,b){ return obj[b]-obj[a]; }), html = '';
+    for (var k = 0; k < keys.length; k++) {
+      var key = keys[k], n = obj[key], w = (n/total)*100;
+      var col = colorMap ? (colorMap[key] || '#6169B8') : '#6169B8';
+      html += '<div class="acct-row"><span class="acct-k">' + key + '</span>' +
+              '<span style="width:120px"><span class="acct-bar" style="display:block;width:' + w + '%;background:' + col + '"></span></span>' +
+              '<span class="acct-v">' + n + '</span></div>';
+    }
+    return html;
+  }
+  document.getElementById('acct-disp').innerHTML = rows(byDisp, null);
+  document.getElementById('acct-script').innerHTML = rows(byScript, SCRIPT_COLOR);
+  document.getElementById('acct-summary').innerHTML =
+    '<div class="acct-row"><span class="acct-k">Total documents</span><span class="acct-v">' + total + '</span></div>' +
+    '<div class="acct-row"><span class="acct-k">Claimed-vs-detected mismatches (quarantine + non-target)</span><span class="acct-v">' + mismatch + '</span></div>' +
+    '<div class="acct-row"><span class="acct-k">Code-mixed documents</span><span class="acct-v">' + codemix + '</span></div>' +
+    '<div class="acct-row"><span class="acct-k">All claimed</span><span class="acct-v">hi / Deva</span></div>';
+}
+
+/* ================= WIRING ================= */
+var sel = document.getElementById('art-select');
+for (var i = 0; i < ARTICLES.length; i++) {
+  var o = document.createElement('option');
+  o.value = i; o.textContent = (i+1) + '. ' + ARTICLES[i].title;
+  sel.appendChild(o);
+}
+sel.addEventListener('change', function(){ state.idx = parseInt(this.value,10); render(); });
+document.getElementById('prev-btn').addEventListener('click', function(){ if (state.idx>0){state.idx--;render();} });
+document.getElementById('next-btn').addEventListener('click', function(){ if (state.idx<ARTICLES.length-1){state.idx++;render();} });
+document.addEventListener('keydown', function(e){
+  if (e.key==='ArrowLeft' && state.idx>0){ state.idx--; render(); }
+  if (e.key==='ArrowRight' && state.idx<ARTICLES.length-1){ state.idx++; render(); }
+});
+
+render();
+accounting();
+</script>
+</body>
+</html>

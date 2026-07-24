@@ -8,6 +8,10 @@ data/
 *.arrow
 *.bin
 
+# fastText LID model (downloaded by run_lid.py; ~938 KB)
+*.ftz
+lid.176.ftz
+
 # Python
 __pycache__/
 *.py[cod]
