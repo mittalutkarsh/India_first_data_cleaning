@@ -1,17 +1,16 @@
-"""Generate v5_playbook.html — how to actually build the V5 plan, written as an
-essay in a plain, intuition-first Substack voice, keeping the one table that
-earns its place (pantry vs plate, OPUS keep-fraction applied)."""
+"""Generate v5_playbook.html — the procedure for constructing the V5 plan,
+in a formal research-proposal register on the shared house style."""
 
 BUDGET_B = 3000.0
 
-# lane, share%, OPUS keep-fraction, unique-eligible tokens (B), note
+# lane, share%, selector keep-fraction, unique-eligible tokens (B), note
 PANTRY = [
-    ("General web", 37, 0.5, 8000, "plenty after dedup"),
-    ("Code", 22, 0.5, 600, "Stack v2, after licences + dedup"),
-    ("STEM", 12, 0.5, 350, "textbooks, science"),
-    ("Agentic", 13, 1.0, 0.08, "must be generated, not scraped"),
-    ("Reasoning", 7, 0.5, 30, "distilled traces, must scale"),
-    ("Indic", 8, 1.0, 150, "mostly raw web; verified tier is thin"),
+    ("General web", 37, 0.5, 8000, "ample after deduplication"),
+    ("Code", 22, 0.5, 600, "Stack v2, after licensing and deduplication"),
+    ("STEM", 12, 0.5, 350, "textbooks and scientific text"),
+    ("Agentic", 13, 1.0, 0.08, "must be generated; scraping is insufficient"),
+    ("Reasoning", 7, 0.5, 30, "distilled traces; requires scaling"),
+    ("Indic", 8, 1.0, 150, "predominantly unverified web; verified tier is limited"),
     ("Safety", 1, 1.0, 15, "curated"),
 ]
 
@@ -33,35 +32,35 @@ NAV = (
 )
 
 CSS = """
-:root { --bg:#FCFCFA; --ink:#1a1a22; --soft:#3d3d4a; --indigo:#2E357E; --marigold:#C77d1a;
-  --teal:#147D74; --rose:#B5476B; --line:#E6E6DF; --muted:#7a7a86; --panel:#f3f3ee; }
+:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
+  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
 *, *::before, *::after { box-sizing:border-box; }
-body { margin:0; background:var(--bg); color:var(--ink);
-  font-family:"Spectral", Georgia, "Times New Roman", serif; font-size:19px; line-height:1.75; -webkit-font-smoothing:antialiased; }
-a { color:var(--indigo); } a:hover { color:var(--marigold); }
-.nav { position:sticky; top:0; z-index:50; background:rgba(252,252,250,.95); border-bottom:1px solid var(--line); backdrop-filter:saturate(1.2) blur(4px); }
-.nav-in { max-width:1180px; margin:0 auto; padding:9px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
-.brand { font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
-.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; text-decoration:none; }
-.nav a:hover { color:var(--ink); } .nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
-.article { max-width:720px; margin:0 auto; padding:0 24px 90px; }
-.crumb { font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); margin-top:26px; }
-.kicker { font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--marigold); font-weight:600; margin-top:14px; }
-h1 { font-weight:700; font-size:clamp(30px,5vw,44px); line-height:1.12; margin:10px 0 6px; letter-spacing:-.01em; }
-.dek { font-size:20px; color:var(--soft); font-style:italic; margin:0 0 30px; }
-h2 { font-weight:700; font-size:25px; margin:40px 0 6px; letter-spacing:-.01em; }
-p { margin:18px 0; } .lead { font-size:21px; }
-.pull { border-left:3px solid var(--marigold); margin:30px 0; padding:4px 0 4px 22px; font-size:22px; line-height:1.4; font-style:italic; color:var(--indigo); }
-.ptable { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13.5px; margin:24px 0; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
-.ptable th, .ptable td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:right; }
-.ptable th:first-child, .ptable td:first-child { text-align:left; }
-.ptable th { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; } .nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:820px; margin:0 auto; padding:0 24px 80px; }
+.crumb { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding:18px 0 0; }
+.phead { padding:8px 0 14px; border-bottom:2px solid var(--ink); }
+.eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(26px,3.6vw,38px); margin:8px 0 8px; }
+.phead .dek { font-size:15px; color:#33334a; margin:0; }
+.sec { margin:28px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:20px; margin:0 0 6px; }
+p { margin:13px 0; } strong { font-weight:600; }
+.tbl { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.tbl th, .tbl td { padding:8px 11px; border-bottom:1px solid var(--line); text-align:right; }
+.tbl th:first-child, .tbl td:first-child { text-align:left; }
+.tbl th { font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
 .b { font-weight:600; padding:1px 7px; border-radius:5px; }
 .b-ok { background:#e6f5ef; color:#0f7a54; } .b-tight { background:#fbeede; color:#9a5a12; }
 .b-starved { background:#fceef2; color:var(--rose); } .b-inf { background:#f7e0e6; color:#8a1a3a; }
-.cap { font-size:14px; color:var(--muted); font-style:italic; margin-top:-8px; }
-.cta { margin:36px 0 0; padding:18px 22px; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:17px; }
-code { font-family:"IBM Plex Mono",monospace; font-size:15px; background:var(--panel); padding:1px 5px; border-radius:4px; }
+.cap { font-size:13px; color:var(--muted); margin-top:-6px; font-style:italic; }
+.callout { margin:16px 0; border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; padding:12px 16px; font-size:14px; color:#4a3a1e; }
+.foot { margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted); }
+code { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--panel); padding:1px 5px; border-radius:4px; }
 """
 
 
@@ -80,14 +79,9 @@ def pantry_rows():
         else:
             cls, lab = "b-ok", "ENOUGH"
         avail_s = ("%.2fB" % avail) if avail < 1 else "{:,}B".format(int(avail))
-        out += (
-            '<tr><td>' + lane + '</td>'
-            '<td>' + str(share) + '%</td>'
-            '<td>~' + ("%d" % round(trained)) + 'B</td>'
-            '<td>~' + ("%d" % round(presented)) + 'B</td>'
-            '<td>~' + avail_s + '</td>'
-            '<td><span class="b ' + cls + '">' + lab + '</span></td></tr>\n'
-        )
+        out += ("<tr><td>%s</td><td>%d%%</td><td>~%dB</td><td>~%dB</td><td>~%s</td>"
+                "<td><span class=\"b %s\">%s</span></td></tr>\n"
+                % (lane, share, round(trained), round(presented), avail_s, cls, lab))
     return out
 
 
@@ -95,113 +89,111 @@ def build_html():
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-        '<title>How to actually build the V5 plan</title>\n'
+        '<title>Constructing the V5 Plan — Procedure</title>\n'
         '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-        '<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600'
-        '&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">\n'
+        '<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700'
+        '&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">\n'
         '<style>' + CSS + '</style>\n</head>\n<body>\n' + NAV +
-        '<div class="article">\n'
-        '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> › how to build it</div>\n'
-        '  <div class="kicker">The hands-on version</div>\n'
-        '  <h1>How to actually build the plan.</h1>\n'
-        '  <p class="dek">The other page told you what the assignment wants. This one walks through it in the order I’d '
-        'actually do it — including the moment the arithmetic turns on you.</p>\n'
+        '<div class="wrap">\n'
+        '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> / Construction procedure</div>\n'
+        '  <div class="phead">\n'
+        '    <div class="eyebrow">V5 mixture &amp; curriculum</div>\n'
+        '    <h1>Construction Procedure</h1>\n'
+        '    <p class="dek">The recommended order of construction, and the supply analysis that constrains the '
+        'allocation. Quantities use an illustrative 3-trillion update-token budget.</p>\n'
+        '  </div>\n'
 
-        '  <p class="lead">There is a temptation to open a spreadsheet and start typing percentages. Resist it. If you pick '
-        'numbers first, you’ll fall in love with a plan you can’t actually cook. Do it in this order instead.</p>\n'
+        '  <div class="sec"><h2>1. Define the target benchmarks</h2>\n'
+        '    <p>The specification begins from the evaluation targets, not from the data. The set of benchmarks the model is '
+        'intended to satisfy determines its capability profile; the mixture is subsequently derived to satisfy that set. '
+        'The targets span coding, agentic tool use, mathematical and general reasoning, general knowledge, and Indic '
+        'understanding and generation.</p></div>\n'
 
-        '  <h2>1. Start from the exams, not the data</h2>\n'
-        '  <p>Before any proportions, write down the benchmarks you’re trying to win — the coding ones, the agentic ones, the '
-        'math and reasoning ones, the general-knowledge one, the Indic ones. That list <em>is</em> the model. Everything '
-        'downstream exists to win it. Then, for each exam, name the dataset that teaches it. People call this “composing '
-        'backward,” and it just means you choose the textbook after you know the test.</p>\n'
+        '  <div class="sec"><h2>2. Map each benchmark to a dataset</h2>\n'
+        '    <p>Each target is associated with the dataset that develops the corresponding capability — a procedure '
+        'sometimes termed composing backward. A capability lane without an identified source dataset is not a plan but an '
+        'aspiration, and is recorded as such.</p></div>\n'
 
-        '  <h2>2. Weigh your pantry before you plan the menu</h2>\n'
-        '  <p>Now go count what you actually own — and be ruthless about it. A published corpus size is an upper bound, not '
-        'trainable inventory. The number drops once you strip out bad licences, remove duplicates, filter for quality, take out '
-        'anything that overlaps your test sets, and re-tokenize with your own tokenizer. Count two things for every lane: how '
-        'many <em>samples</em> you have (that’s variety) and how many <em>tokens</em> (that’s depth). A million examples of '
-        'twenty tokens each teaches almost nothing.</p>\n'
-        '  <p>One subtlety that trips everyone up. For chat and agent data, you only train on the model’s own words — the user '
-        'turns and the raw tool logs are masked out. So a giant agent trace is mostly <em>not</em> trainable, and counting its '
-        'full size flatters you. (Plain web pretraining is different — there, every token counts.)</p>\n'
+        '  <div class="sec"><h2>3. Establish the trainable inventory</h2>\n'
+        '    <p>Effective inventory is measured, not assumed. Published corpus sizes are upper bounds; the usable quantity '
+        'is reduced by licensing, deduplication, quality filtering, contamination removal, and re-tokenisation. Two '
+        'measures are recorded per lane: the number of samples (variety) and the number of tokens (depth). For chat and '
+        'agent data, only the model-generated positions are supervised — user turns and tool outputs are loss-masked — so '
+        'the loss-bearing token count is materially smaller than the raw trace size. In ordinary causal pre-training, by '
+        'contrast, every position is a training target.</p></div>\n'
 
-        '  <h2>3. Portion the plate — and brace yourself</h2>\n'
-        '  <p>Now you write the mixture: a share of the budget for each lane, adding to a hundred. Say the budget is three '
-        'trillion tokens. Multiply the shares out so they’re concrete. This is where most first drafts feel finished.</p>\n'
-        '  <p>They aren’t, because of one detail. That automatic selector I mentioned typically keeps only about half of what you '
-        'show it. So to <em>train</em> on a billion tokens of code, you have to <em>present</em> two billion. Put “presented” '
-        'next to “available” and the picture changes. Watch what happens to code and STEM:</p>\n'
-        '  <table class="ptable"><tr><th>lane</th><th>share</th><th>trained</th><th>presented</th><th>you have</th><th>verdict</th></tr>\n'
+        '  <div class="sec"><h2>4. Specify the allocation</h2>\n'
+        '    <p>A share of the budget is assigned to each lane, summing to 100%, and each share is expressed in tokens '
+        '(share &times; budget) so that it can be reconciled against inventory.</p></div>\n'
+
+        '  <div class="sec"><h2>5. Apply the selector keep-fraction and reconcile against supply</h2>\n'
+        '    <p>The online selector retains only a fraction of the data it screens; consequently the quantity that must be '
+        '<em>presented</em> exceeds the quantity <em>trained</em> on. At a keep-fraction of 0.5, presented = trained &divide; '
+        '0.5. Reconciling presented tokens against unique available supply is the decisive check, and it materially '
+        'changes the assessment of the code and STEM lanes.</p>\n'
+        '    <table class="tbl"><tr><th>Lane</th><th>Share</th><th>Trained</th><th>Presented</th><th>Unique avail.</th><th>Status</th></tr>\n'
         + pantry_rows() +
-        '  </table>\n'
-        '  <p class="cap">Presented = trained ÷ the selector’s keep-rate. Verdict compares what you must present against the unique data you actually own.</p>\n'
+        '    </table>\n'
+        '    <p class="cap">Presented = trained &divide; selector keep-fraction. Status compares presented tokens against '
+        'unique eligible supply and the permitted repetition limit (≤4 epochs).</p></div>\n'
 
-        '  <div class="pull">Code and STEM looked fine until the selector doubled the bill. That’s the kind of thing a grader finds in ten seconds — so you find it first.</div>\n'
+        '  <div class="sec"><h2>6. Classify lane feasibility</h2>\n'
+        '    <p>The reconciliation identifies which lanes are supply-constrained. The <strong>agentic</strong> lane is '
+        'infeasible under current inventory: at approximately 2,000 trainable tokens per trajectory, the requirement '
+        'corresponds to on the order of 10<sup>8</sup> trajectories, which cannot be obtained by scraping. The '
+        '<strong>reasoning</strong> lane is starved. <strong>Long context</strong> is not represented as a lane at all: '
+        'sequence length is a property that data in other lanes already possesses (a long legal document in Indic is both '
+        'Indic and long), and treating it as an independent lane double-counts tokens. It is instead specified as a '
+        'per-phase packing constraint. The principal remedy for the constrained lanes is generation and distillation; the '
+        'most efficient lever is trace design, since trajectories that include planning, reasoning, and reflection yield '
+        'several times more trainable tokens per trajectory than bare tool calls.</p></div>\n'
 
-        '  <h2>4. Stare at the three empty shelves</h2>\n'
-        '  <p>The table is doing the most important job in the whole exercise: it shows you where you’re starving. Code and STEM '
-        'are merely tight. But <strong>agentic is infeasible</strong> as written — you’d need something like 190 million good '
-        'trajectories, and scraping can’t get you there. <strong>Reasoning is starved</strong>. And notice there’s no '
-        '“long-context” row at all, because long context isn’t a lane — it’s a property a document already has. A long Hindi '
-        'legal filing is Indic <em>and</em> long; counting it twice is cheating. Long context becomes a rule about how you pack '
-        'your batches in the later phases, not a slice of the pie.</p>\n'
-        '  <p>So your honest conclusion writes itself: you cannot scrape your way to agentic and reasoning data, you have to '
-        '<em>generate</em> it. And the cheapest lever isn’t more trajectories — it’s better ones. A trace that includes the '
-        'plan, the reasoning, and a reflection at the end yields several times more trainable tokens than a bare tool call. '
-        'Design beats scraping.</p>\n'
+        '  <div class="sec"><h2>7. Decompose the Indic allocation</h2>\n'
+        '    <p>The Indic allocation is reported across four provenance tiers. The verified tier binds hardest: genuinely '
+        'verified material across the target languages amounts to only a few billion unique tokens, so at a repetition '
+        'limit of four epochs the maximum trainable verified quantity is small, and any larger verified figure would imply '
+        'excessive repetition. The verified tier is therefore capped at its supported level and the remainder is carried '
+        'by the unverified and translated tiers, with the associated quality risk stated. Per-language protection is '
+        'expressed as minimum token counts, not as a per-language percentage of the total budget, since the latter would '
+        'exceed the entire Indic allocation once summed across all languages.</p></div>\n'
 
-        '  <h2>5. Grade the Indian-language shelf</h2>\n'
-        '  <p>Split Indic into its four trust tiers, and let the honest numbers hurt a little. Genuinely verified material — '
-        'Wikipedia, textbooks — across all those languages is only a few billion unique tokens. If your plan quietly wanted ten '
-        'times that in the verified tier, you’d be running the same Wikipedia through the model twenty times, which memorizes '
-        'rather than teaches. So cap the repeats at a handful, let the verified tier be as small as it truly is, and be explicit '
-        'that the rest leans on cleaned web and translation, with the quality risk that implies.</p>\n'
-        '  <p>And when you protect a small language, protect it in <em>tokens</em>, not percentages. “Every language gets at '
-        'least 0.3% of the budget” sounds fair until you notice twenty-two languages times 0.3% is more than the whole Indic '
-        'slice. Say “Hindi at least this many billion, each small language at least that many,” and sample the rest by '
-        'temperature.</p>\n'
+        '  <div class="sec"><h2>8. Specify floors and the annealing reserve</h2>\n'
+        '    <p>Protected minima are enforced at batch granularity rather than as run-level averages; a run-level floor '
+        'permits the selector to suppress a lane throughout training and satisfy the constraint only in aggregate. Safety '
+        'is represented as an explicit lane so that its floor is consistent with a mixture summing to 100%. The annealing '
+        'reserve is held within the budget, not added to it, and its contribution is validated against a control run '
+        'without annealing.</p></div>\n'
 
-        '  <h2>6. Keep the vitamins, save the dessert</h2>\n'
-        '  <p>Set your floors — the minimums the selector can’t cross — and enforce them <em>constantly</em>, not as a '
-        'run-long average. A floor that’s only true on average lets the selector starve a lane for ninety percent of training '
-        'and backfill at the end, which is worse than useless. And put safety in the plate as a real lane; a floor for something '
-        'that isn’t in your hundred percent is just an inconsistency waiting to be caught.</p>\n'
-        '  <p>Then carve out the dessert: a small reserve of your very best data for the cooldown at the end. Keep it '
-        '<em>inside</em> the budget, not stacked on top, and remember its value is a claim you’ll test against a run with no '
-        'cooldown — not an article of faith.</p>\n'
+        '  <div class="sec"><h2>9. Define the curriculum phases</h2>\n'
+        '    <p>The single mixture is expanded into a small number of phases — broad, general-web-dominant data first, '
+        'followed by code, science, and reasoning, with the scarce lanes concentrated later and the premium data reserved '
+        'for the final phase. Each phase specifies its own budget, maximum sequence length, and mixture summing to 100%; '
+        'the budget-weighted average of the phase mixtures reproduces the global mixture. Transitions between phases are '
+        'gradual, to avoid the gradient instability associated with abrupt distribution shifts. Difficulty is assigned by '
+        'measurement — for example, the failure rate of a reference model, or pass@k on verifiable items — rather than by '
+        'inspection, and the reasoning-depth label is defined by the shortest correct trace to avoid inducing length '
+        'inflation.</p></div>\n'
 
-        '  <h2>7. Write the weekly schedule</h2>\n'
-        '  <p>Turn the single mixture into a handful of phases — broad and web-heavy first, then code and science and reasoning, '
-        'the scarce lanes concentrated late, the premium data last. Each phase gets its own budget, its own maximum sequence '
-        'length, and its own mixture that adds to a hundred; the phases, weighted by size, should average back to your global '
-        'mixture. Blend each phase into the next so nothing lurches. And decide difficulty by measurement, not by vibe — a '
-        'problem is “hard” if a small reference model fails it most of the time — and let the depth tag be earned by the '
-        'shortest correct answer, or you’ll teach the model to ramble whenever you ask it to think hard.</p>\n'
+        '  <div class="sec"><h2>10. Define the validation protocol</h2>\n'
+        '    <p>Every quantity is treated as a hypothesis and tested at the 1B and 3B scales before full-scale commitment. '
+        'Evaluations are chosen to exhibit signal at those scales; the most demanding benchmarks return near-zero at 1B '
+        'and are uninformative there. Capability contrasts are amplified (for example, 4% versus 12% Indic) to establish '
+        'the direction of an effect, and recipes are promoted on rank stability across scales rather than on absolute '
+        'scores, which shift with scale.</p></div>\n'
 
-        '  <h2>8. Trial it on a junior</h2>\n'
-        '  <p>Everything above is a hypothesis. Test it on a one-billion and a three-billion model before you spend the real '
-        'run. Pick evaluations that actually show signal at that size — the giant benchmarks read zero for everyone at one '
-        'billion, so they tell you nothing. To see if Indic helps, don’t compare 4% against 5%; compare 4% against 12% so the '
-        'effect is visible, then interpolate. And promote a recipe because it <em>ranks</em> above the others across both sizes, '
-        'not because of the exact score, since the scores shift as the model grows.</p>\n'
+        '  <div class="sec"><h2>11. Prioritise data acquisition</h2>\n'
+        '    <p>The supply-constrained lanes define the acquisition queue for the cleaning pipeline, in order: agentic '
+        'trajectory generation, reasoning-trace distillation, long-document collection, and additional verified Indic '
+        'material (textbooks, government records, and news, since encyclopaedic text alone is insufficient). The mixture '
+        'plan thereby determines the priorities of the upstream pipeline.</p></div>\n'
 
-        '  <h2>9. Restock the empty shelves</h2>\n'
-        '  <p>Finally, hand the starvation list back to the cleaning pipeline. It now has a priority queue, in order: generate '
-        'agentic trajectories, distill reasoning traces, gather genuinely long documents, and hunt down more verified Indic '
-        '(textbooks, government records, news — because Wikipedia alone won’t fill the tier). That’s the whole loop. The plan '
-        'tells the pipeline what to go get; the pipeline feeds the next version of the plan.</p>\n'
+        '  <div class="callout">The complete plan is provided as <code>V5_PLAN.md</code>, and the arithmetic above is '
+        'reproduced and validated by <code>mixture.py</code>, which derives the global mixture from the phase mixtures, '
+        'applies the selector keep-fraction, and exits with an error if any phase mixture does not sum to 100% or any lane '
+        'is infeasible.</div>\n'
 
-        '  <h2>What you hand in</h2>\n'
-        '  <p>A README that a skeptic could read and push on at every number — and, ideally, a small script that '
-        're-derives the tables and refuses to run if anything doesn’t add up. That script is the difference between “trust me” '
-        'and “here, check it.”</p>\n'
-
-        '  <div class="cta">Both live in the repo now: <code>V5_PLAN.md</code> is the defended write-up, and '
-        '<code>mixture.py</code> re-computes this table, applies the selector’s keep-rate, and exits with an error if a phase '
-        'doesn’t sum to a hundred or a lane is impossible. Run <code>python3 mixture.py</code> to watch it check itself. '
-        '<a href="v5_brief.html">← back to what the ask is</a></div>\n'
+        '  <div class="foot"><a href="v5_brief.html">&larr; Specification brief</a></div>\n'
         '</div>\n</body>\n</html>\n'
     )
 

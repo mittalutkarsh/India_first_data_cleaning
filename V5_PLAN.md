@@ -79,7 +79,7 @@ huge trace is *mostly not trainable*. For **plain causal pre-training** every
 token is a next-token target. We therefore report *loss-bearing* tokens per lane,
 not raw size.
 
-## 5. The global mixture and the pantry-vs-plate check
+## 5. The global mixture and the requirement-vs-supply reconciliation
 
 The **global mixture is the token-weighted average of the phase mixtures** (§6),
 so the two can never disagree. Emergent global at 3T:
@@ -96,9 +96,10 @@ so the two can never disagree. Emergent global at 3T:
 
 **Key consequence (the highest-value finding).** OPUS keeps ~50% of screened
 lanes, so *presented = trained ÷ 0.5*. Code must **present 1,350B** against ~600B
-unique and STEM **697B** against ~350B — both flip from "enough" to **TIGHT**
-(you re-present unique data ~2×). Agentic is **INFEASIBLE** as scraped; reasoning
-is **STARVED**. This is the plan's honest core, and it drives §8 and §10.
+unique, and STEM **697B** against ~350B — both are reclassified from "sufficient"
+to **TIGHT** (unique data must be re-presented ~2×). Agentic is **INFEASIBLE**
+under scraping; reasoning is **STARVED**. This reconciliation is the substantive
+core of the specification and determines §8 and §10.
 
 *(3T = update tokens; the presented column is the candidate pool OPUS screens.)*
 
@@ -153,7 +154,7 @@ verifier-backed distillation; cap epochs at 4.
   a 20B proxy run is 0.8B, below MILU's noise floor), then interpolate.
 - **Tiers:** verified (T0) / unverified (T1) / translated (T3) / synthetic (T2).
   **The verified cap binds:** T0 unique ≈ 5B across ~22 languages → at ≤4 epochs
-  the most verified-Indic you can train is **~20B**, but 30% of 245B would be 74B.
+  the maximum trainable verified-Indic quantity is **~20B**, whereas 30% of 245B would be 74B.
   So verified is capped at ~20B and the **remainder shifts to T1/T3 with a stated
   quality-risk tradeoff** — not 10–30 epochs of Wikipedia.
 - **Floors are per-language token minimums** (e.g. Hindi ≥ 20B, each low-resource
