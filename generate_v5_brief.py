@@ -1,55 +1,75 @@
-"""Generate v5_brief.html — a plain-English explainer of the V5
-mixture-and-curriculum assignment (what is being asked, with examples)."""
+"""Generate v5_brief.html — a plain-English, transcript-faithful explainer of
+the V5 mixture-and-curriculum assignment (Era V5 session)."""
 
 DELIVERABLES = [
-    ("01", "A share of the budget for every capability",
-     "The model trains on a fixed pile of tokens — the <b>budget</b> (say ~6 trillion). "
-     "You slice that pie, one slice per <b>capability slot</b> (a skill the model needs). The slices must add to 100%.",
-     "English 35% · Indic 22% · Code 18% · Math/Science 10% · Reasoning 6% · Agentic 4% · Long-context 3% · Safety/Other 2%",
-     "These slice sizes are the <b>targets</b> the whole cleaning pipeline is trying to fill. The Manifest stage admits each shard into one of these slots."),
+    ("01", "A defended share of the budget for every capability lane",
+     "The budget is a fixed pile of tokens (the course says <b>2.4–4 trillion</b>). Slice it, one slice per "
+     "<b>capability lane</b>, and be ready to <b>defend every number</b> to a skeptical reviewer.",
+     "General web 34% · Code 25% · STEM 12% · Agentic/tool-calls 16% · Reasoning traces · Long-context · Indic — summing to 100%",
+     "Web stays big because <b>common sense lives on the web</b>. A code-only model writes code that runs but makes no sense (“ask the user how many index fingers each human has”)."),
 
-    ("02", "The Indic slot, split by tier — not one number",
-     "Don’t hide behind “Indic 22%”. Break that 22% into the four <b>provenance tiers</b> you already built, so the plan is honest "
-     "about how much of your Indian-language data is high-trust vs. lower-trust.",
-     "Inside the 22% Indic → Verified (T0) 40% · Unverified web (T1) 35% · Translated (T3) 15% · Synthetic (T2) 10%",
-     "The tiers are exactly the T0–T3 from the <a href='data.html'>Data</a> page. You’d love it to be all verified, but there isn’t enough — so you say clearly how much you’re leaning on weaker tiers."),
+    ("02", "The Indic lane split across all four tiers — not one number",
+     "The instructor asked explicitly for a “full end-to-end verifiable / unverified / translated / synthetic” breakdown of Indic. "
+     "Don’t hide behind one headline % — say how much leans on weaker tiers.",
+     "Inside Indic → Verified (T0) · Unverified web (T1, Sangraha/IndicCorp) · Translated (T3) · Synthetic (T2, distilled). State when Sanskrit / Urdu / other languages enter, if ever.",
+     "Tiers are the T0–T3 from the <a href='data.html'>Data</a> page. Indic is <b>the differentiator</b> — “an intelligent Indian who speaks an Indian language.”"),
 
-    ("03", "Name the agentic, reasoning &amp; long-context slots — and point each at a dataset",
-     "Three modern capabilities are easy to forget and hard to source, so the plan must call them out <b>by name</b> and say "
-     "which dataset from the inventory fills each one.",
-     "Reasoning → a step-by-step math/logic set · Agentic → a tool-use / function-call set · Long-context → book-length &amp; multi-document set",
-     "“Agentic” = using tools and taking multi-step actions. “Reasoning” = showing its working. “Long-context” = handling very long inputs. Each needs its own data, not general web text."),
+    ("03", "Name the agentic, reasoning &amp; long-context lanes — and point each at a dataset",
+     "These three are the newest, scarcest lanes. Name them and map each to a concrete dataset from the inventory that fills it.",
+     "Agentic/function-call → ToolBench / Bolt · Reasoning → distilled chain-of-thought + math sets · Long-context → book-length &amp; multi-doc traces (e.g. long cloud-code sessions)",
+     "Agentic = plan → call tools → read results → recover on failure → continue. This is exactly the cloud-code / cursor traces you all generate."),
 
-    ("04", "The protected always-on floor",
-     "A <b>selector</b> (an automatic system that keeps re-tuning the data mix to lower the loss fastest) will happily starve anything "
-     "that doesn’t pay off immediately. The <b>floor</b> is a set of minimums it is <i>forbidden</i> to cross.",
-     "Odia ≥ 0.5% at all times · Safety data ≥ 1% · smallest Indic languages ≥ 0.3% each — no matter what the optimizer prefers",
-     "This protects fragile, low-resource things (small Indian languages, safety) from quietly vanishing because they’re “inefficient”."),
+    ("04", "The protected always-on floor (because OPUS would starve these)",
+     "During training an online selector called <b>OPUS</b> keeps only samples that move the “benchmark-weak” weights — but it "
+     "peeks at just the <b>first ~512 tokens</b> and its benchmarks are mostly English/coding. So it <b>throws away Indic and "
+     "agentic</b> (agentic traces look like logs early). The floor is the minimum it may never cross.",
+     "Indic ≥ X% and agentic ≥ Y% <b>always on</b>, regardless of what OPUS prefers — plus safety and the smallest Indic languages.",
+     "This is the real, specific reason the floor exists — not a vague “protect fragile data”. It’s to survive OPUS."),
 
-    ("05", "The anneal reserve (held back for the cooldown)",
-     "Training ends with a <b>cooldown / anneal</b> phase where the learning rate ramps to zero. What the model sees in that window "
-     "sticks disproportionately. So you <b>hold back</b> a reserve of your very best data and spend it only then.",
-     "Reserve 5% of the budget — premium verified Indic + textbook-grade reasoning — fed only in the final ~10% of training",
-     "It’s the “peak-nutrition week before the race”. If you burn your best data early, the cooldown has nothing special to lock in."),
+    ("05", "The anneal reserve — best data held back for the cooldown",
+     "Training ends with a short <b>anneal / cooldown</b> (~last 2%, learning rate → 0) where the highest-quality “anti-matter” "
+     "data has outsized effect — “the young Einstein ready to write the relativity paper.” Hold your best data back for it.",
+     "Reserve premium verified Indic + PhD-grade LaTeX/math + clean agentic traces, fed only in the final cooldown — never spent early.",
+     "Feed PhD data too early and the model “consumes without learning.” The labs guard exactly this data; if we collect it, we win."),
 
-    ("06", "Difficulty bands &amp; reasoning-length bands (with an example each)",
-     "Group your data two more ways so the schedule (the <b>curriculum</b>) can be deliberate: by how <b>hard</b> it is, and by how "
-     "<b>long the reasoning</b> is. Give a concrete example for every band.",
-     "Difficulty — Easy: “Capital of India? → New Delhi.” · Medium: a 4-step profit-percent word problem · Hard: “Prove √2 is irrational.”<br>"
-     "Reasoning-length — Short: “2+3=5.” · Medium: a 4–6 step solution · Long: a multi-page proof or multi-hop research answer",
-     "Too much easy/short data and the model never learns to think slowly; too much hard/long and early training destabilises. Bands let you schedule easy→hard."),
+    ("06", "Difficulty bands &amp; reasoning-depth bands, each with an example",
+     "Two more groupings drive the schedule: how <b>hard</b> a sample is, and how <b>long the reasoning</b> should be. The depth "
+     "is <b>controllable</b> via low/medium/high/ultra <b>thinking tags</b> — so you need paired short- and long-answer traces and "
+     "must define each band’s token boundary.",
+     "Difficulty — Easy: “Capital of India? → New Delhi.” · Hard: “Prove √2 is irrational.”<br>"
+     "Depth — Low: “43÷17 ≈ 2.5” in ~20 tokens · Ultra: a multi-hour proof in tens of thousands of tokens (same question, tagged)",
+     "You can’t fake depth by truncating tokens — the model must be <i>trained</i> to think more when told to. That needs tagged data."),
 
-    ("07", "Prove the numbers with cheap 1B &amp; 3B proxy runs first",
-     "Every number above is a <b>guess</b> until tested. So you commit to trialling recipes on tiny 1-billion and 3-billion models "
-     "(cheap) and only scaling up the ones that actually win — before spending the full 40B run.",
-     "Run Recipe A (22% Indic) vs Recipe B (28% Indic) at 1B for 20B tokens → compare Indic &amp; English evals → promote the winner to 3B → only then 40B",
-     "The rule that runs through the whole course: <b>a data decision is a hypothesis until a cheap experiment has tested it.</b>"),
+    ("07", "A curriculum: ordered stages, a difficulty ladder, and smooth band overlap",
+     "The <b>order</b> matters as much as the mix. Nursery → school → undergrad → PhD: broad web first (learn language &amp; common "
+     "sense), then code/STEM/reasoning, with long sequences introduced late. And bands must <b>overlap</b>, not switch sharply — "
+     "in V4 a sudden band change spiked the gradients.",
+     "Long-context = grow the sequence length in stages (4K → 8K → 16K → …; one length per batch). Blend ~15–20% of the next band into the current one so the transition is smooth (gradient norm stays ~0.2).",
+     "A sharp jump “shocks” the model — like being dropped into a PhD course straight after 12th grade."),
 
-    ("08", "Keep cleaning — now aimed at the starved slots",
-     "The 8-stage cleaning pipeline keeps running toward the cumulative token target, but <b>prioritised</b>: pointed at whichever "
-     "slot the mixture shows is <b>starved</b> (you want more of it than you have cleaned).",
-     "Plan wants 6% reasoning but only 2% is cleaned so far → point Cleaning → Language → Quality → … at reasoning sources next",
-     "The mixture plan is the <i>why</i> behind all the cleaning you built: it tells the pipeline what to go get next."),
+    ("08", "Prove every number with cheap 1B &amp; 3B proxy runs — then keep cleaning the starved lanes",
+     "Every share above is a <b>hypothesis</b>. Commit to testing recipes at <b>1B and 3B</b> (V4’s small sizes) before the full run, "
+     "and keep the cleaning pipeline aimed at whichever lane is <b>starved</b>.",
+     "Recipe A vs B at 1B for ~20B tokens → compare Indic &amp; English evals → promote the winner to 3B → only then full scale. OPUS then gives ~8× token efficiency during the run.",
+     "The rule behind the whole course: <b>a data decision is a hypothesis until a cheap experiment has tested it.</b>"),
+]
+
+BENCH_MAP = [
+    ("SWE-bench (+ Pro / Live)", "Coding", "Real GitHub issues + repos; write a patch that passes hidden tests"),
+    ("Terminal-bench", "Agentic", "Tasks solved inside a real shell — install, configure, run"),
+    ("τ-bench / BFCL", "Agentic", "Tool-use &amp; function-calling across many turns (retail, airline, APIs)"),
+    ("WebArena / GAIA / BrowseComp", "Agentic", "Browse real sites, gather &amp; distill an answer"),
+    ("AIME / FrontierMath", "Reasoning", "Olympiad → research-level math; long derivations"),
+    ("MMLU", "General web", "UPSC-style general knowledge — needs broad web/common sense"),
+    ("MILU / Indic evals", "Indic", "Indian-language understanding &amp; generation"),
+]
+
+INVENTORY = [
+    ("Stack v2", "code", "~600M samples", "~900B tok (~25%)", "Permissive source across 100 languages"),
+    ("ToolBench", "agentic", "~120k samples", "~80M tok", "Multi-tool instructions over real REST APIs — tiny per-sample"),
+    ("DCLM / FineWeb", "web + STEM", "very large", "trillions", "High-quality general web &amp; science"),
+    ("Reasoning traces", "reasoning", "to build / distil", "—", "Short↔long tagged chains; not freely available"),
+    ("Sangraha / IndicCorp / Wikipedia", "indic", "251B / 20.9B / 10–90M", "—", "The Indic tiers T0–T1"),
 ]
 
 CSS = """
@@ -71,10 +91,9 @@ a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:under
 .hero p { font-size:15px; color:#33334a; margin:0; max-width:74ch; }
 .analogy { margin:22px 0 0; border:1px solid var(--line); border-left:4px solid var(--marigold); border-radius:0 12px 12px 0; background:#fff; padding:16px 20px; }
 .analogy h3 { margin:0 0 6px; font-family:"Spectral",serif; font-size:18px; }
-.analogy p { margin:0; font-size:14px; color:#33334a; }
-.analogy b { color:var(--ink); }
-.sec { margin:30px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:24px; margin:0 0 4px; }
-.sec .lead { font-size:13px; color:var(--muted); margin:0 0 16px; }
+.analogy p { margin:0; font-size:14px; color:#33334a; } .analogy b { color:var(--ink); }
+.sec { margin:32px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:24px; margin:0 0 4px; }
+.sec .lead { font-size:13px; color:var(--muted); margin:0 0 16px; max-width:80ch; }
 .card { border:1px solid var(--line); border-radius:14px; background:#fff; padding:18px 20px; margin-bottom:13px; }
 .card .top { display:flex; align-items:baseline; gap:12px; }
 .card .num { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:13px; color:#fff; background:var(--indigo); border-radius:8px; padding:3px 9px; }
@@ -84,6 +103,21 @@ a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:under
 .card .eg .lbl { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--teal); font-weight:600; display:block; margin-bottom:5px; }
 .card .conn { font-size:12.5px; color:var(--muted); margin:11px 0 0; }
 .card .conn .lbl { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
+.tbl { width:100%; border-collapse:collapse; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.tbl th, .tbl td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); vertical-align:top; }
+.tbl th { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+.tbl code { font-family:"IBM Plex Mono",monospace; font-size:11.5px; }
+.tag { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:1px 7px; border-radius:5px; background:#eef0fb; color:var(--indigo); }
+.mask { display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; }
+.mtok { font-family:"IBM Plex Mono",monospace; font-size:12px; padding:4px 9px; border-radius:6px; }
+.m-green { background:#e6f5ef; color:#0f7a54; border:1px solid #b9e2d1; }
+.m-gray { background:var(--panel); color:var(--muted); border:1px solid var(--line); }
+.m-violet { background:#f3edfa; color:#7A3FB0; border:1px solid #ddc9ee; }
+.stages { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:12px; overflow:hidden; }
+.stg { background:#fff; padding:12px 13px; }
+.stg .s { font-family:"IBM Plex Mono",monospace; font-size:10px; color:var(--marigold); font-weight:600; }
+.stg .t { font-weight:600; font-size:13.5px; margin:2px 0; }
+.stg .d { font-size:11.5px; color:var(--muted); }
 .toy { border:2px solid var(--indigo); border-radius:14px; background:#fff; overflow:hidden; }
 .toy-hd { background:var(--indigo); color:#fff; padding:10px 16px; font-family:"IBM Plex Mono",monospace; font-size:12px; font-weight:600; letter-spacing:.06em; }
 .toy-bd { padding:16px 18px; }
@@ -98,6 +132,8 @@ a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:under
 .rule { margin:26px 0 0; border-radius:14px; background:#16162a; color:#fff; padding:22px 24px; }
 .rule .k { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--marigold); }
 .rule .q { font-family:"Spectral",serif; font-size:clamp(19px,2.6vw,26px); margin:8px 0 0; line-height:1.3; }
+.submit { border:1px solid var(--line); border-left:4px solid var(--teal); border-radius:0 12px 12px 0; background:#f2faf8; padding:16px 20px; font-size:14px; color:#22483d; }
+.submit b { color:#0f5c43; }
 """
 
 
@@ -105,12 +141,18 @@ def build_html():
     cards = ""
     for num, title, plain, eg, conn in DELIVERABLES:
         cards += (
-            '<div class="card"><div class="top"><span class="num">' + num + '</span>'
-            '<h3>' + title + '</h3></div>'
+            '<div class="card"><div class="top"><span class="num">' + num + '</span><h3>' + title + '</h3></div>'
             '<div class="plain">' + plain + '</div>'
             '<div class="eg"><span class="lbl">Concrete example</span>' + eg + '</div>'
-            '<div class="conn"><span class="lbl">How it connects</span> ' + conn + '</div></div>\n'
+            '<div class="conn"><span class="lbl">Why it matters</span> ' + conn + '</div></div>\n'
         )
+    bench = ""
+    for name, lane, why in BENCH_MAP:
+        bench += '<tr><td><code>' + name + '</code></td><td><span class="tag">' + lane + '</span></td><td>' + why + '</td></tr>\n'
+    inv = ""
+    for name, lane, samples, toks, note in INVENTORY:
+        inv += ('<tr><td><code>' + name + '</code></td><td><span class="tag">' + lane + '</span></td>'
+                '<td>' + samples + '</td><td>' + toks + '</td><td>' + note + '</td></tr>\n')
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
@@ -122,69 +164,115 @@ def build_html():
         '<style>' + CSS + '</style>\n</head>\n<body>\n'
         '<div class="nav"><div class="nav-in">\n'
         '  <span class="brand">India-First 40B</span>\n'
-        '  <a href=\"overview.html\">Overview</a>\n'
-        '  <a href=\"data.html\">Data</a>\n'
-        '  <a href=\"index.html\">Cleaning</a>\n'
-        '  <a href=\"language.html\">Language</a>\n'
-        '  <a href=\"quality.html\">Quality</a>\n'
-        '  <a href=\"dedup.html\">Dedup</a>\n'
-        '  <a href=\"pii.html\">PII</a>\n'
-        '  <a href=\"decontam.html\">Decontam</a>\n'
-        '  <a href=\"tokenizer.html\">Tokenizer</a>\n'
-        '  <a href=\"manifest.html\">Manifest</a>\n'
-        '  <a href=\"v5_brief.html\" class=\"active\">V5 Plan</a>\n'
+        '  <a href="overview.html">Overview</a>\n'
+        '  <a href="data.html">Data</a>\n'
+        '  <a href="index.html">Cleaning</a>\n'
+        '  <a href="language.html">Language</a>\n'
+        '  <a href="quality.html">Quality</a>\n'
+        '  <a href="dedup.html">Dedup</a>\n'
+        '  <a href="pii.html">PII</a>\n'
+        '  <a href="decontam.html">Decontam</a>\n'
+        '  <a href="tokenizer.html">Tokenizer</a>\n'
+        '  <a href="manifest.html">Manifest</a>\n'
+        '  <a href="v5_brief.html" class="active">V5 Plan</a>\n'
         '</div></div>\n'
         '<div class="wrap">\n'
         '  <div class="hero">\n'
-        '    <div class="eyebrow">The assignment, in plain words</div>\n'
-        '    <h1>Write the model’s training diet &amp; study schedule — and prove it works.</h1>\n'
-        '    <p>The task is to draft the <b>mixture-and-curriculum plan</b> for the next model version (V5): a written '
-        'specification, specific enough to defend, that says exactly what data the model trains on, in what proportions, '
-        'in what order, with the best data saved for last — plus a promise to test the recipe cheaply before trusting '
-        'it at full scale. This page explains every part of that ask, with an example for each.</p>\n'
+        '    <div class="eyebrow">The Era-V5 assignment, in plain words</div>\n'
+        '    <h1>Write the model’s training diet &amp; study schedule — and defend every number.</h1>\n'
+        '    <p>Draft the <b>mixture-and-curriculum plan for V5</b> as a written spec: exactly what data the model trains '
+        'on, in what proportions, <b>in what order</b>, with the best data saved for last — plus a promise to test the '
+        'recipe cheaply first. It’s graded <b>subjectively</b>: a reviewer will push on every number, so the marks are in '
+        'your reasoning and evidence. Submit it as a <b>GitHub README</b>, not a widget.</p>\n'
         '  </div>\n'
         '  <div class="analogy">\n'
         '    <h3>The whole thing in one analogy</h3>\n'
-        '    <p>You are a <b>coach planning a season</b> for an athlete (the model). The <b>mixture</b> is the meal plan '
-        '(how much of each food); the <b>curriculum</b> is the practice schedule (what to drill, in what order). You '
-        'protect a few non-negotiables (the <b>floor</b>), you save peak nutrition for the week before the event (the '
-        '<b>anneal reserve</b>), and you trial the whole plan on a junior athlete first (the <b>1B/3B proxy runs</b>) '
-        'before committing your star.</p>\n'
+        '    <p>You’re a <b>coach planning a season</b> for an athlete (the model). The <b>mixture</b> is the meal plan; '
+        'the <b>curriculum</b> is the practice schedule (nursery → PhD). You pin a few non-negotiables (the <b>floor</b>), '
+        'save peak nutrition for the week before the event (the <b>anneal reserve</b>), ease between training blocks so the '
+        'body isn’t shocked (<b>band overlap</b>), and trial the plan on a junior first (the <b>1B/3B proxy runs</b>).</p>\n'
+        '  </div>\n'
+        '  <div class="sec">\n'
+        '    <h2>The core method: compose <em>backward</em> from the benchmarks</h2>\n'
+        '    <p class="lead">You don’t pick percentages by taste. First decide which <b>benchmarks</b> you’re trying to win '
+        '(that defines the model). Then map each benchmark to the dataset that fills it. The mixture is the deliberate '
+        'answer to “what are we trying to win?” The target here is clear: <b>coding &amp; agentic first</b>, then '
+        'controllable-depth reasoning, long-context, and <b>Indic as the differentiator</b>.</p>\n'
+        '    <table class="tbl"><tr><th>Benchmark</th><th>Lane</th><th>What it tests → what data fills it</th></tr>\n' + bench + '</table>\n'
+        '    <p class="note" style="font-size:12px;color:#656579;margin-top:8px">Why is web still ~34%? Because <b>common '
+        'sense and world knowledge live on the web</b>. Strip it out and the code runs but doesn’t make sense.</p>\n'
         '  </div>\n'
         '  <div class="sec">\n'
         '    <h2>The 8 things your plan must contain</h2>\n'
-        '    <p class="lead">Each is a required part of the written spec. Plain meaning, a concrete example, and how it ties back to the pipeline you built.</p>\n'
-        + cards +
+        '    <p class="lead">Each is required. Plain meaning → a concrete example → why it matters.</p>\n' + cards +
+        '  </div>\n'
+        '  <div class="sec">\n'
+        '    <h2>Two things that trip everyone up</h2>\n'
+        '    <p class="lead">Miss these and your plan won’t survive review.</p>\n'
+        '    <div class="card"><div class="top"><h3>① You only train on the model’s own tokens (loss masking)</h3></div>\n'
+        '      <div class="plain">In an agent trace, the loss is computed <b>only on what the model generates</b>. The user’s '
+        'turns and the <b>tool outputs/logs are masked</b> (the model reads them but is never punished for them) — training '
+        'on a raw error log would just teach it to imitate a compiler. Verifier results become <b>reward</b>. '
+        '(Pre-training is different: there, every token is in the loss.)</div>\n'
+        '      <div class="mask">'
+        '<span class="mtok m-green">assistant text = trained</span>'
+        '<span class="mtok m-gray">user turn = masked</span>'
+        '<span class="mtok m-gray">tool output / log = masked</span>'
+        '<span class="mtok m-violet">verifier = reward</span></div>\n'
+        '      <div class="conn" style="margin-top:11px"><span class="lbl" style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--marigold);font-weight:600">Consequence</span> '
+        'A huge agentic trace is <i>mostly not trainable</i> — so size lanes by <b>trainable</b> tokens, not raw tokens.</div>\n'
+        '    </div>\n'
+        '    <div class="card"><div class="top"><h3>② Size in two dimensions: samples <span style="color:#999">(variety)</span> and tokens <span style="color:#999">(depth)</span></h3></div>\n'
+        '      <div class="plain">“400k examples” means nothing if each is 20k tokens of low quality. <b>Number of samples</b> '
+        'buys variety; <b>number of tokens</b> buys depth. A plan states both per lane. Example: ToolBench is 120k samples '
+        'but only ~80M tokens (tiny each); Stack v2 is 600M samples and ~900B tokens.</div>\n'
+        '    </div>\n'
+        '  </div>\n'
+        '  <div class="sec">\n'
+        '    <h2>The curriculum — ordered stages, nursery → PhD</h2>\n'
+        '    <p class="lead">The order is a real design decision. Broad web first to learn language &amp; common sense, then '
+        'harder/narrower data, long sequences last, and the premium anneal at the very end. Bands must <b>overlap</b> — a '
+        'sharp switch spikes the gradients (a real V4 lesson).</p>\n'
+        '    <div class="stages">\n'
+        '      <div class="stg"><div class="s">STAGE 1 · ~95%</div><div class="t">Pre-training</div><div class="d">General web heavy; loss on every token. Web → STEM → code as it matures.</div></div>\n'
+        '      <div class="stg"><div class="s">STAGE 2 · ~2%</div><div class="t">Mid / anneal</div><div class="d">Short cooldown, LR→0; PhD-grade documents locked in.</div></div>\n'
+        '      <div class="stg"><div class="s">STAGE 3</div><div class="t">SFT</div><div class="d">Agent traces, chat, code-fix — loss only on model outputs.</div></div>\n'
+        '      <div class="stg"><div class="s">STAGE 4</div><div class="t">Reasoning</div><div class="d">Short↔long tagged traces; teaches controllable depth.</div></div>\n'
+        '      <div class="stg"><div class="s">STAGE 5</div><div class="t">Preference / RL</div><div class="d">Alignment (GRPO etc.) — a later session, not this plan.</div></div>\n'
+        '    </div>\n'
+        '    <p class="note" style="font-size:12.5px;color:#33334a;margin-top:12px">This assignment centres on the '
+        '<b>pre-training curriculum + Stage 2/3</b>. Long-context = <b>growing the sequence length</b> in steps '
+        '(4K → 8K → 16K → …), one length per batch. Blend ~15–20% of the next band into the current one so the transition '
+        'is smooth.</p>\n'
+        '  </div>\n'
+        '  <div class="sec">\n'
+        '    <h2>The data inventory your lanes point at</h2>\n'
+        '    <p class="lead">A slot is only real if a dataset fills it. Sizes from the session’s inventory widget.</p>\n'
+        '    <table class="tbl"><tr><th>Dataset</th><th>Lane</th><th>Samples</th><th>Tokens</th><th>Note</th></tr>\n' + inv + '</table>\n'
         '  </div>\n'
         '  <div class="sec">\n'
         '    <h2>What a finished (toy) plan looks like</h2>\n'
-        '    <p class="lead">A miniature, illustrative version — so you can see the <em>shape</em> of the deliverable. These numbers are made up to show the format, not a real recommendation.</p>\n'
-        '    <div class="toy"><div class="toy-hd">V5 MIXTURE &amp; CURRICULUM — TOY EXAMPLE</div><div class="toy-bd">\n'
+        '    <p class="lead">A miniature, illustrative version — the <em>shape</em> of the deliverable, not a recommendation. Remember the real mix <b>shifts by phase</b>; this is roughly a mid/late-training snapshot.</p>\n'
+        '    <div class="toy"><div class="toy-hd">V5 MIXTURE &amp; CURRICULUM — TOY SNAPSHOT (mid-training)</div><div class="toy-bd">\n'
         '      <table>\n'
-        '        <tr><th>Capability slot</th><th>Budget share</th><th>Notes</th></tr>\n'
-        '        <tr><td>English (general)</td><td class="pct">35%</td><td>web-prose, high quality</td></tr>\n'
-        '        <tr><td>Indic</td><td class="pct">22%</td><td>split below ↓</td></tr>\n'
-        '        <tr><td>Code</td><td class="pct">18%</td><td>permissively-licensed repos</td></tr>\n'
-        '        <tr><td>Math / Science</td><td class="pct">10%</td><td>textbooks + problem sets</td></tr>\n'
-        '        <tr><td>Reasoning</td><td class="pct">6%</td><td>→ chain-of-thought set</td></tr>\n'
-        '        <tr><td>Agentic</td><td class="pct">4%</td><td>→ tool-use / function-call set</td></tr>\n'
-        '        <tr><td>Long-context</td><td class="pct">3%</td><td>→ book-length + multi-doc set</td></tr>\n'
-        '        <tr><td>Safety / Other</td><td class="pct">2%</td><td>protected (see floor)</td></tr>\n'
+        '        <tr><th>Capability lane</th><th>Share</th><th>Points at</th></tr>\n'
+        '        <tr><td>General web</td><td class="pct">34%</td><td>DCLM / FineWeb — common sense, MMLU</td></tr>\n'
+        '        <tr><td>Code</td><td class="pct">25%</td><td>Stack v2</td></tr>\n'
+        '        <tr><td>Agentic / tool-calls</td><td class="pct">16%</td><td>ToolBench / Bolt (always-on floor)</td></tr>\n'
+        '        <tr><td>STEM</td><td class="pct">12%</td><td>DCLM-STEM / textbooks</td></tr>\n'
+        '        <tr><td>Reasoning traces</td><td class="pct">7%</td><td>tagged short↔long chains</td></tr>\n'
+        '        <tr><td>Indic</td><td class="pct">4%</td><td>split below (always-on floor)</td></tr>\n'
+        '        <tr><td>Long-context</td><td class="pct">2%</td><td>book-length + multi-doc</td></tr>\n'
         '      </table>\n'
-        '      <div style="margin-top:14px"><b>Indic 22%, by tier:</b></div>\n'
-        '      <table style="margin-top:4px">\n'
-        '        <tr><td>Verified (T0)</td><td class="pct">40%</td><td>Wikipedia, textbooks</td></tr>\n'
-        '        <tr><td>Unverified web (T1)</td><td class="pct">35%</td><td>Sangraha, IndicCorp</td></tr>\n'
-        '        <tr><td>Translated (T3)</td><td class="pct">15%</td><td>MT from English</td></tr>\n'
-        '        <tr><td>Synthetic (T2)</td><td class="pct">10%</td><td>model-generated, lineage-tracked</td></tr>\n'
-        '      </table>\n'
-        '      <div style="margin-top:14px; font-size:13px">\n'
-        '        <div><b>Protected floor:</b> Odia ≥ 0.5% · Safety ≥ 1% · each small Indic language ≥ 0.3% — the selector may never cross these.</div>\n'
-        '        <div style="margin-top:4px"><b>Anneal reserve:</b> 5% of the budget (premium verified Indic + textbook reasoning), spent only in the final ~10% of training.</div>\n'
-        '        <div style="margin-top:4px"><b>Curriculum:</b> difficulty easy→hard; keep short and long reasoning chains mixed throughout, long chains weighted up near the end.</div>\n'
-        '        <div style="margin-top:4px"><b>Validation:</b> every share above is tested at 1B and 3B before the 40B run; only recipes that win on the evals are promoted.</div>\n'
+        '      <div style="margin-top:14px"><b>Indic 4%, by tier:</b> Verified (T0) 45% · Unverified (T1) 35% · Translated (T3) 12% · Synthetic (T2) 8%.</div>\n'
+        '      <div style="margin-top:6px;font-size:13px">\n'
+        '        <div><b>Always-on floor:</b> Indic ≥ 3% · agentic ≥ 8% · safety ≥ 1% — OPUS may never cross these.</div>\n'
+        '        <div style="margin-top:3px"><b>Anneal reserve:</b> 2% of budget — premium verified Indic + PhD LaTeX + clean agentic — spent only in the cooldown.</div>\n'
+        '        <div style="margin-top:3px"><b>Curriculum:</b> web-heavy → code/STEM/reasoning → long-context; seq-len 4K→8K→16K; ~18% band overlap.</div>\n'
+        '        <div style="margin-top:3px"><b>Depth bands:</b> low ≤256 · medium ≤1k · high ≤4k · ultra ≤16k+ thinking tokens.</div>\n'
+        '        <div style="margin-top:3px"><b>Validation:</b> tested at 1B &amp; 3B on the benchmarks above before 40B; OPUS keep-fraction ~50% during the run.</div>\n'
         '      </div>\n'
-        '      <div class="disc">Illustrative only — the real assignment is to justify numbers like these and defend them.</div>\n'
+        '      <div class="disc">Illustrative only — the assignment is to justify and defend numbers like these.</div>\n'
         '    </div></div>\n'
         '  </div>\n'
         '  <div class="rule">\n'
@@ -192,22 +280,30 @@ def build_html():
         '    <div class="q">“A data decision is a hypothesis until a cheap experiment has tested it.”</div>\n'
         '  </div>\n'
         '  <div class="sec">\n'
+        '    <h2>How you submit &amp; how it’s graded</h2>\n'
+        '    <div class="submit">Submit a <b>GitHub README</b> (may include scripts you ran to compute shares) — not a Netlify '
+        'app or widget. Grading is <b>subjective</b>: imagine a data-and-curriculum reviewer from a top lab sitting across '
+        'from you, pushing on every number. Marks come from the <b>quality of your reasoning and the evidence</b> behind each '
+        'choice — especially <i>why</i> the data you train on <b>last</b> is what it is. A strong submission gives a defended '
+        'share to every lane and states the Indic split across verified / unverified / translated / synthetic.</div>\n'
+        '  </div>\n'
+        '  <div class="sec">\n'
         '    <h2>Mini-glossary</h2>\n'
-        '    <p class="lead">Every bit of jargon from the assignment, in one line.</p>\n'
         '    <dl class="gloss">\n'
-        '      <dt>Mixture</dt><dd>The recipe: what fraction of training data is each type.</dd>\n'
-        '      <dt>Curriculum</dt><dd>The schedule: which data the model sees when (e.g. easy→hard, best saved for last).</dd>\n'
-        '      <dt>Budget</dt><dd>The total number of training tokens you get to spend — the pie you’re slicing.</dd>\n'
-        '      <dt>Capability slot</dt><dd>A skill bucket you allocate budget to (English, Indic, Code, Reasoning, Agentic, …).</dd>\n'
-        '      <dt>Tier (T0–T3)</dt><dd>Provenance/quality grade: verified · unverified web · synthetic · translated.</dd>\n'
-        '      <dt>Selector</dt><dd>An automatic system that keeps re-tuning the mix during training to lower loss fastest.</dd>\n'
-        '      <dt>Protected floor</dt><dd>Minimum shares the selector is forbidden to go below, so fragile data isn’t starved.</dd>\n'
-        '      <dt>Anneal / cooldown</dt><dd>The final training phase (learning rate → 0) where the last data seen sticks hardest.</dd>\n'
-        '      <dt>Anneal reserve</dt><dd>Your best data, held back to spend in that cooldown window.</dd>\n'
-        '      <dt>Difficulty band</dt><dd>Grouping data by how hard it is (easy / medium / hard).</dd>\n'
-        '      <dt>Reasoning-length band</dt><dd>Grouping by how long the chain of reasoning is (short / medium / long).</dd>\n'
-        '      <dt>Proxy run</dt><dd>A cheap small-model (1B / 3B) experiment that tests a recipe before the full run.</dd>\n'
-        '      <dt>Starved slot</dt><dd>A capability you want more of than you’ve managed to clean — where the pipeline aims next.</dd>\n'
+        '      <dt>Mixture</dt><dd>What fraction of training data is each type — and it shifts by phase.</dd>\n'
+        '      <dt>Curriculum</dt><dd>The order the model sees data: broad → hard, long &amp; premium last.</dd>\n'
+        '      <dt>Capability lane / slot</dt><dd>A skill bucket you allocate budget to (web, code, agentic, reasoning, Indic…).</dd>\n'
+        '      <dt>Compose backward</dt><dd>Pick target benchmarks first, then choose data that wins them.</dd>\n'
+        '      <dt>Loss masking</dt><dd>Train only on the model’s tokens; mask user turns &amp; tool outputs.</dd>\n'
+        '      <dt>Trainable tokens</dt><dd>The green (supervised) tokens only — what you actually size a lane by.</dd>\n'
+        '      <dt>Tier (T0–T3)</dt><dd>verified · unverified web · synthetic · translated.</dd>\n'
+        '      <dt>OPUS / golden proxy</dt><dd>Online selector: keeps samples that move “benchmark-weak” weights; peeks at first ~512 tokens.</dd>\n'
+        '      <dt>Always-on floor</dt><dd>Minimums OPUS can’t cut — protects Indic &amp; agentic from being thrown away.</dd>\n'
+        '      <dt>Anneal / cooldown</dt><dd>Final short phase (LR→0) where the best data is locked in.</dd>\n'
+        '      <dt>Band overlap</dt><dd>Diffusing one data band into the next so gradients don’t spike.</dd>\n'
+        '      <dt>Depth bands</dt><dd>low / medium / high / ultra thinking-token budgets, set by tags.</dd>\n'
+        '      <dt>Proxy run</dt><dd>Cheap 1B / 3B experiment that tests a recipe before the full run.</dd>\n'
+        '      <dt>Starved lane</dt><dd>A capability you want more of than you’ve cleaned — where the pipeline aims next.</dd>\n'
         '    </dl>\n'
         '  </div>\n'
         '</div>\n</body>\n</html>\n'
