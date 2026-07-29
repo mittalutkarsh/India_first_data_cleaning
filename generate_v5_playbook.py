@@ -14,6 +14,29 @@ PANTRY = [
     ("Safety", 1, 1.0, 15, "curated"),
 ]
 
+# Surveyed July 2026 (see Sources in Section 1). name, lane, size, metric, best score (date)
+BENCHMARKS = [
+    ("SWE-bench Verified", "code", "500 verified GitHub issues", "resolved rate (hidden tests pass)", "~76% pass@1, ~81% pass@3 (Jan 2026); frontier 71–77%"),
+    ("Terminal-Bench v2", "agentic", "89 terminal tasks", "sandbox task success", "hard; frontier well below human"),
+    ("&tau;-bench", "agentic", "165 (115 retail, 50 airline)", "pass^k (all k runs pass)", "frontier pass^1 &lt; 70%; GPT-4o retail 60% &rarr; 25% (pass^1&rarr;pass^8)"),
+    ("BFCL v4", "agentic", "function-calling suite", "weighted acc. (agentic 40%, multi-turn 30%)", "continuous leaderboard"),
+    ("GAIA", "agentic", "466 questions, 3 levels", "exact-match (tools + web allowed)", "humans ~92%; public agents trail"),
+    ("AIME", "reasoning", "30 problems / year", "accuracy", "year-rotated; strong reasoning models high"),
+    ("FrontierMath", "reasoning", "338 (295 Tiers 1–3 + 43 Tier 4)", "accuracy", "&gt;50% Tiers 1–3, 25–40% Tier 4 (mid-2026); ~0–6% in 2025"),
+    ("MMLU", "general web", "15,908 Q, 57 subjects", "accuracy", "saturated at the top; kept for regression"),
+    ("MMLU-Pro", "general web", "12,000+ Q, 14 domains", "accuracy", "harder than MMLU; still has headroom"),
+    ("MILU", "indic", "~85,000 MCQs, 11 languages", "accuracy", "Indic understanding; below English MMLU"),
+    ("IndicGenBench", "indic", "generation, 29 languages", "chrF / ROUGE / EM", "reference-based; generative"),
+]
+
+PROXIES = [
+    ("code", "SWE-bench Verified", "HumanEval, MBPP", "164 / ~974 problems"),
+    ("reasoning", "AIME, FrontierMath", "GSM8K, MATH-500", "1,319 test / 500 problems"),
+    ("general web", "MMLU-Pro", "MMLU", "15,908 questions"),
+    ("indic", "MILU, IndicGenBench", "MILU (subset)", "subset of ~85k"),
+    ("agentic", "Terminal-Bench, &tau;-bench", "scripted tool-call success rate", "in-house set"),
+]
+
 NAV = (
     '<div class="nav"><div class="nav-in">\n'
     '  <span class="brand">India-First 40B</span>\n'
@@ -49,7 +72,12 @@ a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:under
 .phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(26px,3.6vw,38px); margin:8px 0 8px; }
 .phead .dek { font-size:15px; color:#33334a; margin:0; }
 .sec { margin:28px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:20px; margin:0 0 6px; }
+h3 { font-size:15px; margin:22px 0 4px; color:var(--indigo); }
 p { margin:13px 0; } strong { font-weight:600; }
+ol, ul { margin:12px 0; padding-left:22px; } li { margin:6px 0; }
+.diagram { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
+.diagram pre { margin:0; font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.55; color:#26263c; white-space:pre; }
+.tblwrap { overflow-x:auto; }
 .tbl { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
 .tbl th, .tbl td { padding:8px 11px; border-bottom:1px solid var(--line); text-align:right; }
 .tbl th:first-child, .tbl td:first-child { text-align:left; }
@@ -85,6 +113,18 @@ def pantry_rows():
     return out
 
 
+def bench_rows():
+    return "".join(
+        "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % b
+        for b in BENCHMARKS)
+
+
+def proxy_rows():
+    return "".join(
+        "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % p
+        for p in PROXIES)
+
+
 def build_html():
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
@@ -105,10 +145,111 @@ def build_html():
         '  </div>\n'
 
         '  <div class="sec"><h2>1. Define the target benchmarks</h2>\n'
-        '    <p>The specification begins from the evaluation targets, not from the data. The set of benchmarks the model is '
-        'intended to satisfy determines its capability profile; the mixture is subsequently derived to satisfy that set. '
-        'The targets span coding, agentic tool use, mathematical and general reasoning, general knowledge, and Indic '
-        'understanding and generation.</p></div>\n'
+        '    <p>The specification is written backward from a fixed set of benchmarks. This section states how that set '
+        'is chosen, records the actual benchmarks with their sizes and current best scores, and traces one benchmark '
+        'instance end to end so that the token accounting used later is concrete. Figures were collected in July 2026 '
+        'and are cited at the end of the section; where a state-of-the-art score moves quickly, the date is attached to '
+        'the number.</p>\n'
+
+        '    <h3>1.1 Selection procedure</h3>\n'
+        '    <p>A capability lane admits a benchmark only if the benchmark passes five tests:</p>\n'
+        '    <ol>\n'
+        '      <li><strong>Direct measurement.</strong> It measures the target capability itself, not a correlate. A '
+        'coding lane is measured by whether a patch makes tests pass, not by a multiple-choice quiz about Python.</li>\n'
+        '      <li><strong>Machine-checkable metric.</strong> The score comes from code execution or a verifier, not a '
+        'human or model rating, which keeps the signal reproducible and cheap to recompute during proxy runs.</li>\n'
+        '      <li><strong>Contamination resistance.</strong> The benchmark has a held-out, temporal, or private variant, '
+        'so a high score cannot be obtained by training on the test.</li>\n'
+        '      <li><strong>Public and reproducible.</strong> The items, harness, and metric are published, so a reported '
+        'number can be rerun.</li>\n'
+        '      <li><strong>Headroom.</strong> The frontier score is below about 90%; a saturated benchmark gives no '
+        'gradient to optimise against.</li>\n'
+        '    </ol>\n'
+        '    <p>Each admitted benchmark is recorded with six fields: version, size, metric, current best score with its '
+        'date, decontamination rule, and a small-model proxy that produces signal at 1B and 3B (§10). Each is then '
+        'assigned to exactly one primary capability lane; a benchmark that touches several capabilities is filed under '
+        'the one it most directly tests, and its other demands are stored as tags. This one-lane rule is what prevents '
+        'the token accounting in §5 from counting the same data more than once.</p>\n'
+
+        '    <h3>1.2 The benchmark set</h3>\n'
+        '    <div class="diagram"><pre>\n'
+        'CAPABILITY LANE        TARGET BENCHMARK(S)                  SUPPLYING DATASET\n'
+        '---------------        ---------------------------          -------------------------------\n'
+        'code            -----> SWE-bench Verified (500)       <---- Stack v2 + generated repo-fix traces\n'
+        '                       SWE-bench Pro / Live (temporal)\n'
+        'agentic         -----> Terminal-Bench (89), GAIA (466) <--- generated tool-use trajectories\n'
+        '                       tau-bench (165), BFCL v4              (plan + act + reflect)\n'
+        'reasoning/math  -----> AIME (30/yr), FrontierMath (338) <--- distilled step-by-step traces\n'
+        'general web     -----> MMLU (15,908), MMLU-Pro (12k+)  <---- DCLM / FineWeb\n'
+        'indic           -----> MILU (~85k), IndicGenBench (29)  <--- Sangraha / IndicCorp / Wikipedia\n'
+        '</pre></div>\n'
+        '    <p>The arrow direction is the substance of the plan: the benchmark on the left fixes the capability, and '
+        'the dataset on the right is chosen to satisfy it.</p>\n'
+
+        '    <h3>1.3 Benchmark inventory</h3>\n'
+        '    <div class="tblwrap"><table class="tbl"><tr><th>Benchmark</th><th>Lane</th><th>Size</th><th>Metric</th>'
+        '<th>Best score (date)</th></tr>\n' + bench_rows() + '</table></div>\n'
+        '    <p>Two design consequences follow. First, the code and agentic lanes are graded by execution and the '
+        'reasoning lanes by exact answers; the model is scored on what it produces, not on the tool logs it reads, which '
+        'is why §3 counts loss-bearing tokens rather than raw trace size. Second, the Indic lane is measured by MILU '
+        '(understanding) and IndicGenBench (generation) together, because a high MILU score with weak generation would '
+        'describe a model that recognises Hindi but cannot write it; Indic results are therefore reported as a '
+        'macro-average across languages and a worst-language figure, not a single average.</p>\n'
+
+        '    <h3>1.4 One instance, traced end to end</h3>\n'
+        '    <p>The phrase &ldquo;resolved rate on 500 issues&rdquo; hides what a single graded item is. One '
+        'representative SWE-bench Verified instance, with concrete numbers:</p>\n'
+        '    <div class="diagram"><pre>\n'
+        'INSTANCE (representative)\n'
+        'repository at a fixed commit ..... ~1,400 Python files, ~600,000 lines\n'
+        'issue text handed to the model ... ~180 words   [CONTEXT: read, no loss taken]\n'
+        'required output (gold patch) ..... diff over 2 files, +14 / -3 lines\n'
+        '                                   [SUPERVISED TARGET: loss taken on these tokens]\n'
+        'grading in a sandbox ............. 3 fail-to-pass tests  (must flip fail -> pass)\n'
+        '                                  41 pass-to-pass tests  (must not regress)\n'
+        'resolved = 1 if all 44 tests pass, else 0\n\n'
+        'benchmark score = mean resolved over 500 instances\n'
+        '                = 380 / 500 = 0.76        (the ~76% figure, made concrete)\n'
+        '</pre></div>\n'
+        '    <p>This fixes three quantities the plan depends on. The trainable content per item is small: the 600,000-line '
+        'repository is read as context, and the supervised target is a 17-line diff, so a code sample contributes far '
+        'fewer loss-bearing tokens than its raw size implies (§3). The reward is verifiable, computed by executing 44 '
+        'tests, so the same item can be scored inside a cheap proxy run. And the supplying dataset is defined by the '
+        'target: Stack v2 provides raw code but not the issue-to-patch structure, so the code lane also requires '
+        'generated repository-fix trajectories, recorded as a supply gap in §6.</p>\n'
+
+        '    <h3>1.5 Proxy benchmarks for the 1B and 3B runs</h3>\n'
+        '    <p>The headline benchmarks return near-zero at 1B and cannot decide anything during validation (§10). Each '
+        'lane therefore names a proxy with signal at small scale.</p>\n'
+        '    <div class="tblwrap"><table class="tbl"><tr><th>Lane</th><th>Headline benchmark</th><th>1B/3B proxy</th>'
+        '<th>Proxy size</th></tr>\n' + proxy_rows() + '</table></div>\n'
+        '    <p>The proxy establishes the direction of an effect and the rank of two recipes, never the absolute number, '
+        'because rankings shift with scale.</p>\n'
+
+        '    <h3>1.6 What this method does not do</h3>\n'
+        '    <ul>\n'
+        '      <li><strong>A benchmark set can be over-fit.</strong> Composing data backward from a fixed set risks '
+        'teaching the test format. §11 pairs this method with a decontamination policy and a private, temporally '
+        'held-out set; without that pairing, a reported gain is not trustworthy.</li>\n'
+        '      <li><strong>It measures only listed capabilities.</strong> Anything absent from the set is invisible to '
+        'the plan. General-web coverage (MMLU, MMLU-Pro) is retained partly to guard against regressing capabilities no '
+        'targeted benchmark names.</li>\n'
+        '      <li><strong>Generative Indic quality is only partly machine-checkable.</strong> IndicGenBench uses '
+        'reference-based metrics (chrF, ROUGE) that correlate imperfectly with human judgement, so the Indic result '
+        'carries more uncertainty than the execution-graded lanes and is flagged as such.</li>\n'
+        '    </ul>\n'
+
+        '    <p class="cap">Sources: SWE-bench Verified (<a href="https://epoch.ai/benchmarks/swe-bench-verified">Epoch AI</a>, '
+        '<a href="https://arxiv.org/abs/2310.06770">Jimenez et&nbsp;al.</a>); Terminal-Bench '
+        '(<a href="https://arxiv.org/abs/2601.11868">arXiv</a>); &tau;-bench '
+        '(<a href="https://github.com/sierra-research/tau2-bench">Sierra</a>); BFCL '
+        '(<a href="https://gorilla.cs.berkeley.edu/leaderboard.html">Gorilla</a>); GAIA '
+        '(<a href="https://arxiv.org/abs/2311.12983">arXiv</a>); FrontierMath '
+        '(<a href="https://epoch.ai/frontiermath/the-benchmark">Epoch AI</a>); MMLU-Pro '
+        '(<a href="https://arxiv.org/abs/2406.01574">arXiv</a>); MILU '
+        '(<a href="https://arxiv.org/abs/2411.02538">arXiv</a>); IndicGenBench '
+        '(<a href="https://arxiv.org/abs/2404.16816">arXiv</a>).</p>\n'
+        '  </div>\n'
 
         '  <div class="sec"><h2>2. Map each benchmark to a dataset</h2>\n'
         '    <p>Each target is associated with the dataset that develops the corresponding capability — a procedure '
