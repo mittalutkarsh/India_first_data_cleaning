@@ -37,6 +37,51 @@ PROXIES = [
     ("agentic", "Terminal-Bench, &tau;-bench", "scripted tool-call success rate", "in-house set"),
 ]
 
+# Benchmark / lane, why selected, capability targeted, how (data lever),
+# current industry best (dated), V5 target (illustrative; locked after validation)
+STRATEGY = [
+    ("SWE-bench Verified", "code",
+     "Execution-graded on real repository bugs; contamination-resistant via the temporal Live variant.",
+     "Autonomous repository-level bug fixing.",
+     "Stack v2 plus generated issue&#8594;patch&#8594;test trajectories.",
+     "~76% pass@1 (Jan 2026)", "&#8805; 50% resolved at 40B"),
+    ("Terminal-Bench v2", "agentic",
+     "Scores multi-step tool use in a real sandbox, not isolated API calls.",
+     "Planning and acting across a terminal session.",
+     "Generated plan&#8594;act&#8594;reflect trajectories, loss-masked on model turns.",
+     "frontier well below human", "~30% task success at 40B"),
+    ("&tau;-bench", "agentic",
+     "Grades whole multi-turn dialogues under pass^k, penalising unreliable behaviour.",
+     "Reliable tool-using assistants.",
+     "Synthetic tool-use dialogues paired with programmatic verifiers.",
+     "retail ~60% &#8594; 25% (pass^1&#8594;pass^8)", "~45% pass^1 at 40B"),
+    ("AIME", "reasoning",
+     "Integer-answer competition mathematics, exact-match and year-rotated (fresh each year).",
+     "Multi-step mathematical reasoning.",
+     "Distilled step-by-step solution traces, banded by reasoning depth.",
+     "high for reasoning models; year-rotated", "~40% on the held-out year"),
+    ("FrontierMath", "reasoning",
+     "Research-level mathematics with large headroom; solutions withheld from training.",
+     "Deep, original reasoning.",
+     "Distilled expert traces plus tool-augmented reasoning.",
+     "25&#8211;40% Tier 4 (mid-2026)", "~15% Tiers 1&#8211;3"),
+    ("MMLU-Pro", "general web",
+     "Broad knowledge that still has headroom, unlike the saturated original MMLU.",
+     "General knowledge and a regression guard for unlisted capabilities.",
+     "High-quality deduplicated web (DCLM / FineWeb).",
+     "harder than MMLU; headroom remains", "&#8805; 65%, no regression vs baseline"),
+    ("MILU", "indic",
+     "Native Indic-language examinations across 11 languages, not translated English.",
+     "Indic knowledge and comprehension.",
+     "Sangraha / IndicCorp / Wikipedia plus verified Indic textbooks.",
+     "below English MMLU", "best open-weight Indic; ~60% macro-avg"),
+    ("IndicGenBench", "indic",
+     "Measures generation across 29 languages, not only recognition.",
+     "Fluent Indic generation and translation.",
+     "Verified and translated Indic tiers, with a per-language worst-case floor.",
+     "reference-based (chrF / ROUGE)", "macro-avg + worst-language reported; chrF above baseline"),
+]
+
 NAV = (
     '<div class="nav"><div class="nav-in">\n'
     '  <span class="brand">India-First 40B</span>\n'
@@ -99,6 +144,12 @@ code { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(-
 .fig figcaption b { color:var(--ink); }
 .eq { margin:14px 0; overflow-x:auto; }
 mjx-container { color:var(--ink); }
+.stbl { width:100%; border-collapse:collapse; font-family:"Inter",sans-serif; font-size:12.5px; line-height:1.45; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.stbl th, .stbl td { text-align:left; vertical-align:top; padding:9px 11px; border-bottom:1px solid var(--line); }
+.stbl th { font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); font-weight:600; }
+.stbl td:first-child { white-space:nowrap; }
+.stbl .lanetag { font-family:"IBM Plex Mono",monospace; font-size:10px; }
+.stbl .tgt { font-weight:600; color:var(--indigo); }
 """
 
 
@@ -133,6 +184,16 @@ def proxy_rows():
     return "".join(
         "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % p
         for p in PROXIES)
+
+
+def strategy_rows():
+    out = ""
+    for bench, lane, why, what, how, best, target in STRATEGY:
+        acc = LANE_COLOR.get(lane, ("#656579", ""))[0]
+        out += ('<tr><td><b>%s</b><br><span class="lanetag" style="color:%s">%s</span></td>'
+                '<td>%s</td><td>%s</td><td>%s</td><td>%s</td><td class="tgt">%s</td></tr>\n'
+                % (bench, acc, lane, why, what, how, best, target))
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -331,13 +392,39 @@ def build_html():
         '  </div>\n'
 
         '  <div class="sec"><h2>1. Define the target benchmarks</h2>\n'
-        '    <p>The specification is written backward from a fixed set of benchmarks. This section states how that set '
-        'is chosen, records the actual benchmarks with their sizes and current best scores, and traces one benchmark '
-        'instance end to end so that the token accounting used later is concrete. Figures were collected in July 2026 '
-        'and are cited at the end of the section; where a state-of-the-art score moves quickly, the date is attached to '
-        'the number.</p>\n'
+        '    <p><strong>Objective.</strong> This section fixes the evaluation target of the entire programme. The '
+        'specification is constructed <em>backward</em>: rather than assembling a corpus and reporting whatever '
+        'capabilities emerge, we first commit to a closed set of benchmarks, and every subsequent decision &mdash; which '
+        'datasets to acquire, how many tokens to allocate to each, and in what order to present them &mdash; is '
+        'justified by its measurable effect on that set. A capability for which no benchmark is named is, for the '
+        'purposes of this plan, unmeasured and therefore unmanaged.</p>\n'
+        '    <p><strong>What this section delivers.</strong> First, the admission rule that determines which benchmarks '
+        'qualify as targets (&sect;1.2). Second, the qualifying benchmarks recorded with their size, grading metric, and '
+        'current state-of-the-art score, each with the date of measurement (&sect;1.3&ndash;1.4). Third, a single '
+        'benchmark instance traced through grading end to end, so that the loss-bearing token accounting relied on in '
+        'later sections rests on an observed example rather than an assumption (&sect;1.5). Figures were collected in '
+        'July 2026 and are cited at the end of the section; where a state-of-the-art score is moving quickly, the date '
+        'is attached to the number so that the claim remains checkable.</p>\n'
+        '    <p><strong>Success criterion.</strong> The section succeeds if a reader can state, for every capability the '
+        'model is meant to have, the exact benchmark that measures it, the current best public score, and the target '
+        'this programme commits to &mdash; and can reproduce each number from the cited source.</p>\n'
 
-        '    <h3>1.1 Selection procedure</h3>\n'
+        '    <h3>1.1 Objectives and targets at a glance</h3>\n'
+        '    <p>The table states, for each target benchmark, why it was selected, the capability it certifies, the data '
+        'lever by which the plan intends to move it, the current industry-best score, and the target this programme '
+        'commits to. The remainder of the section justifies each column; the subsequent sections of the plan are the '
+        'means of reaching the final column.</p>\n'
+        '    <div class="tblwrap"><table class="stbl"><tr>'
+        '<th>Benchmark / lane</th><th>Why selected</th><th>Capability achieved</th><th>How (data lever)</th>'
+        '<th>Industry best (dated)</th><th>V5 target</th></tr>\n'
+        + strategy_rows() +
+        '    </table></div>\n'
+        '    <p class="cap">Industry-best figures are the July&nbsp;2026 public state of the art (see the inventory in '
+        '&sect;1.4 and the Sources). V5 targets are the design goals the mixture is built to move; they are stated for '
+        'the 40B flagship, and their <em>direction</em> is validated at 1B and 3B before full-scale commitment '
+        '(&sect;10). Targets are provisional until that validation locks them.</p>\n'
+
+        '    <h3>1.2 Selection procedure</h3>\n'
         '    <p>A capability lane admits a benchmark only if the benchmark passes five tests. Each test is stated once, '
         'then shown with a benchmark it admits and a benchmark it rejects.</p>\n'
 
@@ -380,7 +467,7 @@ def build_html():
         '    <div class="egbox"><span class="yes">Admitted &mdash; FrontierMath Tier 4.</span> The best systems score '
         '25&ndash;40% (mid-2026), so an improvement from 30% to 40% is real signal.<br>\n'
         '    <span class="no">Rejected as a primary target &mdash; original GSM8K.</span> Frontier models already reach '
-        '~97%; moving 97.0 to 97.3 tells us almost nothing. It is still useful as a small-scale proxy (see §1.5).</div>\n'
+        '~97%; moving 97.0 to 97.3 tells us almost nothing. It is still useful as a small-scale proxy (see &sect;1.6).</div>\n'
 
         '    <p>Each admitted benchmark is recorded with six fields. Filled in for SWE-bench Verified:</p>\n'
         '    <div class="diagram"><pre>\n'
@@ -407,14 +494,14 @@ def build_html():
         '    <div class="eq">\\[ C_{\\text{naive}}(d)=\\sum_{\\ell\\in L(d)}|d| = 4\\times 12{,}000 = 48{,}000, '
         '\\qquad C_{\\text{one\\text{-}lane}}(d)=|d| = 12{,}000. \\]</div>\n'
 
-        '    <h3>1.2 The benchmark set</h3>\n'
+        '    <h3>1.3 The benchmark set</h3>\n'
         + figure(svg_compose_backward(),
                  'Composing backward. Each target benchmark (centre) fixes a capability lane (left); the supplying '
                  'dataset (right) is then chosen so that training on it moves that benchmark. Arrows point into the '
                  'benchmark from both sides: the lane it measures and the data selected to satisfy it. Section 2 '
                  'formalises the right-hand column.', "1") +
 
-        '    <h3>1.3 Benchmark inventory</h3>\n'
+        '    <h3>1.4 Benchmark inventory</h3>\n'
         '    <div class="tblwrap"><table class="tbl"><tr><th>Benchmark</th><th>Lane</th><th>Size</th><th>Metric</th>'
         '<th>Best score (date)</th></tr>\n' + bench_rows() + '</table></div>\n'
         '    <p>Two design consequences follow. First, the code and agentic lanes are graded by execution and the '
@@ -424,7 +511,7 @@ def build_html():
         'describe a model that recognises Hindi but cannot write it; Indic results are therefore reported as a '
         'macro-average across languages and a worst-language figure, not a single average.</p>\n'
 
-        '    <h3>1.4 One instance, traced end to end</h3>\n'
+        '    <h3>1.5 One instance, traced end to end</h3>\n'
         '    <p>The phrase &ldquo;resolved rate on 500 issues&rdquo; hides what a single graded item is. One '
         'representative SWE-bench Verified instance:</p>\n'
         + figure(svg_instance_trace(),
@@ -442,7 +529,7 @@ def build_html():
         'target: Stack v2 provides raw code but not the issue-to-patch structure, so the code lane also requires '
         'generated repository-fix trajectories, recorded as a supply gap in §6.</p>\n'
 
-        '    <h3>1.5 Proxy benchmarks for the 1B and 3B runs</h3>\n'
+        '    <h3>1.6 Proxy benchmarks for the 1B and 3B runs</h3>\n'
         '    <p>The headline benchmarks return near-zero at 1B and cannot decide anything during validation (§10). '
         'Concretely, at 1B a model resolves 0 of 500 SWE-bench issues &mdash; it cannot yet produce a working patch &mdash; '
         'so the score is 0 for every recipe and cannot separate them. On HumanEval the same 1B model solves roughly '
@@ -453,7 +540,7 @@ def build_html():
         '    <p>The proxy establishes the direction of an effect and the rank of two recipes, never the absolute number, '
         'because rankings shift with scale.</p>\n'
 
-        '    <h3>1.6 What this method does not do</h3>\n'
+        '    <h3>1.7 What this method does not do</h3>\n'
         '    <ul>\n'
         '      <li><strong>A benchmark set can be over-fit.</strong> Composing data backward from a fixed set risks '
         'teaching the test format. For example, train on 5,000 paraphrased copies of the SWE-bench issue texts and the '
