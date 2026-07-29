@@ -93,6 +93,12 @@ ol, ul { margin:12px 0; padding-left:22px; } li { margin:6px 0; }
 .callout { margin:16px 0; border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; padding:12px 16px; font-size:14px; color:#4a3a1e; }
 .foot { margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted); }
 code { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--panel); padding:1px 5px; border-radius:4px; }
+.fig { margin:20px 0; padding:16px 16px 6px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+.fig svg { display:block; }
+.fig figcaption { font-size:12.5px; color:var(--muted); margin-top:10px; padding-top:8px; border-top:1px solid var(--line); line-height:1.5; }
+.fig figcaption b { color:var(--ink); }
+.eq { margin:14px 0; overflow-x:auto; }
+mjx-container { color:var(--ink); }
 """
 
 
@@ -129,6 +135,179 @@ def proxy_rows():
         for p in PROXIES)
 
 
+# ---------------------------------------------------------------------------
+# Diagrams. Real SVG in the economist style of the ml-pipeline-diagram skill:
+# light tinted regions, cylinders for data sources, rounded process boxes,
+# orthogonal labelled arrows, a caption. Palette matches the page CSS.
+# ---------------------------------------------------------------------------
+
+# lane -> accent colour, light fill (kept consistent across every figure)
+LANE_COLOR = {
+    "code":        ("#2E357E", "#ECEEF8"),
+    "agentic":     ("#B5476B", "#FBEEF3"),
+    "reasoning":   ("#E0982B", "#FBF1E0"),
+    "general web": ("#656579", "#F1F2F8"),
+    "indic":       ("#147D74", "#E6F3F0"),
+}
+
+
+def _rr(x, y, w, h, fill, stroke, label, sub="", fs=12, rx=8, tcolor="#16162A"):
+    """A rounded-rect process/label box with an optional grey subtitle line."""
+    t = ('<text x="%d" y="%d" text-anchor="middle" font-family="Inter,sans-serif" '
+         'font-size="%d" font-weight="600" fill="%s">%s</text>'
+         % (x + w // 2, y + (h // 2 - 2 if sub else h // 2 + 4), fs, tcolor, label))
+    if sub:
+        t += ('<text x="%d" y="%d" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+              'font-size="10" fill="#6B6B7B">%s</text>' % (x + w // 2, y + h // 2 + 13, sub))
+    return ('<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" stroke="%s" '
+            'stroke-width="1.4"/>%s' % (x, y, w, h, rx, fill, stroke, t))
+
+
+def _cyl(x, y, w, h, stroke, label, sub=""):
+    """A 3D data cylinder (source/output dataset)."""
+    ry = 9
+    body = ('<path d="M%d %d a%d %d 0 0 0 %d 0 v%d a%d %d 0 0 1 -%d 0 z" '
+            'fill="#FFFFFF" stroke="%s" stroke-width="1.5"/>'
+            % (x, y + ry, w // 2, ry, w, h - 2 * ry, w // 2, ry, w, stroke))
+    top = ('<ellipse cx="%d" cy="%d" rx="%d" ry="%d" fill="#FFFFFF" stroke="%s" '
+           'stroke-width="1.5"/>' % (x + w // 2, y + ry, w // 2, ry, stroke))
+    t = ('<text x="%d" y="%d" text-anchor="middle" font-family="Inter,sans-serif" '
+         'font-size="11" font-weight="600" fill="#16162A">%s</text>'
+         % (x + w // 2, y + h // 2 + 2, label))
+    if sub:
+        t += ('<text x="%d" y="%d" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+              'font-size="9" fill="#6B6B7B">%s</text>' % (x + w // 2, y + h // 2 + 15, sub))
+    return body + top + t
+
+
+def _arrow(x1, y1, x2, y2, label="", dash=False, color="#5A5A6E"):
+    d = ' stroke-dasharray="5 4"' if dash else ""
+    line = ('<line x1="%d" y1="%d" x2="%d" y2="%d" stroke="%s" stroke-width="1.5"%s '
+            'marker-end="url(#ah)"/>' % (x1, y1, x2, y2, color, d))
+    if label:
+        mx, my = (x1 + x2) // 2, (y1 + y2) // 2
+        line += ('<rect x="%d" y="%d" width="%d" height="15" rx="3" fill="#FAFBFD"/>'
+                 '<text x="%d" y="%d" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+                 'font-size="9" fill="#656579">%s</text>'
+                 % (mx - len(label) * 3 - 3, my - 8, len(label) * 6 + 6, mx, my + 3, label))
+    return line
+
+
+def _svg_open(w, h):
+    return ('<svg viewBox="0 0 %d %d" width="100%%" role="img" '
+            'xmlns="http://www.w3.org/2000/svg" font-family="Inter,sans-serif">'
+            '<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" '
+            'orient="auto" markerUnits="strokeWidth"><path d="M0,0 L7,3 L0,6 z" '
+            'fill="#5A5A6E"/></marker></defs>' % (w, h))
+
+
+def _col_header(x, w, y, text):
+    return ('<text x="%d" y="%d" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+            'font-size="10" letter-spacing="0.06em" fill="#656579">%s</text>'
+            % (x + w // 2, y, text.upper()))
+
+
+COMPOSE = [
+    # lane, benchmark(s), supplying dataset, dataset sub
+    ("code", "SWE-bench Verified", "Stack v2 + repo-fix traces", "generated"),
+    ("agentic", "Terminal-Bench · &#964;-bench · GAIA", "tool-use trajectories", "generated"),
+    ("reasoning", "AIME · FrontierMath", "distilled step-by-step traces", "distilled"),
+    ("general web", "MMLU · MMLU-Pro", "DCLM / FineWeb", "web"),
+    ("indic", "MILU · IndicGenBench", "Sangraha / IndicCorp / Wiki", "mixed tiers"),
+]
+
+
+def svg_compose_backward():
+    W, top, rh, gap = 820, 58, 46, 12
+    H = top + len(COMPOSE) * (rh + gap) + 6
+    s = _svg_open(W, H)
+    s += _col_header(8, 168, 34, "capability lane")
+    s += _col_header(250, 300, 34, "target benchmark")
+    s += _col_header(600, 212, 34, "supplying dataset")
+    y = top
+    for lane, bench, ds, sub in COMPOSE:
+        acc, fill = LANE_COLOR[lane]
+        s += _rr(8, y, 168, rh, fill, acc, lane, fs=13, tcolor=acc)
+        s += _rr(250, y, 300, rh, "#FFFFFF", "#6169B8", bench, fs=11.5)
+        s += _cyl(600, y - 2, 212, rh + 4, acc, ds, sub)
+        s += _arrow(176, y + rh // 2, 249, y + rh // 2)              # lane -> benchmark
+        s += _arrow(599, y + rh // 2, 551, y + rh // 2)              # dataset -> benchmark
+        y += rh + gap
+    s += "</svg>"
+    return s
+
+
+def svg_instance_trace():
+    W, H = 820, 250
+    s = _svg_open(W, H)
+    acc = "#2E357E"
+    # context inputs (read, no loss) -> model -> supervised target -> sandbox -> bit
+    s += ('<rect x="8" y="30" width="230" height="150" rx="10" fill="#F1F2F8" '
+          'stroke="#C9CBDD" stroke-width="1.2"/>'
+          '<text x="123" y="50" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+          'font-size="9" letter-spacing="0.05em" fill="#656579">CONTEXT &#8212; READ, NO LOSS</text>')
+    s += _cyl(30, 66, 186, 60, acc, "repository @ commit", "~600,000 lines")
+    s += _rr(30, 138, 186, 34, "#FFFFFF", acc, "issue text", "~180 words", fs=11)
+    s += _rr(300, 78, 150, 54, "#ECEEF8", acc, "model", "produces a patch", fs=12, tcolor=acc)
+    s += ('<rect x="512" y="30" width="300" height="150" rx="10" fill="#E6F3F0" '
+          'stroke="#8FC4BC" stroke-width="1.2"/>'
+          '<text x="662" y="50" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+          'font-size="9" letter-spacing="0.05em" fill="#147D74">SANDBOX &#8212; EXECUTED GRADING</text>')
+    s += _rr(300, 150, 150, 34, "#FFFFFF", "#B5476B", "gold patch", "+14 / &#8722;3, target", fs=11, tcolor="#B5476B")
+    s += _rr(532, 66, 260, 30, "#FFFFFF", "#147D74", "3 fail&#8594;pass tests must flip", fs=10.5)
+    s += _rr(532, 104, 260, 30, "#FFFFFF", "#147D74", "41 pass&#8594;pass tests must hold", fs=10.5)
+    s += _rr(532, 142, 260, 34, "#E6F3F0", "#147D74", "resolved = 1 iff all 44 pass", fs=11.5, tcolor="#147D74")
+    s += _arrow(217, 105, 299, 105)                     # inputs -> model
+    s += _arrow(300, 167, 250, 167)                     # gold patch -> (target, leftward marker) decorative
+    s += _arrow(451, 105, 531, 105, "run tests")        # model -> sandbox
+    s += "</svg>"
+    return s
+
+
+PHASES = [
+    ("Foundation", 45, "general web, early code", "up to 8k"),
+    ("Expansion", 30, "code, STEM, reasoning", "up to 32k"),
+    ("Reasoning + LC", 23, "scarce lanes, long docs", "up to 128k"),
+    ("Anneal", 2, "premium, verified Indic", "held in-budget"),
+]
+
+
+def svg_curriculum():
+    W, H = 820, 170
+    x0, y0, bar_w, bar_h = 8, 62, 804, 60
+    s = _svg_open(W, H)
+    s += ('<text x="8" y="30" font-family="IBM Plex Mono,monospace" font-size="10" '
+          'letter-spacing="0.05em" fill="#656579">BUDGET (3T UPDATE TOKENS), LEFT &#8594; RIGHT IN TRAINING ORDER</text>')
+    accents = ["#2E357E", "#147D74", "#E0982B", "#B5476B"]
+    fills = ["#ECEEF8", "#E6F3F0", "#FBF1E0", "#FBEEF3"]
+    x = x0
+    for i, (name, pct, dom, seq) in enumerate(PHASES):
+        w = round(bar_w * pct / 100)
+        s += ('<rect x="%d" y="%d" width="%d" height="%d" rx="6" fill="%s" stroke="%s" '
+              'stroke-width="1.4"/>' % (x, y0, w, bar_h, fills[i], accents[i]))
+        cx = x + w // 2
+        s += ('<text x="%d" y="%d" text-anchor="middle" font-family="Inter,sans-serif" '
+              'font-size="12" font-weight="600" fill="%s">%s</text>' % (cx, y0 + 22, accents[i], name))
+        s += ('<text x="%d" y="%d" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+              'font-size="13" fill="%s">%d%%</text>' % (cx, y0 + 40, accents[i], pct))
+        if w > 90:
+            s += ('<text x="%d" y="%d" text-anchor="middle" font-family="Inter,sans-serif" '
+                  'font-size="9.5" fill="#4a4a5e">%s</text>' % (cx, y0 + 54, dom))
+        s += ('<text x="%d" y="%d" text-anchor="middle" font-family="IBM Plex Mono,monospace" '
+              'font-size="9" fill="#656579">%s</text>' % (cx, y0 + bar_h + 16, seq))
+        x += w
+    s += ('<text x="8" y="%d" font-family="Inter,sans-serif" font-size="10" font-style="italic" '
+          'fill="#656579">Max sequence length rises left to right; transitions are gradual (overlapping bands), '
+          'not step changes.</text>' % (y0 + bar_h + 40))
+    s += "</svg>"
+    return s
+
+
+def figure(svg, caption, n):
+    return ('  <figure class="fig">' + svg +
+            '<figcaption><b>Figure %s.</b> %s</figcaption></figure>\n' % (n, caption))
+
+
 def build_html():
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
@@ -138,6 +317,9 @@ def build_html():
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
         '<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700'
         '&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">\n'
+        '<script>window.MathJax={tex:{inlineMath:[["\\\\(","\\\\)"]],displayMath:[["\\\\[","\\\\]"]]},'
+        'svg:{fontCache:"global"}};</script>\n'
+        '<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>\n'
         '<style>' + CSS + '</style>\n</head>\n<body>\n' + NAV +
         '<div class="wrap">\n'
         '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> / Construction procedure</div>\n'
@@ -220,21 +402,17 @@ def build_html():
         '§5 is inflated 4&times;.<br>\n'
         '    <span class="yes">With the rule:</span> 12,000 tokens counted once, under code; the tags still let the plan '
         'report how much code data is also Indic or long.</div>\n'
+        '    <p>Writing \\(L(d)\\) for the set of capabilities a document \\(d\\) touches and \\(|d|\\) for its token '
+        'count, the naive count sums the document once per capability, while the one-lane rule counts it once:</p>\n'
+        '    <div class="eq">\\[ C_{\\text{naive}}(d)=\\sum_{\\ell\\in L(d)}|d| = 4\\times 12{,}000 = 48{,}000, '
+        '\\qquad C_{\\text{one\\text{-}lane}}(d)=|d| = 12{,}000. \\]</div>\n'
 
         '    <h3>1.2 The benchmark set</h3>\n'
-        '    <div class="diagram"><pre>\n'
-        'CAPABILITY LANE        TARGET BENCHMARK(S)                  SUPPLYING DATASET\n'
-        '---------------        ---------------------------          -------------------------------\n'
-        'code            -----> SWE-bench Verified (500)       <---- Stack v2 + generated repo-fix traces\n'
-        '                       SWE-bench Pro / Live (temporal)\n'
-        'agentic         -----> Terminal-Bench (89), GAIA (466) <--- generated tool-use trajectories\n'
-        '                       tau-bench (165), BFCL v4              (plan + act + reflect)\n'
-        'reasoning/math  -----> AIME (30/yr), FrontierMath (338) <--- distilled step-by-step traces\n'
-        'general web     -----> MMLU (15,908), MMLU-Pro (12k+)  <---- DCLM / FineWeb\n'
-        'indic           -----> MILU (~85k), IndicGenBench (29)  <--- Sangraha / IndicCorp / Wikipedia\n'
-        '</pre></div>\n'
-        '    <p>The arrow direction is the substance of the plan: the benchmark on the left fixes the capability, and '
-        'the dataset on the right is chosen to satisfy it.</p>\n'
+        + figure(svg_compose_backward(),
+                 'Composing backward. Each target benchmark (centre) fixes a capability lane (left); the supplying '
+                 'dataset (right) is then chosen so that training on it moves that benchmark. Arrows point into the '
+                 'benchmark from both sides: the lane it measures and the data selected to satisfy it. Section 2 '
+                 'formalises the right-hand column.', "1") +
 
         '    <h3>1.3 Benchmark inventory</h3>\n'
         '    <div class="tblwrap"><table class="tbl"><tr><th>Benchmark</th><th>Lane</th><th>Size</th><th>Metric</th>'
@@ -248,19 +426,15 @@ def build_html():
 
         '    <h3>1.4 One instance, traced end to end</h3>\n'
         '    <p>The phrase &ldquo;resolved rate on 500 issues&rdquo; hides what a single graded item is. One '
-        'representative SWE-bench Verified instance, with concrete numbers:</p>\n'
-        '    <div class="diagram"><pre>\n'
-        'INSTANCE (representative)\n'
-        'repository at a fixed commit ..... ~1,400 Python files, ~600,000 lines\n'
-        'issue text handed to the model ... ~180 words   [CONTEXT: read, no loss taken]\n'
-        'required output (gold patch) ..... diff over 2 files, +14 / -3 lines\n'
-        '                                   [SUPERVISED TARGET: loss taken on these tokens]\n'
-        'grading in a sandbox ............. 3 fail-to-pass tests  (must flip fail -> pass)\n'
-        '                                  41 pass-to-pass tests  (must not regress)\n'
-        'resolved = 1 if all 44 tests pass, else 0\n\n'
-        'benchmark score = mean resolved over 500 instances\n'
-        '                = 380 / 500 = 0.76        (the ~76% figure, made concrete)\n'
-        '</pre></div>\n'
+        'representative SWE-bench Verified instance:</p>\n'
+        + figure(svg_instance_trace(),
+                 'A single graded item. The repository and issue text are read as context (no loss is taken on them); '
+                 'the gold patch is the supervised target; grading executes 44 tests in a sandbox and returns one bit. '
+                 'A code sample therefore contributes far fewer loss-bearing tokens than its raw size suggests.', "2") +
+        '    <p>The item score is an indicator, and the benchmark score is its mean over the 500 instances:</p>\n'
+        '    <div class="eq">\\[ \\text{resolved}_i=\\mathbb{1}\\!\\left[\\textstyle\\bigwedge_{t=1}^{44}'
+        '\\text{test}_t\\text{ passes}\\right],\\qquad \\text{resolved rate}=\\frac{1}{500}\\sum_{i=1}^{500}'
+        '\\text{resolved}_i=\\frac{380}{500}=0.76. \\]</div>\n'
         '    <p>This fixes three quantities the plan depends on. The trainable content per item is small: the 600,000-line '
         'repository is read as context, and the supervised target is a 17-line diff, so a code sample contributes far '
         'fewer loss-bearing tokens than its raw size implies (§3). The reward is verifiable, computed by executing 44 '
@@ -320,17 +494,27 @@ def build_html():
         'measures are recorded per lane: the number of samples (variety) and the number of tokens (depth). For chat and '
         'agent data, only the model-generated positions are supervised — user turns and tool outputs are loss-masked — so '
         'the loss-bearing token count is materially smaller than the raw trace size. In ordinary causal pre-training, by '
-        'contrast, every position is a training target.</p></div>\n'
+        'contrast, every position is a training target.</p>\n'
+        '    <div class="eq">\\[ T_{\\text{loss}}=\\sum_{i=1}^{T_{\\text{raw}}}\\mathbb{1}\\big[\\text{position }i'
+        '\\text{ is model-generated}\\big]\\ \\ll\\ T_{\\text{raw}}\\ \\ (\\text{chat/agent SFT}),\\qquad '
+        'T_{\\text{loss}}=T_{\\text{raw}}\\ \\ (\\text{plain pre-training}). \\]</div></div>\n'
 
         '  <div class="sec"><h2>4. Specify the allocation</h2>\n'
         '    <p>A share of the budget is assigned to each lane, summing to 100%, and each share is expressed in tokens '
-        '(share &times; budget) so that it can be reconciled against inventory.</p></div>\n'
+        'so that it can be reconciled against inventory:</p>\n'
+        '    <div class="eq">\\[ t_\\ell = s_\\ell\\, B,\\qquad \\sum_{\\ell} s_\\ell = 1,\\qquad '
+        'B = 3\\times 10^{12}\\ \\text{update tokens}. \\]</div></div>\n'
 
         '  <div class="sec"><h2>5. Apply the selector keep-fraction and reconcile against supply</h2>\n'
         '    <p>The online selector retains only a fraction of the data it screens; consequently the quantity that must be '
-        '<em>presented</em> exceeds the quantity <em>trained</em> on. At a keep-fraction of 0.5, presented = trained &divide; '
-        '0.5. Reconciling presented tokens against unique available supply is the decisive check, and it materially '
-        'changes the assessment of the code and STEM lanes.</p>\n'
+        '<em>presented</em> exceeds the quantity <em>trained</em> on. Reconciling presented tokens against unique '
+        'available supply is the decisive check, and it materially changes the assessment of the code and STEM '
+        'lanes:</p>\n'
+        '    <div class="eq">\\[ \\text{presented}_\\ell=\\frac{\\text{trained}_\\ell}{k_\\ell}\\ '
+        '\\xrightarrow{\\,k_\\ell=0.5\\,}\\ 2\\,\\text{trained}_\\ell,\\qquad '
+        '\\text{epochs}_\\ell=\\frac{\\text{presented}_\\ell}{U_\\ell}\\le 4, \\]</div>\n'
+        '    <p>where \\(k_\\ell\\) is the selector keep-fraction and \\(U_\\ell\\) the unique eligible supply; a lane '
+        'is feasible only if it clears the four-epoch repetition limit.</p>\n'
         '    <table class="tbl"><tr><th>Lane</th><th>Share</th><th>Trained</th><th>Presented</th><th>Unique avail.</th><th>Status</th></tr>\n'
         + pantry_rows() +
         '    </table>\n'
@@ -339,9 +523,11 @@ def build_html():
 
         '  <div class="sec"><h2>6. Classify lane feasibility</h2>\n'
         '    <p>The reconciliation identifies which lanes are supply-constrained. The <strong>agentic</strong> lane is '
-        'infeasible under current inventory: at approximately 2,000 trainable tokens per trajectory, the requirement '
-        'corresponds to on the order of 10<sup>8</sup> trajectories, which cannot be obtained by scraping. The '
-        '<strong>reasoning</strong> lane is starved. <strong>Long context</strong> is not represented as a lane at all: '
+        'infeasible under current inventory: at approximately 2,000 trainable tokens per trajectory \\(\\tau\\), the '
+        'requirement is on the order of \\(10^{8}\\) trajectories, which cannot be obtained by scraping.</p>\n'
+        '    <div class="eq">\\[ N_{\\text{traj}}=\\frac{t_{\\text{agentic}}}{\\tau}'
+        '=\\frac{0.13\\times 3\\times 10^{12}}{2{,}000}\\approx 1.95\\times 10^{8}. \\]</div>\n'
+        '    <p>The <strong>reasoning</strong> lane is starved. <strong>Long context</strong> is not represented as a lane at all: '
         'sequence length is a property that data in other lanes already possesses (a long legal document in Indic is both '
         'Indic and long), and treating it as an independent lane double-counts tokens. It is instead specified as a '
         'per-phase packing constraint. The principal remedy for the constrained lanes is generation and distillation; the '
@@ -355,7 +541,12 @@ def build_html():
         'excessive repetition. The verified tier is therefore capped at its supported level and the remainder is carried '
         'by the unverified and translated tiers, with the associated quality risk stated. Per-language protection is '
         'expressed as minimum token counts, not as a per-language percentage of the total budget, since the latter would '
-        'exceed the entire Indic allocation once summed across all languages.</p></div>\n'
+        'exceed the entire Indic allocation once summed across all languages.</p>\n'
+        '    <div class="eq">\\[ T^{\\text{ver}}_{\\max}=4\\,U^{\\text{ver}},\\qquad '
+        '\\sum_{j=1}^{22} m_j \\le t_{\\text{indic}} = 0.08\\,B, \\]</div>\n'
+        '    <p>where \\(U^{\\text{ver}}\\) is unique verified supply and \\(m_j\\) the token floor for language '
+        '\\(j\\). A flat per-language floor of \\(p\\%\\) of the total budget fails as soon as \\(22p \\ge 8\\) '
+        '(i.e. \\(p \\gtrsim 0.36\\%\\)), because the floors alone would then consume the whole Indic allocation.</p></div>\n'
 
         '  <div class="sec"><h2>8. Specify floors and the annealing reserve</h2>\n'
         '    <p>Protected minima are enforced at batch granularity rather than as run-level averages; a run-level floor '
@@ -365,6 +556,11 @@ def build_html():
         'without annealing.</p></div>\n'
 
         '  <div class="sec"><h2>9. Define the curriculum phases</h2>\n'
+        + figure(svg_curriculum(),
+                 'The four curriculum phases across the budget, in training order. Widths are proportional to each '
+                 'phase&#8217;s share of the 3T tokens; maximum sequence length rises left to right, and the scarce and '
+                 'premium lanes are concentrated in the later phases. The budget-weighted average of the phase mixtures '
+                 'reproduces the global mixture.', "3") +
         '    <p>The single mixture is expanded into a small number of phases — broad, general-web-dominant data first, '
         'followed by code, science, and reasoning, with the scarce lanes concentrated later and the premium data reserved '
         'for the final phase. Each phase specifies its own budget, maximum sequence length, and mixture summing to 100%; '
@@ -372,7 +568,11 @@ def build_html():
         'gradual, to avoid the gradient instability associated with abrupt distribution shifts. Difficulty is assigned by '
         'measurement — for example, the failure rate of a reference model, or pass@k on verifiable items — rather than by '
         'inspection, and the reasoning-depth label is defined by the shortest correct trace to avoid inducing length '
-        'inflation.</p></div>\n'
+        'inflation.</p>\n'
+        '    <div class="eq">\\[ s_\\ell = \\frac{\\sum_{p} B_p\\, s_{\\ell,p}}{\\sum_{p} B_p},\\qquad '
+        '\\sum_{\\ell} s_{\\ell,p} = 1\\ \\ \\forall p, \\]</div>\n'
+        '    <p>where \\(B_p\\) is the budget of phase \\(p\\) and \\(s_{\\ell,p}\\) the share of lane \\(\\ell\\) '
+        'within it; this identity is what <code>mixture.py</code> checks.</p></div>\n'
 
         '  <div class="sec"><h2>10. Define the validation protocol</h2>\n'
         '    <p>Every quantity is treated as a hypothesis and tested at the 1B and 3B scales before full-scale commitment. '

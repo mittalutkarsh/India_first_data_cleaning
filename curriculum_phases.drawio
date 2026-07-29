@@ -1,0 +1,28 @@
+<mxfile host="app.diagrams.net" agent="Claude" version="24.0.0">
+  <diagram name="V5 Curriculum Phases" id="curriculum-phases">
+    <mxGraphModel dx="2000" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="1200" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="c2" value="CURRICULUM PHASES across the 3T-token budget (training order, left to right)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=13;fontStyle=1;fontColor=#1F1F3A;" vertex="1" parent="1">
+          <mxGeometry x="40" y="30" width="1000" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="c3" value="&lt;b&gt;Foundation&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:16px'&gt;45%&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ECEEF8;strokeColor=#2E357E;fontColor=#2E357E;arcSize=8;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="90" width="540" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c4" value="&lt;b&gt;Expansion&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:16px'&gt;30%&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F3F0;strokeColor=#147D74;fontColor=#147D74;arcSize=8;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="580" y="90" width="360" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c5" value="&lt;b&gt;Reasoning + LC&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:16px'&gt;23%&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBF1E0;strokeColor=#E0982B;fontColor=#E0982B;arcSize=8;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="940" y="90" width="276" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c6" value="&lt;b&gt;Anneal&lt;/b&gt;&lt;br&gt;&lt;span style='font-size:16px'&gt;2%&lt;/span&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FBEEF3;strokeColor=#B5476B;fontColor=#B5476B;arcSize=8;verticalAlign=middle;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="1216" y="90" width="24" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="c7" value="max sequence length rises left &#8594; right; transitions gradual (overlapping bands)" style="text;html=1;strokeColor=none;fillColor=none;align=left;fontSize=11;fontColor=#656579;fontStyle=2;" vertex="1" parent="1">
+          <mxGeometry x="40" y="224" width="1000" height="20" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
