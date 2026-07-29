@@ -270,7 +270,7 @@ def build_html():
         '      <div style="margin-top:14px"><b>Indic 4%, by tier:</b> Verified (T0) 45% · Unverified (T1) 35% · Translated (T3) 12% · Synthetic (T2) 8%.</div>\n'
         '      <div style="margin-top:6px;font-size:13px">\n'
         '        <div><b>Always-on floor:</b> Indic ≥ 3% · agentic ≥ 8% · safety ≥ 1% — OPUS may never cross these.</div>\n'
-        '        <div style="margin-top:3px"><b>Anneal reserve:</b> 2% of budget — premium verified Indic + PhD LaTeX + clean agentic — spent only in the cooldown.</div>\n'
+        '        <div style="margin-top:3px"><b>Anneal reserve:</b> 2% <i>inside</i> the 3T (not on top) — premium verified Indic + PhD LaTeX + clean agentic — spent only in the cooldown; still counted in its lanes.</div>\n'
         '        <div style="margin-top:3px"><b>Curriculum:</b> web-heavy → code/STEM/reasoning → long-context; seq-len 4K→8K→16K; ~18% band overlap.</div>\n'
         '        <div style="margin-top:3px"><b>Depth bands:</b> low ≤256 · medium ≤1k · high ≤4k · ultra ≤16k+ thinking tokens.</div>\n'
         '        <div style="margin-top:3px"><b>Validation:</b> tested at 1B &amp; 3B on the benchmarks above before 40B; OPUS keep-fraction ~50% during the run.</div>\n'

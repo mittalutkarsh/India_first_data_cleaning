@@ -31,9 +31,11 @@ STEPS = [
      "Every benchmark has at least one dataset mapped to it."),
 
     ("3", "Take stock of your pantry", "weigh the ingredients you own",
-     "Count what you actually have, in <b>two numbers</b>: <b>samples</b> (variety) and <b>tokens</b> (depth). And count "
-     "only <b>trainable</b> tokens — because of loss-masking, the model is trained only on its own words, not on user "
-     "turns or tool logs. A giant agent log is mostly <i>not</i> trainable.",
+     "Count what you actually have, in <b>two numbers</b>: <b>samples</b> (variety) and <b>tokens</b> (depth) — and treat "
+     "published sizes as an <b>upper bound</b>, not trainable inventory (they drop after licensing, dedup, quality, "
+     "decontamination and re-tokenizing with the V5 tokenizer). For <b>chat/agent-style</b> data, loss-masking trains the "
+     "model on its own words, not user turns or tool logs, so a giant agent log is mostly <i>not</i> trainable — but plain "
+     "pretraining is different: there every token is a next-token target.",
      "Stack v2 ≈ 600M samples / ~900B tokens · ToolBench ≈ 120k samples / only ~80M tokens (tiny each) · "
      "DCLM/FineWeb ≈ trillions · Sangraha ≈ 251B · IndicCorp ≈ 20.9B · Wikipedia ≈ 10–90M per language.",
      "You have a table of samples + trainable tokens available for every lane."),
@@ -63,13 +65,16 @@ STEPS = [
      "During training an auto-selector called <b>OPUS</b> keeps only data that helps the target benchmarks — but it peeks "
      "at just the first ~512 tokens and its benchmarks are English/coding-heavy, so it would <b>throw away Indic and "
      "agentic</b>. Set minimums it may never cross.",
-     "Always-on floor: Indic ≥ 3% · agentic ≥ 8% · safety ≥ 1% · each smallest Indic language ≥ 0.3%.",
+     "Always-on floor: agentic ≥ 8% · Indic ≥ 3% of the budget — with <b>per-language token minimums</b> inside the Indic "
+     "lane (e.g. Hindi ≥ 20B, each low-resource language ≥ 2B), never a per-language % of the total (0.3% × 22 languages "
+     "would blow past the whole Indic lane). Safety is a cross-cutting tag counted inside its host lanes, held ≥ 1%.",
      "You have explicit floor percentages the selector is forbidden to go below."),
 
     ("8", "Save dessert for last — the anneal reserve", "peak nutrition before the race",
      "Hold back a slice of your <b>very best</b> data for the final <b>cooldown</b> (~last 2%, learning-rate→0), where what "
      "the model sees last sticks hardest. Spend it only then.",
-     "Reserve ~2% of the budget (~60B): premium verified Indic + PhD-grade LaTeX/math + the cleanest agentic traces.",
+     "Reserve ~2% (~60B) that sits <b>inside</b> the 3T (core 2.94T + anneal 0.06T, not an extra 60B): premium verified "
+     "Indic + PhD-grade LaTeX/math + the cleanest agentic traces. Those tokens still count toward their lane totals.",
      "A named reserve of best data with a % and a rule: “fed only in the cooldown.”"),
 
     ("9", "Sort by difficulty and thinking-length", "label easy/hard and short/long",
