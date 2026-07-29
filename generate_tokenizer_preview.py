@@ -247,6 +247,7 @@ def build_html(articles):
         '  <a href=\"decontam.html\">Decontam</a>\n'
         '  <a href=\"tokenizer.html\" class=\"active\">Tokenizer</a>\n'
         '  <a href=\"manifest.html\">Manifest</a>\n'
+        '  <a href=\"v5_brief.html\">V5 Plan</a>\n'
         '</div></div>\n'
         '<div class="wrap">\n'
         '  <div class="phead">\n'
