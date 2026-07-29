@@ -1,249 +1,207 @@
-"""Generate v5_playbook.html — a step-by-step, layman's how-to for actually
-BUILDING the V5 mixture-and-curriculum plan, with the real data explained."""
+"""Generate v5_playbook.html — how to actually build the V5 plan, written as an
+essay in a plain, intuition-first Substack voice, keeping the one table that
+earns its place (pantry vs plate, OPUS keep-fraction applied)."""
 
-# Worked example uses a 3T-token budget (within the 2.4-4T the course allows).
-BUDGET_B = 3000  # billions of tokens
+BUDGET_B = 3000.0
 
 # lane, share%, OPUS keep-fraction, unique-eligible tokens (B), note
-# (long-context is NOT a lane — it's a per-phase packing constraint; safety IS a lane)
 PANTRY = [
-    ("General web", 37, 0.5, 8000, "FineWeb/DCLM — ample after dedup"),
-    ("Code", 22, 0.5, 600, "Stack v2 after license + dedup"),
-    ("STEM", 12, 0.5, 350, "DCLM-STEM / textbooks"),
-    ("Agentic / tools", 13, 1.0, 0.08, "ToolBench trainable only — must be GENERATED"),
-    ("Reasoning", 7, 0.5, 30, "distilled verifier-backed traces — must scale"),
-    ("Indic", 8, 1.0, 150, "Sangraha/IndicCorp (mostly T1); verified tier thin"),
-    ("Safety", 1, 1.0, 15, "curated refusal/redteam"),
+    ("General web", 37, 0.5, 8000, "plenty after dedup"),
+    ("Code", 22, 0.5, 600, "Stack v2, after licences + dedup"),
+    ("STEM", 12, 0.5, 350, "textbooks, science"),
+    ("Agentic", 13, 1.0, 0.08, "must be generated, not scraped"),
+    ("Reasoning", 7, 0.5, 30, "distilled traces, must scale"),
+    ("Indic", 8, 1.0, 150, "mostly raw web; verified tier is thin"),
+    ("Safety", 1, 1.0, 15, "curated"),
 ]
 
-STEPS = [
-    ("1", "Pick the exams you must pass", "coach picks the meets",
-     "Before any percentages, list the <b>benchmarks</b> that define the model. That single list <i>is</i> the target — "
-     "everything downstream is chosen to win these.",
-     "Coding: SWE-bench, SWE-bench-Pro/Live · Agentic: Terminal-bench, τ-bench, BFCL, WebArena, GAIA · "
-     "Reasoning/math: AIME, FrontierMath, LiveBench · General knowledge: MMLU · Indic: MILU + Indic evals.",
-     "You have a written list of target benchmarks, grouped by capability lane."),
-
-    ("2", "For each exam, get the right textbook", "match each meet to a drill",
-     "This is “compose backward”: every benchmark is matched to the <b>dataset</b> that teaches that skill. A lane is only "
-     "real if a dataset fills it.",
-     "SWE-bench → GitHub-issue+patch data · Terminal-bench → shell-session traces · BFCL/τ-bench → ToolBench/Bolt · "
-     "AIME → math-reasoning traces · MMLU → general web (DCLM/FineWeb) · MILU → Sangraha/IndicCorp/Wikipedia.",
-     "Every benchmark has at least one dataset mapped to it."),
-
-    ("3", "Take stock of your pantry", "weigh the ingredients you own",
-     "Count what you actually have, in <b>two numbers</b>: <b>samples</b> (variety) and <b>tokens</b> (depth) — and treat "
-     "published sizes as an <b>upper bound</b>, not trainable inventory (they drop after licensing, dedup, quality, "
-     "decontamination and re-tokenizing with the V5 tokenizer). For <b>chat/agent-style</b> data, loss-masking trains the "
-     "model on its own words, not user turns or tool logs, so a giant agent log is mostly <i>not</i> trainable — but plain "
-     "pretraining is different: there every token is a next-token target.",
-     "Stack v2 ≈ 600M samples / ~900B tokens · ToolBench ≈ 120k samples / only ~80M tokens (tiny each) · "
-     "DCLM/FineWeb ≈ trillions · Sangraha ≈ 251B · IndicCorp ≈ 20.9B · Wikipedia ≈ 10–90M per language.",
-     "You have a table of samples + trainable tokens available for every lane."),
-
-    ("4", "Decide the plate — slice the budget into lanes", "portion the meal",
-     "Fix the total <b>budget</b> (the course says 2.4–4T tokens; we’ll use <b>3T</b>). Give each lane a % that sums to "
-     "100, then turn % into tokens so it’s concrete: <code>tokens = share × budget</code>.",
-     "At a 3T budget: Web 34% → ~1,020B · Code 25% → ~750B · Agentic 16% → ~480B · STEM 12% → ~360B · "
-     "Reasoning 7% → ~210B · Indic 4% → ~120B · Long-context 2% → ~60B.",
-     "You have a mixture table where the shares add to 100% and each is written in tokens."),
-
-    ("5", "Reality-check: pantry vs plate → find the STARVED lanes", "do you have enough of each?",
-     "Put “tokens needed” next to “tokens available”. Where you need more than you have, the lane is <b>starved</b> — that’s "
-     "the single most important output of this whole exercise, because it tells the cleaning pipeline what to go get.",
-     "Agentic wants ~480B but only ~0.08B is trainable → <b>massively starved</b>. Reasoning wants ~210B, have ~30B → "
-     "<b>starved</b>. Code wants ~750B, have ~900B → fine. See the table below.",
-     "Every lane is marked ENOUGH or STARVED, with the shortfall in tokens."),
-
-    ("6", "Split the Indic dish into its four qualities", "grade the ingredients",
-     "Don’t write one Indic number. Break the 120B into the four <b>tiers</b> by how much you can honestly source of each, "
-     "and say when Sanskrit / Urdu / other languages enter.",
-     "e.g. Indic 120B → Verified (T0) 45% (54B, Wikipedia/textbooks — thin, so this caps you) · Unverified (T1) 35% "
-     "(42B, Sangraha/IndicCorp) · Translated (T3) 12% (14B) · Synthetic (T2) 8% (10B, distilled).",
-     "The Indic lane is written as four tier-numbers that add up, with a note on which languages and when."),
-
-    ("7", "Pin the non-negotiables (the floor) — because of OPUS", "the vitamins you never skip",
-     "During training an auto-selector called <b>OPUS</b> keeps only data that helps the target benchmarks — but it peeks "
-     "at just the first ~512 tokens and its benchmarks are English/coding-heavy, so it would <b>throw away Indic and "
-     "agentic</b>. Set minimums it may never cross.",
-     "Always-on floor: agentic ≥ 8% · Indic ≥ 3% of the budget — with <b>per-language token minimums</b> inside the Indic "
-     "lane (e.g. Hindi ≥ 20B, each low-resource language ≥ 2B), never a per-language % of the total (0.3% × 22 languages "
-     "would blow past the whole Indic lane). Safety is a cross-cutting tag counted inside its host lanes, held ≥ 1%.",
-     "You have explicit floor percentages the selector is forbidden to go below."),
-
-    ("8", "Save dessert for last — the anneal reserve", "peak nutrition before the race",
-     "Hold back a slice of your <b>very best</b> data for the final <b>cooldown</b> (~last 2%, learning-rate→0), where what "
-     "the model sees last sticks hardest. Spend it only then.",
-     "Reserve ~2% (~60B) that sits <b>inside</b> the 3T (core 2.94T + anneal 0.06T, not an extra 60B): premium verified "
-     "Indic + PhD-grade LaTeX/math + the cleanest agentic traces. Those tokens still count toward their lane totals.",
-     "A named reserve of best data with a % and a rule: “fed only in the cooldown.”"),
-
-    ("9", "Sort by difficulty and thinking-length", "label easy/hard and short/long",
-     "Add two more labels so the schedule can be deliberate: how <b>hard</b> each sample is, and how <b>long</b> the reasoning "
-     "should be (the model is trained to obey low/medium/high/ultra tags). Long-context is separate: grow the sequence "
-     "length in steps.",
-     "Difficulty — Easy: “Capital of India?” · Hard: “Prove √2 irrational.” Depth — low ≤256 · medium ≤1k · high ≤4k · "
-     "ultra ≤16k+ thinking tokens. Sequence length ladder: 4K → 8K → 16K → 32K.",
-     "Every dataset is tagged with a difficulty band and (for reasoning) a depth band, with example boundaries."),
-
-    ("10", "Write the weekly schedule — the curriculum", "plan the training weeks",
-     "The <b>order</b> matters as much as the mix. Broad web first (learn language + common sense), then code/STEM/reasoning, "
-     "long-context late, premium anneal last. Bands must <b>overlap</b> (~15–20%) or the gradients spike. Show the mix as a "
-     "few <b>phase snapshots</b>, not one static table.",
-     "Early (nursery): Web 55% / Code 15% / STEM 10% / Indic 8% / rest small. Mid: the 34/25/16/12/7/4/2 plate above. "
-     "Anneal: tiny, premium-only. Blend 18% of the next phase into the current one.",
-     "You have 3 phase-snapshot mixtures + a stated overlap rule between phases."),
-
-    ("11", "Trial on a junior first — proxy runs", "test the plan on a trainee",
-     "Every number is a <b>guess</b> until tested cheaply. Commit to running competing recipes at <b>1B and 3B</b> (V4’s "
-     "small sizes) for a small budget, compare on the Step-1 benchmarks, and only promote winners. During the real run, "
-     "OPUS gives ~8× token efficiency.",
-     "e.g. Recipe A (Indic 4%) vs B (Indic 6%) at 1B for ~20B tokens → if B lifts Indic evals without hurting English, "
-     "promote to 3B → then 40B. OPUS keep-fraction ~50%.",
-     "You have a written experiment plan: which recipes, which scale, which evals, promotion criteria."),
-
-    ("12", "Send the shopping list back to the kitchen", "restock the starved shelves",
-     "Point the 8-stage cleaning pipeline at the lanes Step 5 marked <b>starved</b> — that’s the “cleaning continues, aimed "
-     "at the starved slots” line. Then assemble everything into the <b>README</b> you submit.",
-     "Priority queue for cleaning: agentic traces (biggest gap) → reasoning traces → long-context docs. README sections: "
-     "target benchmarks · mixture (per phase) · Indic tiers · floor · anneal · bands · curriculum · validation plan.",
-     "A prioritised cleaning queue + a complete, defended README ready to submit."),
-]
+NAV = (
+    '<div class="nav"><div class="nav-in">\n'
+    '  <span class="brand">India-First 40B</span>\n'
+    '  <a href="overview.html">Overview</a>\n'
+    '  <a href="data.html">Data</a>\n'
+    '  <a href="index.html">Cleaning</a>\n'
+    '  <a href="language.html">Language</a>\n'
+    '  <a href="quality.html">Quality</a>\n'
+    '  <a href="dedup.html">Dedup</a>\n'
+    '  <a href="pii.html">PII</a>\n'
+    '  <a href="decontam.html">Decontam</a>\n'
+    '  <a href="tokenizer.html">Tokenizer</a>\n'
+    '  <a href="manifest.html">Manifest</a>\n'
+    '  <a href="v5_brief.html" class="active">V5 Plan</a>\n'
+    '</div></div>\n'
+)
 
 CSS = """
-:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
-  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
+:root { --bg:#FCFCFA; --ink:#1a1a22; --soft:#3d3d4a; --indigo:#2E357E; --marigold:#C77d1a;
+  --teal:#147D74; --rose:#B5476B; --line:#E6E6DF; --muted:#7a7a86; --panel:#f3f3ee; }
 *, *::before, *::after { box-sizing:border-box; }
-body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.6; -webkit-font-smoothing:antialiased; }
-a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
-.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
-.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
-.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
-.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
-.nav a:hover { color:var(--ink); text-decoration:none; }
-.nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
-.wrap { max-width:1000px; margin:0 auto; padding:0 24px 80px; }
-.crumb { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding:20px 0 0; }
-.hero { padding:10px 0 20px; border-bottom:2px solid var(--ink); }
-.hero .eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.15em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
-.hero h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(27px,4.4vw,44px); margin:8px 0 10px; line-height:1.08; }
-.hero p { font-size:15px; color:#33334a; margin:0; max-width:76ch; }
-.analogy { margin:20px 0 0; border:1px solid var(--line); border-left:4px solid var(--marigold); border-radius:0 12px 12px 0; background:#fff; padding:14px 18px; font-size:14px; color:#33334a; }
-.analogy b { color:var(--ink); }
-.step { border:1px solid var(--line); border-radius:14px; background:#fff; padding:18px 20px; margin:13px 0 0; }
-.step .top { display:flex; align-items:baseline; gap:12px; flex-wrap:wrap; }
-.step .n { font-family:"IBM Plex Mono",monospace; font-weight:700; font-size:14px; color:#fff; background:var(--indigo); border-radius:9px; width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; }
-.step h3 { font-family:"Spectral",serif; font-size:20px; margin:0; }
-.step .kite { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--teal); }
-.step .plain { font-size:14px; color:#33334a; margin:10px 0 0; }
-.step .data { margin:12px 0 0; padding:11px 14px; background:var(--panel); border-radius:9px; font-size:13px; }
-.step .data .lbl { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--indigo); font-weight:600; display:block; margin-bottom:5px; }
-.step .done { font-size:12.5px; color:var(--teal); margin:11px 0 0; }
-.step .done b { color:#0f5c43; }
-.big { margin:32px 0 0; } .big h2 { font-family:"Spectral",serif; font-size:24px; margin:0 0 4px; } .big .lead { font-size:13px; color:var(--muted); margin:0 0 14px; }
-.tbl { width:100%; border-collapse:collapse; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; }
-.tbl th, .tbl td { text-align:left; padding:8px 12px; border-bottom:1px solid var(--line); }
-.tbl th { font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
-.tbl .num { font-family:"IBM Plex Mono",monospace; text-align:right; }
-.tbl code { font-family:"IBM Plex Mono",monospace; font-size:11.5px; }
-.badge { font-family:"IBM Plex Mono",monospace; font-size:10px; font-weight:600; padding:1px 8px; border-radius:5px; }
-.ok { background:#e6f5ef; color:#0f7a54; } .starved { background:#fceef2; color:var(--rose); }
-.tight { background:#fdf3e3; color:#9a5a12; }
-.formula { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:#16162a; color:#eee; border-radius:8px; padding:10px 14px; margin-top:8px; }
-.cta { margin:26px 0 0; border-radius:12px; background:#f2faf8; border:1px solid #cfe6e1; padding:16px 20px; font-size:14px; }
-.cta a { font-weight:600; }
+body { margin:0; background:var(--bg); color:var(--ink);
+  font-family:"Spectral", Georgia, "Times New Roman", serif; font-size:19px; line-height:1.75; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); } a:hover { color:var(--marigold); }
+.nav { position:sticky; top:0; z-index:50; background:rgba(252,252,250,.95); border-bottom:1px solid var(--line); backdrop-filter:saturate(1.2) blur(4px); }
+.nav-in { max-width:1180px; margin:0 auto; padding:9px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
+.brand { font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; text-decoration:none; }
+.nav a:hover { color:var(--ink); } .nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.article { max-width:720px; margin:0 auto; padding:0 24px 90px; }
+.crumb { font-family:"IBM Plex Mono",monospace; font-size:12px; color:var(--muted); margin-top:26px; }
+.kicker { font-family:"IBM Plex Mono",monospace; font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--marigold); font-weight:600; margin-top:14px; }
+h1 { font-weight:700; font-size:clamp(30px,5vw,44px); line-height:1.12; margin:10px 0 6px; letter-spacing:-.01em; }
+.dek { font-size:20px; color:var(--soft); font-style:italic; margin:0 0 30px; }
+h2 { font-weight:700; font-size:25px; margin:40px 0 6px; letter-spacing:-.01em; }
+p { margin:18px 0; } .lead { font-size:21px; }
+.pull { border-left:3px solid var(--marigold); margin:30px 0; padding:4px 0 4px 22px; font-size:22px; line-height:1.4; font-style:italic; color:var(--indigo); }
+.ptable { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13.5px; margin:24px 0; background:#fff; border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+.ptable th, .ptable td { padding:8px 10px; border-bottom:1px solid var(--line); text-align:right; }
+.ptable th:first-child, .ptable td:first-child { text-align:left; }
+.ptable th { font-size:10.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+.b { font-weight:600; padding:1px 7px; border-radius:5px; }
+.b-ok { background:#e6f5ef; color:#0f7a54; } .b-tight { background:#fbeede; color:#9a5a12; }
+.b-starved { background:#fceef2; color:var(--rose); } .b-inf { background:#f7e0e6; color:#8a1a3a; }
+.cap { font-size:14px; color:var(--muted); font-style:italic; margin-top:-8px; }
+.cta { margin:36px 0 0; padding:18px 22px; background:#fff; border:1px solid var(--line); border-radius:12px; font-size:17px; }
+code { font-family:"IBM Plex Mono",monospace; font-size:15px; background:var(--panel); padding:1px 5px; border-radius:4px; }
 """
 
 
-def build_html():
-    steps = ""
-    for n, title, kite, plain, data, done in STEPS:
-        steps += (
-            '<div class="step"><div class="top"><span class="n">' + n + '</span>'
-            '<h3>' + title + '</h3><span class="kite">' + kite + '</span></div>'
-            '<div class="plain">' + plain + '</div>'
-            '<div class="data"><span class="lbl">The data / the numbers</span>' + data + '</div>'
-            '<div class="done">✔ <b>Done when:</b> ' + done + '</div></div>\n'
-        )
-    pantry = ""
+def pantry_rows():
+    out = ""
     for lane, share, keep, avail, note in PANTRY:
         trained = share / 100 * BUDGET_B
         presented = trained / keep
-        executable = min(trained, avail * 4)          # unique x epoch cap (4)
+        executable = min(trained, avail * 4)
         if executable < trained * 0.5:
-            cls, label = "starved", "INFEASIBLE"
+            cls, lab = "b-inf", "INFEASIBLE"
         elif executable < trained * 0.999:
-            cls, label = "starved", "STARVED"
+            cls, lab = "b-starved", "STARVED"
         elif presented > avail * 1.5:
-            cls, label = "tight", "TIGHT"
+            cls, lab = "b-tight", "TIGHT"
         else:
-            cls, label = "ok", "ENOUGH"
+            cls, lab = "b-ok", "ENOUGH"
         avail_s = ("%.2fB" % avail) if avail < 1 else "{:,}B".format(int(avail))
-        pantry += (
+        out += (
             '<tr><td>' + lane + '</td>'
-            '<td class="num">' + str(share) + '%</td>'
-            '<td class="num">~' + ("%d" % round(trained)) + 'B</td>'
-            '<td class="num">~' + ("%d" % round(presented)) + 'B</td>'
-            '<td class="num">~' + avail_s + '</td>'
-            '<td><span class="badge ' + cls + '">' + label + '</span></td>'
-            '<td style="font-size:12px;color:#656579">' + note + '</td></tr>\n'
+            '<td>' + str(share) + '%</td>'
+            '<td>~' + ("%d" % round(trained)) + 'B</td>'
+            '<td>~' + ("%d" % round(presented)) + 'B</td>'
+            '<td>~' + avail_s + '</td>'
+            '<td><span class="b ' + cls + '">' + lab + '</span></td></tr>\n'
         )
+    return out
+
+
+def build_html():
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-        '<title>V5 Plan — Step-by-Step How-To</title>\n'
+        '<title>How to actually build the V5 plan</title>\n'
         '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
-        '<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,600;0,700;1,600'
-        '&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">\n'
-        '<style>' + CSS + '</style>\n</head>\n<body>\n'
-        '<div class="nav"><div class="nav-in">\n'
-        '  <span class="brand">India-First 40B</span>\n'
-        '  <a href="overview.html">Overview</a>\n'
-        '  <a href="data.html">Data</a>\n'
-        '  <a href="index.html">Cleaning</a>\n'
-        '  <a href="language.html">Language</a>\n'
-        '  <a href="quality.html">Quality</a>\n'
-        '  <a href="dedup.html">Dedup</a>\n'
-        '  <a href="pii.html">PII</a>\n'
-        '  <a href="decontam.html">Decontam</a>\n'
-        '  <a href="tokenizer.html">Tokenizer</a>\n'
-        '  <a href="manifest.html">Manifest</a>\n'
-        '  <a href="v5_brief.html" class="active">V5 Plan</a>\n'
-        '</div></div>\n'
-        '<div class="wrap">\n'
-        '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> › Step-by-step how-to</div>\n'
-        '  <div class="hero">\n'
-        '    <div class="eyebrow">How to actually build the plan</div>\n'
-        '    <h1>12 steps to a defended V5 mixture &amp; curriculum.</h1>\n'
-        '    <p>The <a href="v5_brief.html">V5 Plan</a> page explains <em>what</em> is being asked. This page is the '
-        '<b>recipe for doing it</b> — each step in plain words, with the real datasets and token maths worked out, ending '
-        'in the README you submit.</p>\n'
-        '  </div>\n'
-        '  <div class="analogy">Running analogy: you are the <b>head chef</b> planning a season’s meal plan for an athlete '
-        '(the model). Steps go: pick the events → choose drills → weigh your pantry → portion the plate → spot what you’re '
-        'short on → grade ingredients → fix the daily vitamins → save dessert for race week → label easy/hard &amp; '
-        'quick/slow → write the weekly schedule → trial on a junior → restock the empty shelves.</div>\n'
-        + steps +
-        '  <div class="big">\n'
-        '    <h2>The one table that matters: pantry vs plate</h2>\n'
-        '    <p class="lead">Step 4 + 5 made concrete at a <b>3T update-token</b> budget — and this is the version that '
-        'survives a hostile grader. The trap: OPUS keeps only ~50% of screened lanes, so you must <b>present</b> twice what '
-        'you <b>train</b> on. <code>trained = share × 3T</code>; <code>presented = trained ÷ keep</code>. Compare '
-        '<b>presented</b> to what’s available — that’s what flips Code and STEM from “enough” to <span class="badge tight">TIGHT</span>.</p>\n'
-        '    <div class="formula">trained = share% × 3T    ·    presented = trained ÷ OPUS_keep    (agentic: 13% × 3T = 390B; keep=1.0 via floor)</div>\n'
-        '    <table class="tbl" style="margin-top:10px"><tr><th>Lane</th><th class="num">Share</th><th class="num">Trained</th>'
-        '<th class="num">Presented</th><th class="num">Unique avail.</th><th>Status</th><th>Why</th></tr>\n' + pantry + '</table>\n'
-        '    <p class="lead" style="margin-top:10px">Read-out: <b>web</b> is fine; <b>code &amp; STEM are TIGHT</b> once OPUS’s '
-        '2× presentation is counted; <b>agentic is INFEASIBLE</b> as scraped (must be generated); <b>reasoning is STARVED</b>; '
-        '<b>Indic is tight</b> and its verified tier is capped by epochs. Long-context is <b>not a lane</b> — it’s a per-phase '
-        'packing constraint (≥15% of sequences ≥32K, drawn proportionally). Honest conclusion: generate agentic + reasoning '
-        'data, cap verified-Indic epochs, and protect scarce lanes with per-batch floors so OPUS can’t bin them.</p>\n'
-        '  </div>\n'
-        '  <div class="cta">📄 The submittable version now lives in the repo: <b><code>V5_PLAN.md</code></b> (the defended '
-        'README, revised against two reviews) and <b><code>mixture.py</code></b> (a self-checking script that derives the '
-        'global mixture from the phases, applies the OPUS keep-fraction, and flags every infeasible/starved lane — run '
-        '<code>python3 mixture.py</code>). <a href="v5_brief.html">← back to what the ask is</a></div>\n'
+        '<link href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400;1,600'
+        '&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">\n'
+        '<style>' + CSS + '</style>\n</head>\n<body>\n' + NAV +
+        '<div class="article">\n'
+        '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> › how to build it</div>\n'
+        '  <div class="kicker">The hands-on version</div>\n'
+        '  <h1>How to actually build the plan.</h1>\n'
+        '  <p class="dek">The other page told you what the assignment wants. This one walks through it in the order I’d '
+        'actually do it — including the moment the arithmetic turns on you.</p>\n'
+
+        '  <p class="lead">There is a temptation to open a spreadsheet and start typing percentages. Resist it. If you pick '
+        'numbers first, you’ll fall in love with a plan you can’t actually cook. Do it in this order instead.</p>\n'
+
+        '  <h2>1. Start from the exams, not the data</h2>\n'
+        '  <p>Before any proportions, write down the benchmarks you’re trying to win — the coding ones, the agentic ones, the '
+        'math and reasoning ones, the general-knowledge one, the Indic ones. That list <em>is</em> the model. Everything '
+        'downstream exists to win it. Then, for each exam, name the dataset that teaches it. People call this “composing '
+        'backward,” and it just means you choose the textbook after you know the test.</p>\n'
+
+        '  <h2>2. Weigh your pantry before you plan the menu</h2>\n'
+        '  <p>Now go count what you actually own — and be ruthless about it. A published corpus size is an upper bound, not '
+        'trainable inventory. The number drops once you strip out bad licences, remove duplicates, filter for quality, take out '
+        'anything that overlaps your test sets, and re-tokenize with your own tokenizer. Count two things for every lane: how '
+        'many <em>samples</em> you have (that’s variety) and how many <em>tokens</em> (that’s depth). A million examples of '
+        'twenty tokens each teaches almost nothing.</p>\n'
+        '  <p>One subtlety that trips everyone up. For chat and agent data, you only train on the model’s own words — the user '
+        'turns and the raw tool logs are masked out. So a giant agent trace is mostly <em>not</em> trainable, and counting its '
+        'full size flatters you. (Plain web pretraining is different — there, every token counts.)</p>\n'
+
+        '  <h2>3. Portion the plate — and brace yourself</h2>\n'
+        '  <p>Now you write the mixture: a share of the budget for each lane, adding to a hundred. Say the budget is three '
+        'trillion tokens. Multiply the shares out so they’re concrete. This is where most first drafts feel finished.</p>\n'
+        '  <p>They aren’t, because of one detail. That automatic selector I mentioned typically keeps only about half of what you '
+        'show it. So to <em>train</em> on a billion tokens of code, you have to <em>present</em> two billion. Put “presented” '
+        'next to “available” and the picture changes. Watch what happens to code and STEM:</p>\n'
+        '  <table class="ptable"><tr><th>lane</th><th>share</th><th>trained</th><th>presented</th><th>you have</th><th>verdict</th></tr>\n'
+        + pantry_rows() +
+        '  </table>\n'
+        '  <p class="cap">Presented = trained ÷ the selector’s keep-rate. Verdict compares what you must present against the unique data you actually own.</p>\n'
+
+        '  <div class="pull">Code and STEM looked fine until the selector doubled the bill. That’s the kind of thing a grader finds in ten seconds — so you find it first.</div>\n'
+
+        '  <h2>4. Stare at the three empty shelves</h2>\n'
+        '  <p>The table is doing the most important job in the whole exercise: it shows you where you’re starving. Code and STEM '
+        'are merely tight. But <strong>agentic is infeasible</strong> as written — you’d need something like 190 million good '
+        'trajectories, and scraping can’t get you there. <strong>Reasoning is starved</strong>. And notice there’s no '
+        '“long-context” row at all, because long context isn’t a lane — it’s a property a document already has. A long Hindi '
+        'legal filing is Indic <em>and</em> long; counting it twice is cheating. Long context becomes a rule about how you pack '
+        'your batches in the later phases, not a slice of the pie.</p>\n'
+        '  <p>So your honest conclusion writes itself: you cannot scrape your way to agentic and reasoning data, you have to '
+        '<em>generate</em> it. And the cheapest lever isn’t more trajectories — it’s better ones. A trace that includes the '
+        'plan, the reasoning, and a reflection at the end yields several times more trainable tokens than a bare tool call. '
+        'Design beats scraping.</p>\n'
+
+        '  <h2>5. Grade the Indian-language shelf</h2>\n'
+        '  <p>Split Indic into its four trust tiers, and let the honest numbers hurt a little. Genuinely verified material — '
+        'Wikipedia, textbooks — across all those languages is only a few billion unique tokens. If your plan quietly wanted ten '
+        'times that in the verified tier, you’d be running the same Wikipedia through the model twenty times, which memorizes '
+        'rather than teaches. So cap the repeats at a handful, let the verified tier be as small as it truly is, and be explicit '
+        'that the rest leans on cleaned web and translation, with the quality risk that implies.</p>\n'
+        '  <p>And when you protect a small language, protect it in <em>tokens</em>, not percentages. “Every language gets at '
+        'least 0.3% of the budget” sounds fair until you notice twenty-two languages times 0.3% is more than the whole Indic '
+        'slice. Say “Hindi at least this many billion, each small language at least that many,” and sample the rest by '
+        'temperature.</p>\n'
+
+        '  <h2>6. Keep the vitamins, save the dessert</h2>\n'
+        '  <p>Set your floors — the minimums the selector can’t cross — and enforce them <em>constantly</em>, not as a '
+        'run-long average. A floor that’s only true on average lets the selector starve a lane for ninety percent of training '
+        'and backfill at the end, which is worse than useless. And put safety in the plate as a real lane; a floor for something '
+        'that isn’t in your hundred percent is just an inconsistency waiting to be caught.</p>\n'
+        '  <p>Then carve out the dessert: a small reserve of your very best data for the cooldown at the end. Keep it '
+        '<em>inside</em> the budget, not stacked on top, and remember its value is a claim you’ll test against a run with no '
+        'cooldown — not an article of faith.</p>\n'
+
+        '  <h2>7. Write the weekly schedule</h2>\n'
+        '  <p>Turn the single mixture into a handful of phases — broad and web-heavy first, then code and science and reasoning, '
+        'the scarce lanes concentrated late, the premium data last. Each phase gets its own budget, its own maximum sequence '
+        'length, and its own mixture that adds to a hundred; the phases, weighted by size, should average back to your global '
+        'mixture. Blend each phase into the next so nothing lurches. And decide difficulty by measurement, not by vibe — a '
+        'problem is “hard” if a small reference model fails it most of the time — and let the depth tag be earned by the '
+        'shortest correct answer, or you’ll teach the model to ramble whenever you ask it to think hard.</p>\n'
+
+        '  <h2>8. Trial it on a junior</h2>\n'
+        '  <p>Everything above is a hypothesis. Test it on a one-billion and a three-billion model before you spend the real '
+        'run. Pick evaluations that actually show signal at that size — the giant benchmarks read zero for everyone at one '
+        'billion, so they tell you nothing. To see if Indic helps, don’t compare 4% against 5%; compare 4% against 12% so the '
+        'effect is visible, then interpolate. And promote a recipe because it <em>ranks</em> above the others across both sizes, '
+        'not because of the exact score, since the scores shift as the model grows.</p>\n'
+
+        '  <h2>9. Restock the empty shelves</h2>\n'
+        '  <p>Finally, hand the starvation list back to the cleaning pipeline. It now has a priority queue, in order: generate '
+        'agentic trajectories, distill reasoning traces, gather genuinely long documents, and hunt down more verified Indic '
+        '(textbooks, government records, news — because Wikipedia alone won’t fill the tier). That’s the whole loop. The plan '
+        'tells the pipeline what to go get; the pipeline feeds the next version of the plan.</p>\n'
+
+        '  <h2>What you hand in</h2>\n'
+        '  <p>A README that a skeptic could read and push on at every number — and, ideally, a small script that '
+        're-derives the tables and refuses to run if anything doesn’t add up. That script is the difference between “trust me” '
+        'and “here, check it.”</p>\n'
+
+        '  <div class="cta">Both live in the repo now: <code>V5_PLAN.md</code> is the defended write-up, and '
+        '<code>mixture.py</code> re-computes this table, applies the selector’s keep-rate, and exits with an error if a phase '
+        'doesn’t sum to a hundred or a lane is impossible. Run <code>python3 mixture.py</code> to watch it check itself. '
+        '<a href="v5_brief.html">← back to what the ask is</a></div>\n'
         '</div>\n</body>\n</html>\n'
     )
 
