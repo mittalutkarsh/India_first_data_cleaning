@@ -84,6 +84,7 @@ def build_html():
         '  <a href=\"tokenizer.html\">Tokenizer</a>\n'
         '  <a href=\"manifest.html\">Manifest</a>\n'
         '  <a href=\"v5_brief.html\">V5 Plan</a>\n'
+        '  <a href=\"v5_playbook.html\">V5 Plan — Procedure</a>\n'
         '</div></div>\n'
         '<div class="wrap">\n'
         '  <div class="hero">\n'
