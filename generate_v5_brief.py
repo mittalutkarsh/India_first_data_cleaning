@@ -133,7 +133,7 @@ def build_html():
         '  </div>\n'
 
         '  <div class="foot">Companion documents: the construction procedure '
-        '(<a href="v5_playbook.html">V5 Plan — Procedure</a>), the full plan (<code>V5_PLAN.md</code>), and a verification '
+        '(<a href="v5_playbook.html">V5 Plan — Proposal</a>), the full plan (<code>V5_PLAN.md</code>), and a verification '
         'script (<code>mixture.py</code>) that derives the global mixture from the phase mixtures and validates every '
         'invariant.</div>\n'
         '</div>\n</body>\n</html>\n'

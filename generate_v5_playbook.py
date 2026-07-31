@@ -96,7 +96,7 @@ NAV = (
     '  <a href="tokenizer.html">Tokenizer</a>\n'
     '  <a href="manifest.html">Manifest</a>\n'
     '  <a href="v5_brief.html">V5 Plan</a>\n'
-    '  <a href="v5_playbook.html" class="active">V5 Plan — Procedure</a>\n'
+    '  <a href="v5_playbook.html" class="active">V5 Plan — Proposal</a>\n'
     '</div></div>\n'
 )
 
