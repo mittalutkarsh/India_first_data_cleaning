@@ -82,6 +82,15 @@ STRATEGY = [
      "reference-based (chrF / ROUGE)", "macro-avg + worst-language reported; chrF above baseline"),
 ]
 
+# Section 2 lane -> dataset map. lane, target, foundation data, targeted data, how obtained
+DATASET_MAP = [
+    ("code", "SWE-bench", "Stack v2 (raw code)", "issue&rarr;patch&rarr;test traces", "off-the-shelf + generated"),
+    ("agentic", "Terminal-Bench, &tau;-bench, GAIA", "&mdash;", "plan&rarr;act&rarr;reflect tool-use trajectories", "generated (scraping insufficient)"),
+    ("reasoning", "AIME, FrontierMath", "web / STEM text", "distilled step-by-step traces", "distilled from a teacher"),
+    ("general web", "MMLU, MMLU-Pro", "DCLM / FineWeb", "&mdash;", "off-the-shelf"),
+    ("indic", "MILU, IndicGenBench", "Sangraha / IndicCorp / Wikipedia", "verified textbooks, news, gov records", "mixed tiers (T0&ndash;T3)"),
+]
+
 NAV = (
     '<div class="nav"><div class="nav-in">\n'
     '  <span class="brand">India-First 40B</span>\n'
@@ -184,6 +193,15 @@ def proxy_rows():
     return "".join(
         "<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>\n" % p
         for p in PROXIES)
+
+
+def datasetmap_rows():
+    out = ""
+    for lane, target, foundation, targeted, how in DATASET_MAP:
+        acc = LANE_COLOR.get(lane, ("#656579", ""))[0]
+        out += ('<tr><td><span class="lanetag" style="color:%s">%s</span></td><td>%s</td><td>%s</td>'
+                '<td>%s</td><td>%s</td></tr>\n' % (acc, lane, target, foundation, targeted, how))
+    return out
 
 
 def strategy_rows():
@@ -753,9 +771,51 @@ def build_html():
         '  </div>\n'
 
         '  <div class="sec"><h2>2. Map each benchmark to a dataset</h2>\n'
-        '    <p>Each target is associated with the dataset that develops the corresponding capability — a procedure '
-        'sometimes termed composing backward. A capability lane without an identified source dataset is not a plan but an '
-        'aspiration, and is recorded as such.</p></div>\n'
+        '    <p>Section&nbsp;1 fixed what to measure; this section fixes what data to feed so that the measurement can '
+        'move. Each target benchmark is associated with the specific dataset that develops the capability it grades &mdash; '
+        'the second half of composing backward. The governing rule is stated first, because it is what makes the step '
+        'honest: a capability lane with no identified source dataset is not a plan but an aspiration, and is recorded as '
+        'one. The mapping is derived, not asserted, by the following procedure.</p>\n'
+
+        '    <h3>2.1 Procedure</h3>\n'
+        '    <p><strong>1. Decompose the benchmark into a training-signal shape.</strong> Read off what the model must '
+        'take in and what it must produce to score. SWE-bench reads a repository and an issue and must produce a patch '
+        'that passes hidden tests; the graded capability is therefore not &ldquo;knows Python&rdquo; but &ldquo;turns an '
+        'issue into a correct diff&rdquo;. That output shape is the specification the data must satisfy.</p>\n'
+        '    <p><strong>2. Name the data of that shape.</strong> Identify the examples that would teach exactly that '
+        'behaviour. For SWE-bench this is <span class="q">(repository, issue, gold-patch, tests)</span> tuples &mdash; '
+        'issue&rarr;patch&rarr;test trajectories. Raw source code teaches syntax and idiom but not the issue-to-patch '
+        'structure, so it cannot, by itself, develop the graded skill.</p>\n'
+        '    <p><strong>3. Split into foundation and targeted data.</strong> One dataset usually supplies broad fluency '
+        'and another supplies the exact structure the benchmark grades. For code, Stack&nbsp;v2 is the foundation '
+        '(general code competence) and generated repository-fix trajectories are the targeted data (the issue&rarr;patch '
+        'skill itself).</p>\n'
+        '    <p><strong>4. Classify how the data is obtained.</strong> This branch decides feasibility (&sect;3, '
+        '&sect;6). A source is either off-the-shelf (exists at scale: general web from DCLM/FineWeb, code from Stack '
+        'v2), distilled (produced from a stronger teacher model: reasoning traces), generated from scratch (scraping '
+        'cannot supply it: agentic tool-use trajectories), or translated and verified (the Indic tiers).</p>\n'
+        '    <p><strong>5. Record the mapping and its gaps.</strong> Each lane&rarr;dataset link is written down with a '
+        'provenance tier (T0 verified, T1 web, T2 synthetic, T3 translated). Where no adequate source exists, the lane '
+        'is marked as a gap for &sect;6 to classify and &sect;11 to queue, rather than being quietly left blank.</p>\n'
+
+        '    <h3>2.2 The resulting map</h3>\n'
+        '    <div class="tblwrap"><table class="stbl"><tr><th>Lane (target)</th><th>Target benchmark</th>'
+        '<th>Foundation data</th><th>Targeted data</th><th>How obtained</th></tr>\n'
+        + datasetmap_rows() +
+        '    </table></div>\n'
+        '    <p class="cap"><b>Table 2.</b> The lane&rarr;dataset map &mdash; the right-hand column of Figure&nbsp;1, '
+        'justified dataset by dataset. A dash denotes that the lane needs no separate foundation (agentic) or no separate '
+        'targeted set (general web).</p>\n'
+
+        '    <h3>2.3 Two rules that keep the mapping honest</h3>\n'
+        '    <p>First, the link must be causal: the dataset must plausibly develop the graded skill, so a lane cannot be '
+        'mapped to loosely related text (multiple-choice trivia does not teach patch-writing, and SWE-bench cannot be '
+        'mapped to &ldquo;more web text&rdquo;). Second, the dataset must not <em>be</em> the benchmark: mapping code to '
+        '&ldquo;train on the SWE-bench issues&rdquo; is contamination (test&nbsp;3). The source develops the capability; '
+        'it is never the test itself. The value of these rules is that the step surfaces the plan&rsquo;s hardest truth '
+        '&mdash; when the agentic lane is mapped, no scrapable source is found, which is not a failure of the mapping '
+        'but the discovery that the lane must be manufactured. That discovery is exactly what &sect;6 records as '
+        'infeasible-by-scraping and &sect;11 places at the head of the acquisition queue.</p></div>\n'
 
         '  <div class="sec"><h2>3. Establish the trainable inventory</h2>\n'
         '    <p>Effective inventory is measured, not assumed. Published corpus sizes are upper bounds; the usable quantity '

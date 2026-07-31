@@ -46,6 +46,16 @@ def strategy_table():
     return head + rows
 
 
+def datasetmap_table():
+    head = ("| Lane (target) | Target benchmark | Foundation data | Targeted data | How obtained |\n"
+            "|---|---|---|---|---|\n")
+    rows = ""
+    for lane, target, foundation, targeted, how in P.DATASET_MAP:
+        rows += "| `%s` | %s | %s | %s | %s |\n" % (
+            lane, dent(target), dent(foundation), dent(targeted), dent(how))
+    return head + rows
+
+
 def bench_table():
     head = ("| Benchmark | Lane | Size | Metric | Best score (date) |\n"
             "|---|---|---|---|---|\n")
@@ -264,7 +274,24 @@ The pairing keeps the compose-backward spine intact: the plan still *targets* th
 
 ## 2. Map each benchmark to a dataset
 
-Each target is associated with the dataset that develops the corresponding capability — a procedure sometimes termed composing backward. A capability lane without an identified source dataset is not a plan but an aspiration, and is recorded as such.
+Section 1 fixed what to measure; this section fixes what data to feed so that the measurement can move. Each target benchmark is associated with the specific dataset that develops the capability it grades — the second half of composing backward. The governing rule is stated first, because it is what makes the step honest: a capability lane with no identified source dataset is not a plan but an aspiration, and is recorded as one. The mapping is derived, not asserted, by the following procedure.
+
+### 2.1 Procedure
+
+1. **Decompose the benchmark into a training-signal shape.** Read off what the model must take in and what it must produce to score. SWE-bench reads a repository and an issue and must produce a patch that passes hidden tests; the graded capability is therefore not "knows Python" but "turns an issue into a correct diff". That output shape is the specification the data must satisfy.
+2. **Name the data of that shape.** Identify the examples that would teach exactly that behaviour. For SWE-bench this is `(repository, issue, gold-patch, tests)` tuples — issue→patch→test trajectories. Raw source code teaches syntax and idiom but not the issue-to-patch structure, so it cannot, by itself, develop the graded skill.
+3. **Split into foundation and targeted data.** One dataset usually supplies broad fluency and another supplies the exact structure the benchmark grades. For code, Stack v2 is the foundation (general code competence) and generated repository-fix trajectories are the targeted data (the issue→patch skill itself).
+4. **Classify how the data is obtained.** This branch decides feasibility (§3, §6). A source is either off-the-shelf (exists at scale: general web from DCLM/FineWeb, code from Stack v2), distilled (produced from a stronger teacher model: reasoning traces), generated from scratch (scraping cannot supply it: agentic tool-use trajectories), or translated and verified (the Indic tiers).
+5. **Record the mapping and its gaps.** Each lane→dataset link is written down with a provenance tier (T0 verified, T1 web, T2 synthetic, T3 translated). Where no adequate source exists, the lane is marked as a gap for §6 to classify and §11 to queue, rather than being quietly left blank.
+
+### 2.2 The resulting map
+
+""" + datasetmap_table() + """
+**Table 2.** The lane→dataset map — the right-hand column of Figure 1, justified dataset by dataset. A dash denotes that the lane needs no separate foundation (agentic) or no separate targeted set (general web).
+
+### 2.3 Two rules that keep the mapping honest
+
+First, the link must be causal: the dataset must plausibly develop the graded skill, so a lane cannot be mapped to loosely related text (multiple-choice trivia does not teach patch-writing, and SWE-bench cannot be mapped to "more web text"). Second, the dataset must not *be* the benchmark: mapping code to "train on the SWE-bench issues" is contamination (test 3). The source develops the capability; it is never the test itself. The value of these rules is that the step surfaces the plan's hardest truth — when the agentic lane is mapped, no scrapable source is found, which is not a failure of the mapping but the discovery that the lane must be manufactured. That discovery is exactly what §6 records as infeasible-by-scraping and §11 places at the head of the acquisition queue.
 
 ## 3. Establish the trainable inventory
 
