@@ -173,7 +173,9 @@ This fixes three quantities the plan depends on. The trainable content per item 
 
 ### 1.6 Proxy benchmarks for the 1B and 3B runs
 
-The headline benchmarks return near-zero at 1B and cannot decide anything during validation (§10). Concretely, at 1B a model resolves 0 of 500 SWE-bench issues — it cannot yet produce a working patch — so the score is 0 for every recipe and cannot separate them. On HumanEval the same 1B model solves roughly 15–20 of 164 problems, and that number does move between recipes, so it can rank them. Each lane therefore names a proxy with signal at small scale.
+Every quantity in this plan is a hypothesis — that one data recipe beats another. Testing a hypothesis by training the full 40B model is far too expensive to repeat, so recipes are first compared on cheap runs at 1B and 3B parameters, and only the winner is committed to the full run; this is the validation protocol of §10. The difficulty is that the measurement has to work at that small scale, and the headline benchmarks do not: they are so hard that a 1B model scores near zero on all of them, and a benchmark on which every recipe scores zero cannot tell the recipes apart. This is the floor half of the headroom test (test 5) — a score pinned to the bottom carries no more signal than one pinned to the ceiling.
+
+The two coding benchmarks make the contrast concrete. At 1B a model resolves **0 of 500** SWE-bench issues, because it cannot yet produce a working repository patch; the score is 0 for every recipe, so SWE-bench cannot separate them at this scale. On HumanEval — a much easier test of small, self-contained functions — the same 1B model solves roughly **15–20 of 164** problems, and that count *moves* with the recipe (a better code mixture might reach 20, a worse one 15). Because the number moves, it can rank the recipes. HumanEval is therefore the small-scale *proxy* for the code lane: an easier, same-capability stand-in that sits in the informative middle band at 1B, where the real target is stuck on the floor. Each lane names such a proxy.
 
 | Lane | Headline benchmark | 1B/3B proxy | Proxy size |
 |---|---|---|---|
@@ -183,7 +185,7 @@ The headline benchmarks return near-zero at 1B and cannot decide anything during
 | indic | MILU, IndicGenBench | MILU (subset) | subset of ~85k |
 | agentic | Terminal-Bench, τ-bench | scripted tool-call success rate | in-house set |
 
-The proxy establishes the direction of an effect and the rank of two recipes, never the absolute number, because rankings shift with scale.
+The pairing keeps the compose-backward spine intact: the plan still *targets* the headline benchmark, but it *steers* the recipe using the proxy at small scale and *confirms* on the headline benchmark at full scale. The proxy is a cheap filter for killing bad recipes early, not a substitute for the real measurement, and it comes with a firm limit: a proxy establishes the **direction** of an effect and the **rank** of two recipes, never the absolute number, because both the absolute score and, occasionally, the ranking itself shift with scale. This is why §10 promotes a recipe on rank stability across the 1B and 3B runs rather than on any single proxy value.
 
 ### 1.7 What this method does not do
 
