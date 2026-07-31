@@ -527,12 +527,7 @@ def build_html():
         'decontamination rule it relies on, and both jobs are applied together.</p>\n'
 
         '    <p><strong>4. Public and reproducible.</strong> The items, harness, and metric must be published, so that a '
-        'reported number can be rerun by anyone.</p>\n'
-        '    <p>This is easily confused with test&nbsp;2, but it is a different requirement. Test&nbsp;2 asked whether '
-        'grading is <em>mechanical</em> &mdash; a program, not a human, decides. Test&nbsp;4 asks whether anyone else '
-        'can <em>re-run</em> that grading and obtain the same number. A vendor could grade with a perfectly mechanical '
-        'program in secret: that passes test&nbsp;2 and fails test&nbsp;4, because no outsider can reproduce it. A '
-        'benchmark qualifies as a target only if three things are public:</p>\n'
+        'reported number can be rerun by anyone. A benchmark qualifies as a target only if three things are public:</p>\n'
         '    <ul>\n'
         '      <li><strong>Items</strong> &mdash; the actual questions or tasks (the 164 HumanEval problems, the 500 '
         'SWE-bench issues). Without them you do not know <em>what</em> was tested.</li>\n'
