@@ -843,3 +843,14 @@ if __name__ == "__main__":
     with open("v5_playbook.html", "w", encoding="utf-8") as f:
         f.write(build_html())
     print("Done. v5_playbook.html written.")
+    # Keep README.md ("V5 Plan — Proposal") and its figures in sync automatically,
+    # so the page and the README never drift. (README prose mirrors this page.)
+    import os
+    import generate_v5_readme as R
+    os.makedirs(R.FIGDIR, exist_ok=True)
+    R.write_svg("compose_backward", svg_compose_backward())
+    R.write_svg("instance_trace", svg_instance_trace())
+    R.write_svg("curriculum", svg_curriculum())
+    with open("README.md", "w", encoding="utf-8") as f:
+        f.write(R.build_md())
+    print("Done. README.md + figures/*.svg written (in sync with the page).")
