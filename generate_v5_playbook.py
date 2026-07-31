@@ -373,7 +373,7 @@ def build_html():
     return (
         '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n'
         '<meta name="viewport" content="width=device-width, initial-scale=1.0">\n'
-        '<title>Constructing the V5 Plan — Procedure</title>\n'
+        '<title>V5 Plan — Proposal</title>\n'
         '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
         '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
         '<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700'
@@ -383,10 +383,10 @@ def build_html():
         '<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" id="MathJax-script" async></script>\n'
         '<style>' + CSS + '</style>\n</head>\n<body>\n' + NAV +
         '<div class="wrap">\n'
-        '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> / Construction procedure</div>\n'
+        '  <div class="crumb"><a href="v5_brief.html">V5 Plan</a> / Proposal</div>\n'
         '  <div class="phead">\n'
         '    <div class="eyebrow">V5 mixture &amp; curriculum</div>\n'
-        '    <h1>Construction Procedure</h1>\n'
+        '    <h1>Proposal</h1>\n'
         '    <p class="dek">The recommended order of construction, and the supply analysis that constrains the '
         'allocation. Quantities use an illustrative 3-trillion update-token budget.</p>\n'
         '  </div>\n'
