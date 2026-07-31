@@ -382,6 +382,97 @@ def svg_curriculum():
     return s
 
 
+def svg_architecture():
+    """Full end-to-end blueprint: targets -> sources -> accounting -> curriculum
+    -> validation, with the acquisition queue closing the loop back to sources."""
+    W, H = 860, 612
+    s = _svg_open(W, H)
+
+    def band(y, h, label, fill, stroke):
+        return ('<rect x="4" y="%d" width="758" height="%d" rx="10" fill="%s" stroke="%s" '
+                'stroke-width="1.2"/><text x="16" y="%d" font-family="IBM Plex Mono,monospace" '
+                'font-size="10" letter-spacing="0.05em" font-weight="600" fill="%s">%s</text>'
+                % (y, h, fill, stroke, y + 18, stroke, label))
+
+    # 1 - targets
+    s += band(6, 80, "1 &middot; TARGETS &mdash; benchmark set (compose backward)", "#ECEEF8", "#2E357E")
+    t1 = [("code", "SWE-bench"), ("agentic", "Terminal &middot; &#964; &middot; GAIA"),
+          ("reasoning", "AIME &middot; FrontierMath"), ("general web", "MMLU-Pro"),
+          ("indic", "MILU &middot; IndicGenBench")]
+    x = 8
+    for lane, bench in t1:
+        acc, fill = LANE_COLOR[lane]
+        s += _rr(x, 34, 142, 40, fill, acc, lane, bench, fs=11, tcolor=acc)
+        x += 150
+
+    # 2 - data sources
+    s += band(96, 104, "2 &middot; DATA SOURCES by acquisition mode", "#E6F3F0", "#147D74")
+    src = [("off-the-shelf", "DCLM &middot; Stack v2"), ("distilled", "reasoning traces"),
+           ("generated", "agentic trajectories"), ("translated", "Indic tiers T0&ndash;T3")]
+    x = 8
+    for lab, sub in src:
+        s += _cyl(x, 120, 178, 66, "#147D74", lab, sub)
+        x += 188
+
+    # 3 - accounting
+    s += band(210, 92, "3 &middot; ACCOUNTING &mdash; inventory &rarr; allocation &rarr; reconcile &rarr; feasibility",
+              "#FBF1E0", "#E0982B")
+    acc3 = [("inventory", "loss-bearing"), ("allocation", "t = s&middot;B"),
+            ("keep-fraction", "presented=trained/k"), ("feasibility", "INFEASIBLE / STARVED")]
+    x = 8
+    for lab, sub in acc3:
+        if x > 8:
+            s += _arrow(x - 8, 263, x, 263)
+        s += _rr(x, 240, 178, 46, "#FFFFFF", "#E0982B", lab, sub, fs=11)
+        x += 188
+
+    # 4 - curriculum
+    s += band(312, 84, "4 &middot; CURRICULUM &mdash; phases (budget-weighted avg = global mix)", "#EEF0FA", "#6169B8")
+    ph = [("Foundation", "45%"), ("Expansion", "30%"), ("Reasoning+LC", "23%"), ("Anneal", "2%")]
+    x = 8
+    for lab, sub in ph:
+        if x > 8:
+            s += _arrow(x - 8, 363, x, 363)
+        s += _rr(x, 342, 178, 42, "#FFFFFF", "#6169B8", lab, sub, fs=11)
+        x += 188
+
+    # 5 - validation
+    s += band(406, 84, "5 &middot; VALIDATION &mdash; cheap runs, promote on rank stability", "#FBEEF3", "#B5476B")
+    val = [("1B / 3B proxy runs", "direction + rank"), ("rank-stable recipe", "across scales"),
+           ("40B commit", "full run")]
+    x = 8
+    for lab, sub in val:
+        if x > 8:
+            s += _arrow(x - 9, 457, x, 457)
+        s += _rr(x, 436, 240, 42, "#FFFFFF", "#B5476B", lab, sub, fs=11)
+        x += 249
+
+    # 6 - acquisition queue
+    s += band(506, 94, "6 &middot; ACQUISITION QUEUE &mdash; supply gaps set pipeline priority", "#F1F2F8", "#656579")
+    q = [("#1 agentic", "generate traj."), ("#2 reasoning", "distil traces"),
+         ("#3 long-docs", "collect"), ("#4 verified Indic", "textbooks &middot; gov &middot; news")]
+    x = 8
+    for lab, sub in q:
+        s += _rr(x, 536, 178, 44, "#FFFFFF", "#656579", lab, sub, fs=11)
+        x += 188
+
+    # central spine (solid, top to bottom)
+    for y1, y2 in [(86, 96), (200, 210), (302, 312), (396, 406)]:
+        s += _arrow(383, y1, 383, y2)
+    # feasibility gaps feed the queue (dashed, down the right margin)
+    s += ('<path d="M762 263 H784 V563 H758" fill="none" stroke="#8a1a3a" stroke-width="1.3" '
+          'stroke-dasharray="5 4" marker-end="url(#ah)"/>'
+          '<text x="790" y="352" font-family="IBM Plex Mono,monospace" font-size="9" fill="#8a1a3a" '
+          'transform="rotate(90 790 352)">gaps set the queue</text>')
+    # queue feeds the sources (dashed, further right, back up)
+    s += ('<path d="M762 545 H820 V140 H758" fill="none" stroke="#147D74" stroke-width="1.3" '
+          'stroke-dasharray="5 4" marker-end="url(#ah)"/>'
+          '<text x="826" y="300" font-family="IBM Plex Mono,monospace" font-size="9" fill="#147D74" '
+          'transform="rotate(90 826 300)">feeds sources</text>')
+    s += "</svg>"
+    return s
+
+
 def figure(svg, caption, n):
     return ('  <figure class="fig">' + svg +
             '<figcaption><b>Figure %s.</b> %s</figcaption></figure>\n' % (n, caption))
@@ -956,16 +1047,20 @@ def build_html():
         'the direction of an effect, and recipes are promoted on rank stability across scales rather than on absolute '
         'scores, which shift with scale.</p></div>\n'
 
-        '  <div class="sec"><h2>11. Prioritise data acquisition</h2>\n'
-        '    <p>The supply-constrained lanes define the acquisition queue for the cleaning pipeline, in order: agentic '
-        'trajectory generation, reasoning-trace distillation, long-document collection, and additional verified Indic '
-        'material (textbooks, government records, and news, since encyclopaedic text alone is insufficient). The mixture '
-        'plan thereby determines the priorities of the upstream pipeline.</p></div>\n'
-
-        '  <div class="callout">The complete plan is provided as <code>V5_PLAN.md</code>, and the arithmetic above is '
-        'reproduced and validated by <code>mixture.py</code>, which derives the global mixture from the phase mixtures, '
-        'applies the selector keep-fraction, and exits with an error if any phase mixture does not sum to 100% or any lane '
-        'is infeasible.</div>\n'
+        '  <div class="sec"><h2>11. Architecture &mdash; the plan end to end</h2>\n'
+        '    <p>The eleven steps compose one pipeline. Fixed benchmarks define the targets; each lane is supplied by a '
+        'dataset obtained off-the-shelf, distilled, generated, or translated; the accounting stage sizes and reconciles '
+        'the lanes and flags the infeasible ones; the surviving mixture is sequenced into curriculum phases; and every '
+        'quantity is validated at 1B and 3B before the 40B commitment. The feasibility gaps close the loop: they set the '
+        'acquisition queue, which feeds new material back into the sources.</p>\n'
+        + figure(svg_architecture(),
+                 'The V5 construction pipeline end to end. Solid arrows are the forward path (targets &rarr; sources '
+                 '&rarr; accounting &rarr; curriculum &rarr; validation). The dashed loop is the feedback: the '
+                 'feasibility gaps in stage&nbsp;3 set the acquisition queue in stage&nbsp;6 (agentic first, then '
+                 'reasoning, long documents, and verified Indic), and the queue feeds new material back into the data '
+                 'sources in stage&nbsp;2. The arithmetic of stages&nbsp;3&ndash;5 is reproduced and self-checked by '
+                 '<code>mixture.py</code>; the full specification is <code>V5_PLAN.md</code>.', "4") +
+        '  </div>\n'
 
         '  <div class="foot"><a href="v5_brief.html">&larr; Specification brief</a></div>\n'
         '</div>\n</body>\n</html>\n'
@@ -984,6 +1079,7 @@ if __name__ == "__main__":
     R.write_svg("compose_backward", svg_compose_backward())
     R.write_svg("instance_trace", svg_instance_trace())
     R.write_svg("curriculum", svg_curriculum())
+    R.write_svg("architecture", svg_architecture())
     with open("README.md", "w", encoding="utf-8") as f:
         f.write(R.build_md())
     print("Done. README.md + figures/*.svg written (in sync with the page).")

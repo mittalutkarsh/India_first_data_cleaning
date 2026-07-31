@@ -17,6 +17,8 @@ _ENT = {
     "&mdash;": "—", "&tau;": "τ", "&#964;": "τ", "&lt;": "<", "&gt;": ">",
     "&amp;": "&", "&nbsp;": " ", "&ldquo;": "“", "&rdquo;": "”",
     "&rsquo;": "’", "&times;": "×", "&sect;": "§", "&divide;": "÷",
+    "&middot;": "·", "&#183;": "·", "&asymp;": "≈", "&le;": "≤", "&minus;": "−",
+    "&cup;": "∪", "&cap;": "∩",
 }
 
 
@@ -27,10 +29,13 @@ def dent(s):
 
 
 def write_svg(fn, svg):
-    """Write a shared SVG figure to figures/<fn>.svg with a fixed pixel width."""
+    """Write a shared SVG figure to figures/<fn>.svg with a fixed pixel width.
+    Named HTML entities are converted to Unicode, since a standalone .svg is
+    parsed as strict XML where only the five XML built-in entities are defined."""
     m = re.search(r'viewBox="0 0 (\d+) (\d+)"', svg)
     w, h = (m.group(1), m.group(2)) if m else ("820", "300")
     svg = svg.replace('width="100%"', 'width="%s" height="%s"' % (w, h), 1)
+    svg = dent(svg)
     with open("%s/%s.svg" % (FIGDIR, fn), "w", encoding="utf-8") as f:
         f.write('<?xml version="1.0" encoding="UTF-8"?>\n' + svg + "\n")
 
@@ -389,13 +394,13 @@ where $B_p$ is the budget of phase $p$ and $s_{\\ell,p}$ the share of lane $\\el
 
 Every quantity is treated as a hypothesis and tested at the 1B and 3B scales before full-scale commitment. Evaluations are chosen to exhibit signal at those scales; the most demanding benchmarks return near-zero at 1B and are uninformative there. Capability contrasts are amplified (for example, 4% versus 12% Indic) to establish the direction of an effect, and recipes are promoted on rank stability across scales rather than on absolute scores, which shift with scale.
 
-## 11. Prioritise data acquisition
+## 11. Architecture — the plan end to end
 
-The supply-constrained lanes define the acquisition queue for the cleaning pipeline, in order: agentic trajectory generation, reasoning-trace distillation, long-document collection, and additional verified Indic material (textbooks, government records, and news, since encyclopaedic text alone is insufficient). The mixture plan thereby determines the priorities of the upstream pipeline.
+The eleven steps compose one pipeline. Fixed benchmarks define the targets; each lane is supplied by a dataset obtained off-the-shelf, distilled, generated, or translated; the accounting stage sizes and reconciles the lanes and flags the infeasible ones; the surviving mixture is sequenced into curriculum phases; and every quantity is validated at 1B and 3B before the 40B commitment. The feasibility gaps close the loop: they set the acquisition queue, which feeds new material back into the sources.
 
----
+![The V5 construction pipeline end to end, from target benchmarks through data sources, accounting, curriculum, and validation, with the acquisition queue feeding back into the sources.](""" + FIGDIR + """/architecture.svg)
 
-*The complete plan is provided as [V5_PLAN.md](./V5_PLAN.md), and the arithmetic above is reproduced and validated by [mixture.py](./mixture.py), which derives the global mixture from the phase mixtures, applies the selector keep-fraction, and exits with an error if any phase mixture does not sum to 100% or any lane is infeasible.*
+**Figure 4.** The V5 construction pipeline end to end. Solid arrows are the forward path (targets → sources → accounting → curriculum → validation). The dashed loop is the feedback: the feasibility gaps in stage 3 set the acquisition queue in stage 6 (agentic first, then reasoning, long documents, and verified Indic), and the queue feeds new material back into the data sources in stage 2. The arithmetic of stages 3–5 is reproduced and self-checked by [mixture.py](./mixture.py); the full specification is [V5_PLAN.md](./V5_PLAN.md).
 """
 
 
