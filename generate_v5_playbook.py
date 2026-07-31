@@ -567,8 +567,9 @@ def build_html():
         'decontamination rule), so the provenance of every number is on the page.</li>\n'
         '    </ol>\n'
 
-        '    <p><strong>5. Headroom.</strong> The frontier score must sit below about 90%, or there is no gradient left '
-        'to optimise against.</p>\n'
+        '    <p><strong>5. Headroom.</strong> The frontier score &mdash; the best result any current model achieves on '
+        'the benchmark, that is, the state of the art &mdash; must sit below about 90%, or there is no gradient left to '
+        'optimise against.</p>\n'
         '    <p>Headroom is the room a benchmark still has to improve. We steer the plan by measuring how a change in the '
         'data recipe moves a score (&sect;10), and a benchmark can only guide us if its score can actually move. When '
         'the best systems already sit near the top &mdash; a <em>ceiling effect</em> &mdash; the score is pinned, so two '
