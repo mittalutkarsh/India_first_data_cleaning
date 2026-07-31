@@ -3,7 +3,7 @@
 
 *The recommended order of construction, and the supply analysis that constrains the allocation. Quantities use an illustrative 3-trillion update-token budget.*
 
-> This README mirrors the interactive page **[v5_playbook.html](./v5_playbook.html)** (nav tab: *V5 Plan — Proposal*). The full submittable specification is **[V5_PLAN.md](./V5_PLAN.md)**, and the arithmetic is reproduced and self-checked by **[mixture.py](./mixture.py)**.
+**Live interactive version:** https://mittalutkarsh.github.io/India_first_data_cleaning/v5_playbook.html
 
 ---
 
