@@ -177,6 +177,13 @@ Every quantity in this plan is a hypothesis — that one data recipe beats anoth
 
 The two coding benchmarks make the contrast concrete. At 1B a model resolves **0 of 500** SWE-bench issues, because it cannot yet produce a working repository patch; the score is 0 for every recipe, so SWE-bench cannot separate them at this scale. On HumanEval — a much easier test of small, self-contained functions — the same 1B model solves roughly **15–20 of 164** problems, and that count *moves* with the recipe (a better code mixture might reach 20, a worse one 15). Because the number moves, it can rank the recipes. HumanEval is therefore the small-scale *proxy* for the code lane: an easier, same-capability stand-in that sits in the informative middle band at 1B, where the real target is stuck on the floor. Each lane names such a proxy.
 
+The proxy is an *evaluation* set, not training data. Running it means scoring an already-trained model on a fixed public test (HumanEval's 164 problems are downloaded, not bought), which costs negligible compute and never touches the token budget; the proxy is never trained on, since that would be contamination (test 3). What costs compute is *training* the small 1B and 3B models — cheap only relative to the 40B run — and the proxy is simply the cheap ruler used to read the result.
+
+|  | What it is | Cost | Budget? |
+|---|---|---|---|
+| **Training** | Feeding trillions of tokens to update the model's weights | Huge | **Yes — the 3T-token budget** |
+| **Evaluating** <br>`HumanEval, SWE-bench` | Scoring an already-trained model on a fixed test | Tiny (e.g. 164 problems) | No — negligible, separate |
+
 | Lane | Headline benchmark | 1B/3B proxy | Proxy size |
 |---|---|---|---|
 | code | SWE-bench Verified | HumanEval, MBPP | 164 / ~974 problems |
