@@ -211,15 +211,47 @@ Section 1 fixed what to measure; this section fixes what data to feed so that th
 ### 2.1 Procedure
 
 1. **Decompose the benchmark into a training-signal shape.** Read off what the model must take in and what it must produce to score. SWE-bench reads a repository and an issue and must produce a patch that passes hidden tests; the graded capability is therefore not "knows Python" but "turns an issue into a correct diff". That output shape is the specification the data must satisfy.
-   > **Example.** The same read-off for AIME: it presents a competition problem and accepts a single integer from 0 to 999, so the graded capability is "reach the correct final integer through valid steps", not "recognise an option". The signal shape is `problem → worked solution → boxed integer`.
+   > **Example.** The same read-off for AIME, on a representative problem. It presents a problem and grades only the final integer (0–999), so the capability is to reach that integer through valid steps — the signal shape `problem → worked solution → boxed integer`.
+   > ```
+   > problem ......... How many integers n with 1 ≤ n ≤ 1000 are divisible by neither 5 nor 7?
+   > worked solution . |div by 5| = 200 ;  |div by 7| = 142 ;  |div by 35| = 28
+   >                   |5 or 7| = 200 + 142 − 28 = 314
+   >                   answer  = 1000 − 314 = 686
+   > boxed integer ... 686        (graded: exact match to 686, nothing else)
+   > ```
 2. **Name the data of that shape.** Identify the examples that would teach exactly that behaviour. For SWE-bench this is `(repository, issue, gold-patch, tests)` tuples — issue→patch→test trajectories. Raw source code teaches syntax and idiom but not the issue-to-patch structure, so it cannot, by itself, develop the graded skill.
-   > **Example.** For AIME, the data of that shape is `(problem, full worked solution, boxed answer)` triples. An answer key alone — `2024 AIME I #7 → 480` — carries the target but not the derivation that produces it, so it would teach recognition of the number, not the reasoning that reaches it.
+   > **Example.** The usable training example is the whole triple `(problem, full worked solution, boxed answer)`; an answer key is not, because it carries the target without the derivation that produces it.
+   > ```
+   > GOOD  (a usable training example — the full trajectory)
+   >   problem  : How many integers n with 1 ≤ n ≤ 1000 are divisible by neither 5 nor 7?
+   >   solution : 200 + 142 − 28 = 314 ;  1000 − 314 = 686
+   >   answer   : 686
+   >
+   > BAD   (answer key only — target present, derivation absent)
+   >   How many integers ... divisible by neither 5 nor 7?   →   686
+   > ```
 3. **Split into foundation and targeted data.** One dataset usually supplies broad fluency and another supplies the exact structure the benchmark grades. For code, Stack v2 is the foundation (general code competence) and generated repository-fix trajectories are the targeted data (the issue→patch skill itself).
-   > **Example.** For reasoning, broad mathematics and science text (textbooks, arXiv) is the foundation that teaches notation and theorems, while distilled contest-style solution traces are the targeted data that teach the multi-step derivation ending in a single integer.
+   > **Example.** Foundation data teaches the tool; targeted data applies it end to end. For reasoning, broad mathematics and science text supplies the theorem, while a distilled solution trace supplies the worked derivation that uses it.
+   > ```
+   > foundation (textbook / arXiv) : By inclusion–exclusion, |A or B| = |A| + |B| − |A and B|.
+   > targeted   (distilled trace)  : the full 686 solution above, applying that identity
+   >                                 step by step to a single boxed integer.
+   > ```
 4. **Classify how the data is obtained.** This branch decides feasibility (§3, §6). A source is either off-the-shelf (exists at scale: general web from DCLM/FineWeb, code from Stack v2), distilled (produced from a stronger teacher model: reasoning traces), generated from scratch (scraping cannot supply it: agentic tool-use trajectories), or translated and verified (the Indic tiers).
-   > **Example.** Reasoning traces are *distilled* — a stronger teacher model solves ~50,000 problems with its steps shown and the verified-correct solutions are kept. Agentic trajectories are *generated* — no corpus of plan→act→reflect terminal sessions exists to scrape, so they are synthesised in a sandbox. General web is *off-the-shelf* — DCLM is downloaded as-is.
+   > **Example.** The three acquisition modes, each shown as what is actually run to produce one training example.
+   > ```
+   > distilled     : teacher model prompted "solve, show every step";
+   >                 keep a run only if its boxed answer matches the answer key.
+   > generated     : sandboxed shell; agent told "find the failing test and fix it";
+   >                 record each plan / act / reflect turn as the trajectory.
+   > off-the-shelf : download a DCLM shard, dedup + quality-filter; no generation.
+   > ```
 5. **Record the mapping and its gaps.** Each lane→dataset link is written down with a provenance tier (T0 verified, T1 web, T2 synthetic, T3 translated). Where no adequate source exists, the lane is marked as a gap for §6 to classify and §11 to queue, rather than being quietly left blank.
-   > **Example.** The reasoning row is recorded as `distilled traces, tier T2, status STARVED` and the agentic row as `generated trajectories, tier T2, status INFEASIBLE (~1.95×10⁸ needed), queued first in §11`. No lane is left with a blank cell; an absent source becomes an explicit gap entry.
+   > **Example.** Each lane becomes a recorded row; no lane is left with a blank cell, so an absent source becomes an explicit gap entry rather than a silent omission.
+   > ```
+   > reasoning : source = distilled traces       | tier = T2 | unique ≈ 30B       | status = STARVED
+   > agentic   : source = generated trajectories | tier = T2 | need ≈ 1.95e8 traj | status = INFEASIBLE | queue = #1 (§11)
+   > ```
 
 ### 2.2 The resulting map
 
