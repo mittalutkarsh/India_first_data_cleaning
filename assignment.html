@@ -141,7 +141,7 @@ corpus
     <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric.</p></div>
   <div class="sec"><h2>Feature 1 — Collecting data (epics &amp; stories)</h2>
     <p>Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined eval split, all reproducible, in one clean data model.</p>
-    <h3>Epic 1.1 — Corpus data model &nbsp; <span class="b b-tight">in progress</span></h3>
+    <h3>Epic 1.1 — Corpus data model &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>Document frozen dataclass: id, lane∈{web,code,math,indic,multilingual}, provenance_tier∈{T0,T1,T2,T3}, split∈{train,eval}, source, text.</li>
       <li>ContrastivePair frozen dataclass: id, topic, prefix, y_plus, y_minus, vantage, chauvinism.</li>
@@ -149,7 +149,7 @@ corpus
       <li>Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).</li>
     </ul>
     <p class="cap">Acceptance: stdlib only; no I/O; tests pass.</p>
-    <h3>Epic 1.2 — Sources manifest &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 1.2 — Sources manifest &nbsp; <span class="b b-tight">in progress</span></h3>
     <ul>
       <li>Config listing, per lane, the pinned dataset id + snapshot/revision + license + target token count.</li>
       <li>Validator: lane targets sum to ~10M and every source has a license.</li>
@@ -232,8 +232,8 @@ corpus
     <p class="cap">Use when web Claude has returned the code.</p>
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
-  <div class="sec"><h2>Current epic — 1.1 · Corpus data model</h2>
-    <p>Prompt to paste into Claude on the web (returns <code>corpus_schema.py</code> + its test):</p>
+  <div class="sec"><h2>Current epic — 1.2 · Sources manifest</h2>
+    <p><strong>Epic 1.1 is done</strong> &mdash; <code>corpus_schema.py</code> in the <code>v5-execution-system</code> repo, 4 tests pass (stdlib only, no I/O). Next is Epic 1.2: a config that lists, per lane, the pinned dataset + revision + license + target token count. Its web prompt is written once the per-lane sources are pinned (that decision is in progress). Prior epic&rsquo;s prompt for reference:</p>
     <div class="diagram"><pre>CONTEXT: I am building a small, reproducible &quot;Training Data Execution System&quot; for LLM
 pretraining (a course assignment), Python 3.11, built in very small steps. THIS IS
 MICRO-STEP 1.1 (Epic 1.1) ONLY — just the corpus data model. No data, no downloads, no

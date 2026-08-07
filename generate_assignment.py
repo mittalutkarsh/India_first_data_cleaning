@@ -65,13 +65,13 @@ FEATURES = [
 
 # id, title, status, [stories], acceptance
 FEATURE1 = [
-    ("1.1", "Corpus data model", "active", [
+    ("1.1", "Corpus data model", "done", [
         "Document frozen dataclass: id, lane∈{web,code,math,indic,multilingual}, provenance_tier∈{T0,T1,T2,T3}, split∈{train,eval}, source, text.",
         "ContrastivePair frozen dataclass: id, topic, prefix, y_plus, y_minus, vantage, chauvinism.",
         "validate_document / validate_contrastive raise ValueError on bad enum, empty required string, or chauvinism != none.",
         "Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).",
     ], "stdlib only; no I/O; tests pass."),
-    ("1.2", "Sources manifest", "pending", [
+    ("1.2", "Sources manifest", "active", [
         "Config listing, per lane, the pinned dataset id + snapshot/revision + license + target token count.",
         "Validator: lane targets sum to ~10M and every source has a license.",
     ], "data only, no downloads yet; test asserts totals and license presence."),
@@ -305,8 +305,11 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.1 · Corpus data model</h2>\n'
-        '    <p>Prompt to paste into Claude on the web (returns <code>corpus_schema.py</code> + its test):</p>\n'
+        '  <div class="sec"><h2>Current epic — 1.2 · Sources manifest</h2>\n'
+        '    <p><strong>Epic 1.1 is done</strong> &mdash; <code>corpus_schema.py</code> in the '
+        '<code>v5-execution-system</code> repo, 4 tests pass (stdlib only, no I/O). Next is Epic 1.2: a config that '
+        'lists, per lane, the pinned dataset + revision + license + target token count. Its web prompt is written once '
+        'the per-lane sources are pinned (that decision is in progress). Prior epic&rsquo;s prompt for reference:</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '

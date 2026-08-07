@@ -51,14 +51,14 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 
 Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined eval split, all reproducible, in one clean data model.
 
-### Epic 1.1 — Corpus data model  ◐
+### Epic 1.1 — Corpus data model  ☑
 - Document frozen dataclass: id, lane∈{web,code,math,indic,multilingual}, provenance_tier∈{T0,T1,T2,T3}, split∈{train,eval}, source, text.
 - ContrastivePair frozen dataclass: id, topic, prefix, y_plus, y_minus, vantage, chauvinism.
 - validate_document / validate_contrastive raise ValueError on bad enum, empty required string, or chauvinism != none.
 - Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).
 - **Acceptance:** stdlib only; no I/O; tests pass.
 
-### Epic 1.2 — Sources manifest  ☐
+### Epic 1.2 — Sources manifest  ◐
 - Config listing, per lane, the pinned dataset id + snapshot/revision + license + target token count.
 - Validator: lane targets sum to ~10M and every source has a license.
 - **Acceptance:** data only, no downloads yet; test asserts totals and license presence.
