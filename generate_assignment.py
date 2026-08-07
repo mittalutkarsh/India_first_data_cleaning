@@ -127,6 +127,27 @@ OPEN_DECISIONS = [
     ("Provenance tiers usage", "Feature 2/4", "T0 verified · T1 web · T2 synthetic · T3 translated"),
 ]
 
+# label, when-to-use, the copy-paste instruction the USER gives to Claude Code
+TEMPLATES = [
+    ("A · Expand a feature",
+     "when a feature is still just an outline and we're ready to work it",
+     "Expand Feature <N> (<name>) into full epics and stories. For each epic give: an id, "
+     "a title, its stories (concrete tasks), and acceptance criteria. Keep every epic micro "
+     "(one small module + one test each). Update the plan (session6_plan.md + assignment.html "
+     "regenerate together). Do NOT send anything to the web yet."),
+    ("B · Prepare an epic for the web",
+     "when an epic is next and we want the code prompt",
+     "Write the web-Claude prompt for Epic <N.M> (<title>). Make it self-contained (web Claude "
+     "has no repo context), scoped to ONLY this epic, with the exact module name, the "
+     "function/class signatures, and the acceptance test it must satisfy; end by asking for the "
+     "complete code + test + a one-line note. Put it in the 'Current epic' section of the page."),
+    ("C · Integrate & advance",
+     "when web Claude has returned the code",
+     "Here is web Claude's output for Epic <N.M>: <paste code>. Review it against the acceptance "
+     "criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic "
+     "<N.M> done and set the next epic active in the plan."),
+]
+
 PROMPT_CURRENT = r'''CONTEXT: I am building a small, reproducible "Training Data Execution System" for LLM
 pretraining (a course assignment), Python 3.11, built in very small steps. THIS IS
 MICRO-STEP 1.1 (Epic 1.1) ONLY — just the corpus data model. No data, no downloads, no
@@ -197,6 +218,15 @@ def h_outline():
 
 def h_opendec():
     return "".join('<tr><td><b>%s</b></td><td>%s</td><td>%s</td></tr>\n' % r for r in OPEN_DECISIONS)
+
+
+def h_templates():
+    out = ""
+    for label, when, text in TEMPLATES:
+        out += ('    <h3>Template %s</h3>\n    <p class="cap">Use %s.</p>\n'
+                '    <div class="diagram"><pre>%s</pre></div>\n'
+                % (html.escape(label), html.escape(when), html.escape(text)))
+    return out
 
 
 def build_html():
@@ -270,6 +300,11 @@ def build_html():
         '    <div class="tblwrap"><table class="stbl"><tr><th>Decision</th><th>Needed by</th><th>Default / candidate</th></tr>\n'
         + h_opendec() + '</table></div></div>\n'
 
+        '  <div class="sec"><h2>Working templates — how we drive this build</h2>\n'
+        '    <p>Copy-paste instructions <em>you</em> give to Claude Code (here), in order, to advance the plan. '
+        'Fill in the angle-bracket placeholders.</p>\n'
+        + h_templates() + '</div>\n'
+
         '  <div class="sec"><h2>Current epic — 1.1 · Corpus data model</h2>\n'
         '    <p>Prompt to paste into Claude on the web (returns <code>corpus_schema.py</code> + its test):</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
@@ -324,7 +359,12 @@ def build_md():
     out.append("| Decision | Needed by | Default / candidate |\n|---|---|---|")
     for a, b, c in OPEN_DECISIONS:
         out.append("| %s | %s | %s |" % (a, b, c))
-    out.append("\n## Current epic — 1.1 · Corpus data model\n")
+    out.append("\n## Working templates — how we drive this build\n")
+    out.append("Copy-paste instructions *you* give to Claude Code, in order, to advance the plan. "
+               "Fill in the angle-bracket placeholders.\n")
+    for label, when, text in TEMPLATES:
+        out.append("### Template %s\nUse %s.\n\n```\n%s\n```\n" % (label, when, text))
+    out.append("## Current epic — 1.1 · Corpus data model\n")
     out.append("Prompt (paste into web Claude) is on the Assignment page and returns `corpus_schema.py` + its test.\n")
     return "\n".join(out) + "\n"
 

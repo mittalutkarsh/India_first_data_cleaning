@@ -150,6 +150,31 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 | MoE dims (d_model, layers, #experts, top-k) | Feature 10 | d_model 128, 2 layers, 4 experts, top-2 |
 | Provenance tiers usage | Feature 2/4 | T0 verified · T1 web · T2 synthetic · T3 translated |
 
+## Working templates — how we drive this build
+
+Copy-paste instructions *you* give to Claude Code, in order, to advance the plan. Fill in the angle-bracket placeholders.
+
+### Template A · Expand a feature
+Use when a feature is still just an outline and we're ready to work it.
+
+```
+Expand Feature <N> (<name>) into full epics and stories. For each epic give: an id, a title, its stories (concrete tasks), and acceptance criteria. Keep every epic micro (one small module + one test each). Update the plan (session6_plan.md + assignment.html regenerate together). Do NOT send anything to the web yet.
+```
+
+### Template B · Prepare an epic for the web
+Use when an epic is next and we want the code prompt.
+
+```
+Write the web-Claude prompt for Epic <N.M> (<title>). Make it self-contained (web Claude has no repo context), scoped to ONLY this epic, with the exact module name, the function/class signatures, and the acceptance test it must satisfy; end by asking for the complete code + test + a one-line note. Put it in the 'Current epic' section of the page.
+```
+
+### Template C · Integrate & advance
+Use when web Claude has returned the code.
+
+```
+Here is web Claude's output for Epic <N.M>: <paste code>. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic <N.M> done and set the next epic active in the plan.
+```
+
 ## Current epic — 1.1 · Corpus data model
 
 Prompt (paste into web Claude) is on the Assignment page and returns `corpus_schema.py` + its test.

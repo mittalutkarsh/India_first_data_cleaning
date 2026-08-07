@@ -220,6 +220,18 @@ corpus
 <tr><td><b>MoE dims (d_model, layers, #experts, top-k)</b></td><td>Feature 10</td><td>d_model 128, 2 layers, 4 experts, top-2</td></tr>
 <tr><td><b>Provenance tiers usage</b></td><td>Feature 2/4</td><td>T0 verified · T1 web · T2 synthetic · T3 translated</td></tr>
 </table></div></div>
+  <div class="sec"><h2>Working templates — how we drive this build</h2>
+    <p>Copy-paste instructions <em>you</em> give to Claude Code (here), in order, to advance the plan. Fill in the angle-bracket placeholders.</p>
+    <h3>Template A · Expand a feature</h3>
+    <p class="cap">Use when a feature is still just an outline and we&#x27;re ready to work it.</p>
+    <div class="diagram"><pre>Expand Feature &lt;N&gt; (&lt;name&gt;) into full epics and stories. For each epic give: an id, a title, its stories (concrete tasks), and acceptance criteria. Keep every epic micro (one small module + one test each). Update the plan (session6_plan.md + assignment.html regenerate together). Do NOT send anything to the web yet.</pre></div>
+    <h3>Template B · Prepare an epic for the web</h3>
+    <p class="cap">Use when an epic is next and we want the code prompt.</p>
+    <div class="diagram"><pre>Write the web-Claude prompt for Epic &lt;N.M&gt; (&lt;title&gt;). Make it self-contained (web Claude has no repo context), scoped to ONLY this epic, with the exact module name, the function/class signatures, and the acceptance test it must satisfy; end by asking for the complete code + test + a one-line note. Put it in the &#x27;Current epic&#x27; section of the page.</pre></div>
+    <h3>Template C · Integrate &amp; advance</h3>
+    <p class="cap">Use when web Claude has returned the code.</p>
+    <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
+</div>
   <div class="sec"><h2>Current epic — 1.1 · Corpus data model</h2>
     <p>Prompt to paste into Claude on the web (returns <code>corpus_schema.py</code> + its test):</p>
     <div class="diagram"><pre>CONTEXT: I am building a small, reproducible &quot;Training Data Execution System&quot; for LLM
