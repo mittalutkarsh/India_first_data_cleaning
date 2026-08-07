@@ -46,7 +46,7 @@ LOCKED = [
 # num, name, area, points, status (done|active|pending)
 FEATURES = [
     (1, "Collecting data", "Tokenizer integrity / data", 100, "active"),
-    (2, "Normalize + content hash", "Shards/manifests", 100, "pending"),
+    (2, "Clean & filter", "Shards/manifests", 100, "pending"),
     (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "pending"),
     (4, "Immutable shards + manifests", "Shards/manifests", 100, "pending"),
     (5, "Evaluation firewall", "Firewall", 50, "pending"),
@@ -101,7 +101,7 @@ FEATURE1 = [
 
 # feature num -> provisional epic outline
 OUTLINE = {
-    2: "2.1 canonical text normalizer (Unicode NFC, whitespace) · 2.2 content-hasher (sha256 over canonical bytes) — born here · 2.3 hash each Document + exact-duplicate removal · 2.4 normalized-corpus report + test",
+    2: "2.1 canonical normalization (Unicode NFC, whitespace, strip control chars) · 2.2 content-hasher (sha256 over canonical bytes) — born here — + exact-duplicate removal · 2.3 quality filter (min length, symbol/word ratio, repetition heuristics) · 2.4 near-duplicate dedup (MinHash / LSH) · 2.5 PII scrub (emails, phone numbers → redact) · 2.6 decontamination (n-gram overlap of train vs eval + contrastive; drop leaked docs) · 2.7 cleaning report (per-stage drop counts) + test",
     3: "3.1 BPE trainer on a pool sample · 3.2 freeze (serialize vocab+merges) + tokenizer content hash · 3.3 encode/decode with round-trip test · 3.4 tokenizer manifest (hash, vocab size, special tokens) + test",
     4: "4.1 shard writer (fixed-size token shards, content-addressed, immutable) · 4.2 per-shard manifest (hash, token count, lane, provenance, tags, source doc ids) · 4.3 shard-set index · 4.4 immutability / re-hash verification + test",
     5: "5.1 mark eval shards · 5.2 firewall gate (eval shard ids can never enter a train batch) · 5.3 [PASS] eval_shard_blocked event + test",
@@ -237,6 +237,7 @@ def build_html():
         '  <div class="sec"><h2>Architecture</h2>\n'
         '    <div class="diagram"><pre>\n'
         'corpus\n'
+        '  -> clean &amp; filter                          (normalize, dedup, PII, decontaminate)\n'
         '  -> [frozen byte-level BPE tokenizer]        (content-hashed, frozen)\n'
         '  -> immutable tokenized shards + manifests   (hash, token count, lane, provenance, tags)\n'
         '  -> evaluation firewall                      (eval shards quarantined from loss)\n'

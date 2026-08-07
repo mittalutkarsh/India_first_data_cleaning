@@ -31,7 +31,7 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 | # | Feature | Area | Pts | Status |
 |---|---|---|---|---|
 | 1 | Collecting data | Tokenizer integrity / data | 100 | ◐ |
-| 2 | Normalize + content hash | Shards/manifests | 100 | ☐ |
+| 2 | Clean & filter | Shards/manifests | 100 | ☐ |
 | 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ☐ |
 | 4 | Immutable shards + manifests | Shards/manifests | 100 | ☐ |
 | 5 | Evaluation firewall | Firewall | 50 | ☐ |
@@ -94,8 +94,8 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 
 ## Features 2–16 — epic outline (stories elaborated just-in-time)
 
-### Feature 2 — Normalize + content hash
-2.1 canonical text normalizer (Unicode NFC, whitespace) · 2.2 content-hasher (sha256 over canonical bytes) — born here · 2.3 hash each Document + exact-duplicate removal · 2.4 normalized-corpus report + test
+### Feature 2 — Clean & filter
+2.1 canonical normalization (Unicode NFC, whitespace, strip control chars) · 2.2 content-hasher (sha256 over canonical bytes) — born here — + exact-duplicate removal · 2.3 quality filter (min length, symbol/word ratio, repetition heuristics) · 2.4 near-duplicate dedup (MinHash / LSH) · 2.5 PII scrub (emails, phone numbers → redact) · 2.6 decontamination (n-gram overlap of train vs eval + contrastive; drop leaked docs) · 2.7 cleaning report (per-stage drop counts) + test
 
 ### Feature 3 — Frozen BPE tokenizer
 3.1 BPE trainer on a pool sample · 3.2 freeze (serialize vocab+merges) + tokenizer content hash · 3.3 encode/decode with round-trip test · 3.4 tokenizer manifest (hash, vocab size, special tokens) + test

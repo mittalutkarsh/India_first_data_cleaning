@@ -107,6 +107,7 @@ mjx-container { color:var(--ink); }
   <div class="sec"><h2>Architecture</h2>
     <div class="diagram"><pre>
 corpus
+  -> clean &amp; filter                          (normalize, dedup, PII, decontaminate)
   -> [frozen byte-level BPE tokenizer]        (content-hashed, frozen)
   -> immutable tokenized shards + manifests   (hash, token count, lane, provenance, tags)
   -> evaluation firewall                      (eval shards quarantined from loss)
@@ -121,7 +122,7 @@ corpus
   <div class="sec"><h2>Feature map (16)</h2>
     <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Feature</th><th>Area</th><th>Pts</th><th>Status</th></tr>
 <tr><td>1</td><td>Collecting data</td><td>Tokenizer integrity / data</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
-<tr><td>2</td><td>Normalize + content hash</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>2</td><td>Clean & filter</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>3</td><td>Frozen BPE tokenizer</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>4</td><td>Immutable shards + manifests</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>5</td><td>Evaluation firewall</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
@@ -194,7 +195,7 @@ corpus
   <div class="sec"><h2>Features 2–16 — epic outline</h2>
     <p class="cap">Provisional epic breakdown; story-level detail is written when each feature becomes current.</p>
     <div class="tblwrap"><table class="stbl"><tr><th>Feature</th><th>Epics</th></tr>
-<tr><td><b>2 · Normalize + content hash</b></td><td>2.1 canonical text normalizer (Unicode NFC, whitespace) · 2.2 content-hasher (sha256 over canonical bytes) — born here · 2.3 hash each Document + exact-duplicate removal · 2.4 normalized-corpus report + test</td></tr>
+<tr><td><b>2 · Clean & filter</b></td><td>2.1 canonical normalization (Unicode NFC, whitespace, strip control chars) · 2.2 content-hasher (sha256 over canonical bytes) — born here — + exact-duplicate removal · 2.3 quality filter (min length, symbol/word ratio, repetition heuristics) · 2.4 near-duplicate dedup (MinHash / LSH) · 2.5 PII scrub (emails, phone numbers → redact) · 2.6 decontamination (n-gram overlap of train vs eval + contrastive; drop leaked docs) · 2.7 cleaning report (per-stage drop counts) + test</td></tr>
 <tr><td><b>3 · Frozen BPE tokenizer</b></td><td>3.1 BPE trainer on a pool sample · 3.2 freeze (serialize vocab+merges) + tokenizer content hash · 3.3 encode/decode with round-trip test · 3.4 tokenizer manifest (hash, vocab size, special tokens) + test</td></tr>
 <tr><td><b>4 · Immutable shards + manifests</b></td><td>4.1 shard writer (fixed-size token shards, content-addressed, immutable) · 4.2 per-shard manifest (hash, token count, lane, provenance, tags, source doc ids) · 4.3 shard-set index · 4.4 immutability / re-hash verification + test</td></tr>
 <tr><td><b>5 · Evaluation firewall</b></td><td>5.1 mark eval shards · 5.2 firewall gate (eval shard ids can never enter a train batch) · 5.3 [PASS] eval_shard_blocked event + test</td></tr>
