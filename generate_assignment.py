@@ -1,6 +1,6 @@
-"""Generate assignment.html — the living tracker for the Session 6
-Training Data Execution System. Reuses the house CSS from the playbook
-generator. Updated step by step as each piece is integrated and verified."""
+"""Generate assignment.html AND session6_plan.md from one data source, so the
+living tracker page and the plan document cannot drift. Reuses the house CSS.
+Update the data structures below as epics advance (status) or get elaborated."""
 import html
 import generate_v5_playbook as P
 
@@ -25,60 +25,131 @@ NAV = (
     '</div></div>\n'
 )
 
-# n, title, area, points, status (done | active | pending)
-# Data-first ordering: each step is one small artifact. The reproducibility
-# utilities are introduced where first needed (hasher at the tokenizer/shards;
-# deterministic RNG at the batch stream) rather than as an upfront scaffold.
-# run_demo.py and run.log are born at Step 1 and grow one stage per step.
-STEPS = [
-    (1, "Corpus — tiny multi-lane docs (web/code/math/indic) + eval split + contrastive pairs; minimal run_demo + run.log", "Tokenizer integrity", 100, "active"),
-    (2, "Normalize + per-document content hash (light clean; the content-hasher is introduced here)", "Shards/manifests", 100, "pending"),
-    (3, "Frozen byte-level BPE tokenizer + content hash", "Tokenizer integrity", 100, "pending"),
-    (4, "Immutable tokenized shards + manifests (hash, token count, lane, provenance, chauvinism tag)", "Shards/manifests", 100, "pending"),
-    (5, "Evaluation / validation firewall — eval shards can never enter a loss-bearing batch", "Firewall", 50, "pending"),
-    (6, "Mixture schedule — curriculum stages, lane weights, protected floors (planned shares)", "Mixture", 150, "pending"),
-    (7, "OPUS selector — accept / reject / defer + protected-floor override; ΔS surprisal as a selection signal", "Mixture/OPUS", 150, "pending"),
-    (8, "Packer — per-type packing policies (incl. contrastive pairs), loss + attention masks, position ids", "Packing/masks", 150, "pending"),
-    (9, "Deterministic batch stream + consumption ledger (RNG introduced here; batch id, token spans, offsets, hashes)", "Ledgers", 150, "pending"),
-    (10, "Trainer (tiny MoE transformer) + learning ledger + F1 per-token surprisal + F2 ΔS per contrastive pair", "Ledgers", 150, "pending"),
-    (11, "Checkpoints tied to ledger offset + RNG state", "Checkpoint", 150, "pending"),
-    (12, "Deliberate crash → resume; prove the next batch is exactly the expected batch (no skip/repeat)", "Checkpoint", 150, "pending"),
-    (13, "Replay an earlier interval; prove batch ids / token spans / hashes match the original run", "Checkpoint", 150, "pending"),
-    (14, "Fork from an earlier checkpoint (branch)", "Checkpoint", 150, "pending"),
-    (15, "Throughput + packing efficiency → performance.json", "Throughput", 50, "pending"),
-    (16, "Audit + evidence bundle (evidence.json / .md from real artifacts) + one-command run_demo.py + tests + README", "Evidence/tests/docs", 50, "pending"),
+CONV = [
+    ("Feature", "a top-level capability = one pipeline stage (16 total)", "large"),
+    ("Epic", "a micro-step inside a feature = one web-Claude prompt → one small module + test", "small"),
+    ("Story", "the detail / acceptance criteria inside an epic", "tiny"),
 ]
 
-DECISIONS = [
-    ("Stack", "Python 3.11 + PyTorch on CPU, determinism pinned (fixed seeds, deterministic algorithms, single thread)."),
-    ("Model", "Tiny Mixture-of-Experts transformer, built as a pluggable module at Step 8 (after the data plane is proven)."),
-    ("Tokenizer", "Self-contained byte-level BPE, trained once on the toy corpus then frozen — vocab + merges committed and content-hashed."),
-    ("Method", "Contrastive perspective lane (y+/y−) + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry kept as a documented hook (see contrastive_perspective_corpus.md)."),
-    ("Repo", "New standalone GitHub repository (the submission), separate from this proposal site. This page is the tracker; the code lives in the submission repo."),
+LOCKED = [
+    ("Corpus pool", "~10,000,000 tokens (collected, tokenized, sharded)."),
+    ("Training budget", "~3,000,000 tokens (keep-fraction ≈ 0.3 of the pool — demonstrates OPUS selection). A single config knob."),
+    ("Tests", "run on a tiny slice; only the one hero run_demo does the full 3M."),
+    ("Stack", "Python 3.11, PyTorch on CPU with determinism pinned, NumPy allowed."),
+    ("Model", "tiny Mixture-of-Experts transformer, pluggable at Feature 10 (after the data plane)."),
+    ("Tokenizer", "self-contained frozen byte-level BPE, vocab + merges committed and content-hashed."),
+    ("Method", "contrastive perspective lane + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry = documented hook (contrastive_perspective_corpus.md)."),
+    ("Repo", "new standalone GitHub repository (name TBD — placeholder v5-execution-system)."),
+    ("Invariant", "a seed + a ledger offset reconstructs any batch byte-for-byte — the basis of resume, replay, and fork."),
+]
+
+# num, name, area, points, status (done|active|pending)
+FEATURES = [
+    (1, "Collecting data", "Tokenizer integrity / data", 100, "active"),
+    (2, "Normalize + content hash", "Shards/manifests", 100, "pending"),
+    (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "pending"),
+    (4, "Immutable shards + manifests", "Shards/manifests", 100, "pending"),
+    (5, "Evaluation firewall", "Firewall", 50, "pending"),
+    (6, "Mixture / curriculum", "Mixture", 150, "pending"),
+    (7, "OPUS selector", "Mixture/OPUS", 150, "pending"),
+    (8, "Packer (masks, position ids)", "Packing/masks", 150, "pending"),
+    (9, "Batch stream + consumption ledger", "Ledgers", 150, "pending"),
+    (10, "Trainer (MoE) + learning ledger", "Ledgers", 150, "pending"),
+    (11, "Checkpoints", "Checkpoint", 150, "pending"),
+    (12, "Crash + resume", "Checkpoint", 150, "pending"),
+    (13, "Replay", "Checkpoint", 150, "pending"),
+    (14, "Fork", "Checkpoint", 150, "pending"),
+    (15, "Throughput / packing efficiency", "Throughput", 50, "pending"),
+    (16, "Audit + evidence + one-command + tests + README", "Evidence/tests/docs + end-to-end", 200, "pending"),
+]
+
+# id, title, status, [stories], acceptance
+FEATURE1 = [
+    ("1.1", "Corpus data model", "active", [
+        "Document frozen dataclass: id, lane∈{web,code,math,indic,multilingual}, provenance_tier∈{T0,T1,T2,T3}, split∈{train,eval}, source, text.",
+        "ContrastivePair frozen dataclass: id, topic, prefix, y_plus, y_minus, vantage, chauvinism.",
+        "validate_document / validate_contrastive raise ValueError on bad enum, empty required string, or chauvinism != none.",
+        "Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).",
+    ], "stdlib only; no I/O; tests pass."),
+    ("1.2", "Sources manifest", "pending", [
+        "Config listing, per lane, the pinned dataset id + snapshot/revision + license + target token count.",
+        "Validator: lane targets sum to ~10M and every source has a license.",
+    ], "data only, no downloads yet; test asserts totals and license presence."),
+    ("1.3", "Fetch one lane (web/English)", "pending", [
+        "Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.",
+        "Record each raw file's sha256 in a fetch log.",
+    ], "re-running yields identical file hashes; respects the cap."),
+    ("1.4–1.7", "Fetch code / math / indic / multilingual", "pending", [
+        "Same shape as 1.3, one lane per epic.",
+    ], "per-lane caps respected; file hashes recorded."),
+    ("1.8", "Author contrastive pairs", "pending", [
+        "~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.",
+    ], "all validate; committed as source, not downloaded."),
+    ("1.9", "Eval held-out split", "pending", [
+        "Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.",
+    ], "eval docs disjoint from train; recorded separately."),
+    ("1.10", "Corpus loader", "pending", [
+        "Iterate all raw files → Documents in the schema; attach a byte→token estimate.",
+    ], "loads deterministically; counts stable across runs."),
+    ("1.11", "Corpus summary report", "pending", [
+        "Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).",
+    ], "report regenerates identically; totals ≈ 10M."),
+    ("1.12", "Wire load_corpus into run_demo.py", "pending", [
+        "Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.",
+    ], "python run_demo.py runs clean; test asserts the PASS event."),
+]
+
+# feature num -> provisional epic outline
+OUTLINE = {
+    2: "2.1 canonical text normalizer (Unicode NFC, whitespace) · 2.2 content-hasher (sha256 over canonical bytes) — born here · 2.3 hash each Document + exact-duplicate removal · 2.4 normalized-corpus report + test",
+    3: "3.1 BPE trainer on a pool sample · 3.2 freeze (serialize vocab+merges) + tokenizer content hash · 3.3 encode/decode with round-trip test · 3.4 tokenizer manifest (hash, vocab size, special tokens) + test",
+    4: "4.1 shard writer (fixed-size token shards, content-addressed, immutable) · 4.2 per-shard manifest (hash, token count, lane, provenance, tags, source doc ids) · 4.3 shard-set index · 4.4 immutability / re-hash verification + test",
+    5: "5.1 mark eval shards · 5.2 firewall gate (eval shard ids can never enter a train batch) · 5.3 [PASS] eval_shard_blocked event + test",
+    6: "6.1 mixture config (lane weights, protected floors, phases) · 6.2 compiler → planned per-lane token targets per phase · 6.3 floor-enforcement logic · 6.4 planned-shares report + test",
+    7: "7.1 candidate scoring interface · 7.2 accept/reject/defer rule · 7.3 protected-floor override · 7.4 ΔS surprisal signal hook · 7.5 decision ledger + test",
+    8: "8.1 sequence packing to seq_len with doc boundaries · 8.2 loss mask (eval/padding + contrastive framing-span-only) · 8.3 attention mask (block cross-document attention) · 8.4 position ids (reset per document) · 8.5 contrastive-pair packing policy · 8.6 packed-batch report + mask correctness tests",
+    9: "9.1 deterministic RNG (born here) + shard sampling per mixture · 9.2 batch iterator (batch id, token spans, shard offsets) · 9.3 batch content hash · 9.4 append-only consumption ledger · 9.5 determinism test (same seed → same batch ids/hashes)",
+    10: "10.1 tiny MoE model (embedding, 1–2 layers, top-k experts, head) using masks + position ids · 10.2 deterministic training step · 10.3 per-token loss = F1 surprisal → learning ledger · 10.4 F2 ΔS per contrastive pair · 10.5 learning ledger links loss → source · 10.6 tests (loss decreases; determinism)",
+    11: "11.1 checkpoint writer (model + optimizer + RNG snapshot + ledger offset) · 11.2 checkpoint manifest + hash · 11.3 restore · 11.4 restore round-trip test",
+    12: "12.1 deliberate crash hook (raise at a set batch) · 12.2 resume from checkpoint · 12.3 prove next batch == expected (no skip/repeat) · 12.4 [PASS] resume_next_batch_matched + test",
+    13: "13.1 replay interval [a,b] from ledger · 13.2 reconstruct batch ids/token spans/hashes · 13.3 prove match vs original + [PASS] replay_hash_matched + test",
+    14: "14.1 fork from an earlier checkpoint (new branch id) · 14.2 divergent run on the branch · 14.3 lineage recorded + test",
+    15: "15.1 packing-utilization metric · 15.2 useful loss-bearing tokens/sec · 15.3 performance.json + test",
+    16: "16.1 audit pass (cross-check ledgers vs manifests) · 16.2 evidence.json from real artifacts · 16.3 evidence.md summary · 16.4 run.log completeness check · 16.5 full run_demo.py wiring (one command) · 16.6 README + invariant test suite",
+}
+
+OPEN_DECISIONS = [
+    ("Repo name", "before first commit", "v5-execution-system"),
+    ("Pinned datasets + licenses per lane", "Epic 1.2 / 1.3", "web: FineWeb/C4 · code: The Stack (permissive) · math: open math set · indic: Sangraha/IndicCorp/Indic-Wiki · multilingual: small sample"),
+    ("Tokenizer vocab size", "Feature 3", "~8k–16k"),
+    ("seq_len, batch size", "Feature 8/9", "seq 256, batch 8 (≈2,048 tokens/batch)"),
+    ("MoE dims (d_model, layers, #experts, top-k)", "Feature 10", "d_model 128, 2 layers, 4 experts, top-2"),
+    ("Provenance tiers usage", "Feature 2/4", "T0 verified · T1 web · T2 synthetic · T3 translated"),
 ]
 
 PROMPT_CURRENT = r'''CONTEXT: I am building a small, reproducible "Training Data Execution System" for LLM
-pretraining (a course assignment), Python 3.11, built in small steps. THIS IS STEP 1 ONLY
-— just the toy corpus and a minimal runner. No tokenization yet.
+pretraining (a course assignment), Python 3.11, built in very small steps. THIS IS
+MICRO-STEP 1.1 (Epic 1.1) ONLY — just the corpus data model. No data, no downloads, no
+tokenization, no runner.
 
-TASK
-1. A tiny in-repo corpus organised by lane. A module corpus.py returning documents, each a
-   dict {id, lane, provenance_tier, split, text}. Include: 2-3 short "web", "code" and
-   "math" docs; one or two "indic" docs; an "eval" split (a couple of docs marked
-   split="eval") that must never be trained on; and 3-4 "contrastive" pairs on contested
-   topics — each a shared prefix plus two continuations y_plus (Indian-vantage) and y_minus
-   (Western-default) differing only in a framing span, tagged {vantage, chauvinism:"none"}.
-   Represent a contrastive pair as its own document type. Keep every text 1-3 sentences,
-   fixed/authored, no randomness.
-2. A minimal run_demo.py that creates a submission_artifacts/ folder with a run.log, calls
-   one stage load_corpus(), logs one line per lane like "[INFO] corpus_loaded lane=web
-   docs=3", and a final "[PASS] corpus_loaded total=N eval=M contrastive=K".
-3. A tiny pytest test asserting: the corpus loads; the eval split is non-empty and flagged;
-   every contrastive pair has a prefix, y_plus, y_minus, and a vantage tag.
+TASK: Create a single module corpus_schema.py defining the data model:
+ - A frozen dataclass Document with fields: id: str, lane: str (one of
+   "web","code","math","indic","multilingual"), provenance_tier: str (one of
+   "T0","T1","T2","T3"), split: str (one of "train","eval"), source: str, text: str.
+ - A frozen dataclass ContrastivePair with fields: id: str, topic: str, prefix: str,
+   y_plus: str (Indian-vantage continuation), y_minus: str (Western-default continuation),
+   vantage: str (should equal "indian_plus_western_minus"), chauvinism: str (must equal
+   "none").
+ - validate_document(doc) and validate_contrastive(pair) that raise ValueError on any
+   invalid field (bad lane/provenance_tier/split enum, empty required strings,
+   chauvinism != "none").
+ - 2 example Documents and 1 example ContrastivePair as module-level constants (EXAMPLES).
+ - A tiny pytest test asserting: the examples validate; a Document with a bad lane raises
+   ValueError; a ContrastivePair with chauvinism != "none" raises ValueError.
 
-REQUIREMENTS: standard library only for now; deterministic (no randomness); small and
-readable. Return the full code for corpus.py, run_demo.py and the test, plus a one-line
-note on the data model.'''
+REQUIREMENTS: standard library only (dataclasses, typing); deterministic; no file I/O;
+small and readable. Return the full code for corpus_schema.py and the test, plus a
+one-line note on the data model.'''
 
 
 def badge(status):
@@ -89,16 +160,42 @@ def badge(status):
     return '<span class="b" style="background:#eee;color:#888">pending</span>'
 
 
-def steps_rows():
+# ---------- HTML ----------
+
+def h_conv():
+    return "".join('<tr><td><b>%s</b></td><td>%s</td><td>%s</td></tr>\n' % r for r in CONV)
+
+
+def h_locked():
+    return "".join('<tr><td><b>%s</b></td><td>%s</td></tr>\n' % (k, v) for k, v in LOCKED)
+
+
+def h_features():
     out = ""
-    for n, title, area, pts, status in STEPS:
-        out += ('<tr><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>\n'
-                % (n, title, area, pts, badge(status)))
+    for n, name, area, pts, st in FEATURES:
+        out += '<tr><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>\n' % (n, name, area, pts, badge(st))
     return out
 
 
-def decisions_rows():
-    return "".join('<tr><td><b>%s</b></td><td>%s</td></tr>\n' % (k, v) for k, v in DECISIONS)
+def h_feature1():
+    out = ""
+    for eid, title, st, stories, acc in FEATURE1:
+        out += '    <h3>Epic %s — %s &nbsp; %s</h3>\n' % (eid, title, badge(st))
+        out += '    <ul>\n' + "".join('      <li>%s</li>\n' % s for s in stories) + '    </ul>\n'
+        out += '    <p class="cap">Acceptance: %s</p>\n' % acc
+    return out
+
+
+def h_outline():
+    out = ""
+    for n, name, area, pts, st in FEATURES:
+        if n in OUTLINE:
+            out += '<tr><td><b>%d · %s</b></td><td>%s</td></tr>\n' % (n, name, OUTLINE[n])
+    return out
+
+
+def h_opendec():
+    return "".join('<tr><td><b>%s</b></td><td>%s</td><td>%s</td></tr>\n' % r for r in OPEN_DECISIONS)
 
 
 def build_html():
@@ -114,25 +211,28 @@ def build_html():
         '<div class="wrap">\n'
         '  <div class="crumb">Session 6 / Training Data Execution System</div>\n'
         '  <div class="phead">\n'
-        '    <div class="eyebrow">Session 6 assignment</div>\n'
+        '    <div class="eyebrow">Session 6 assignment · delivery plan</div>\n'
         '    <h1>Training Data Execution System</h1>\n'
-        '    <p class="dek">A small but complete, reproducible and auditable data plane for V5: '
-        'documents &rarr; shards &rarr; manifests &rarr; mixture &rarr; packing &rarr; batches &rarr; training '
-        '&rarr; ledgers &rarr; checkpoint &rarr; crash &rarr; resume &rarr; replay &rarr; audit. This page is the '
-        'living tracker; we build it step by step and record each step&rsquo;s prompt and evidence here.</p>\n'
+        '    <p class="dek">A small but complete, reproducible and auditable data plane for V5. This page is the '
+        'living plan and tracker; it mirrors <code>session6_plan.md</code> and both are generated from one source.</p>\n'
         '  </div>\n'
 
         '  <div class="sec"><h2>What it must prove</h2>\n'
-        '    <p>The goal is not scale; it is that the data system is correct, reproducible, auditable and '
-        'efficient. The governing invariant is that <strong>a seed plus a ledger offset reconstructs any batch '
-        'byte-for-byte</strong> &mdash; which is what makes resume, replay and fork provable. The final run must '
-        'deliberately crash, resume with the exact next batch, and replay an earlier interval whose batch ids, '
-        'token spans and hashes match the original.</p></div>\n'
+        '    <p>The goal is not scale; it is that the data system is correct, reproducible, auditable and efficient. '
+        'The governing invariant is that <strong>a seed plus a ledger offset reconstructs any batch byte-for-byte</strong>. '
+        'The final run must deliberately crash, resume with the exact next batch, and replay an earlier interval whose '
+        'batch ids, token spans and hashes match the original.</p></div>\n'
 
-        '  <div class="sec"><h2>Decisions (locked)</h2>\n'
+        '  <div class="sec"><h2>Hierarchy &amp; conventions</h2>\n'
+        '    <div class="tblwrap"><table class="stbl"><tr><th>Level</th><th>Meaning</th><th>Size</th></tr>\n'
+        + h_conv() + '</table></div>\n'
+        '    <p>One epic at a time; an epic is <em>done</em> only when its acceptance criteria are proven by a passing '
+        'test or generated evidence, never hardcoded. <code>run_demo.py</code> and <code>run.log</code> are born at '
+        'Feature 1 and grow one stage per feature.</p></div>\n'
+
+        '  <div class="sec"><h2>Locked decisions</h2>\n'
         '    <div class="tblwrap"><table class="stbl"><tr><th>Area</th><th>Decision</th></tr>\n'
-        + decisions_rows() +
-        '    </table></div></div>\n'
+        + h_locked() + '</table></div></div>\n'
 
         '  <div class="sec"><h2>Architecture</h2>\n'
         '    <div class="diagram"><pre>\n'
@@ -147,43 +247,89 @@ def build_html():
         '  -> trainer (tiny MoE transformer)           (+ learning ledger: F1 surprisal, F2 &Delta;S)\n'
         '  -> checkpoint (tied to ledger offset + RNG)\n'
         '  -> crash -> resume -> replay -> fork -> audit -> evidence bundle\n'
-        '</pre></div>\n'
-        '    <p>The contrastive perspective lane and the surprisal metrics are specified in '
-        '<code>contrastive_perspective_corpus.md</code>; they enter the system as a data type with its own '
-        'packing policy (F1/F2), a learning-ledger signal, and an OPUS selection signal.</p></div>\n'
+        '</pre></div></div>\n'
 
-        '  <div class="sec"><h2>Roadmap</h2>\n'
-        '    <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Step</th><th>Area</th>'
-        '<th>Pts</th><th>Status</th></tr>\n'
-        + steps_rows() +
-        '    </table></div>\n'
-        '    <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric. A step advances only once its '
-        'invariant is proven by reproducible evidence.</p></div>\n'
+        '  <div class="sec"><h2>Feature map (16)</h2>\n'
+        '    <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Feature</th><th>Area</th><th>Pts</th><th>Status</th></tr>\n'
+        + h_features() + '</table></div>\n'
+        '    <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric.</p></div>\n'
 
-        '  <div class="sec"><h2>How each step runs</h2>\n'
-        '    <ol>\n'
-        '      <li>Paste the step&rsquo;s prompt (below) into Claude on the web; it returns the code.</li>\n'
-        '      <li>Bring the code back; we integrate it into the submission repo.</li>\n'
-        '      <li>We verify the step&rsquo;s invariant (the part graders check &mdash; evidence produced by the '
-        'implementation, never hardcoded) and record the result here.</li>\n'
-        '      <li>Only then do we advance to the next step.</li>\n'
-        '    </ol></div>\n'
+        '  <div class="sec"><h2>Feature 1 — Collecting data (epics &amp; stories)</h2>\n'
+        '    <p>Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined eval '
+        'split, all reproducible, in one clean data model.</p>\n'
+        + h_feature1() + '</div>\n'
 
-        '  <div class="sec"><h2>Current step — Step 1 · Corpus</h2>\n'
-        '    <p>The first concrete artifact: a tiny multi-lane corpus (web / code / math / indic), an eval split '
-        'quarantined from training, and a handful of contrastive perspective pairs (prefix + y+ / y&minus;). Plus a '
-        'minimal one-command <code>run_demo.py</code> and <code>run.log</code>, which grow one stage per step. The '
-        'reproducibility utilities (content-hasher, deterministic RNG) are introduced later, at the step where each is '
-        'first needed. Prompt to paste into web Claude:</p>\n'
+        '  <div class="sec"><h2>Features 2–16 — epic outline</h2>\n'
+        '    <p class="cap">Provisional epic breakdown; story-level detail is written when each feature becomes current.</p>\n'
+        '    <div class="tblwrap"><table class="stbl"><tr><th>Feature</th><th>Epics</th></tr>\n'
+        + h_outline() + '</table></div></div>\n'
+
+        '  <div class="sec"><h2>Open decisions</h2>\n'
+        '    <div class="tblwrap"><table class="stbl"><tr><th>Decision</th><th>Needed by</th><th>Default / candidate</th></tr>\n'
+        + h_opendec() + '</table></div></div>\n'
+
+        '  <div class="sec"><h2>Current epic — 1.1 · Corpus data model</h2>\n'
+        '    <p>Prompt to paste into Claude on the web (returns <code>corpus_schema.py</code> + its test):</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
-        '  <div class="foot">Session 6 &middot; tracker for the Training Data Execution System. '
+        '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
         '</div>\n</body>\n</html>\n'
     )
 
 
+# ---------- Markdown (session6_plan.md) ----------
+
+def m_features():
+    return "".join("| %d | %s | %s | %d | %s |\n" % (n, name, area, pts,
+                   {"done": "☑", "active": "◐", "pending": "☐"}[st])
+                   for n, name, area, pts, st in FEATURES)
+
+
+def build_md():
+    st = {"done": "☑", "active": "◐", "pending": "☐"}
+    out = []
+    out.append("# Session 6 — Training Data Execution System — Delivery Plan\n")
+    out.append("*Generated from `generate_assignment.py` — mirrors the Assignment page "
+               "(`assignment.html`). We build strictly one **epic** (micro-step) at a time.*\n")
+    out.append("## Hierarchy & conventions\n")
+    out.append("| Level | Meaning | Size |\n|---|---|---|")
+    for a, b, c in CONV:
+        out.append("| **%s** | %s | %s |" % (a, b, c))
+    out.append("\nOne epic at a time; an epic is **Done** only when its acceptance criteria are proven by a "
+               "passing test or generated evidence — never hardcoded. `run_demo.py` and `run.log` are born at "
+               "Feature 1 and grow one stage per feature.\n")
+    out.append("## Locked decisions\n")
+    out.append("| Area | Decision |\n|---|---|")
+    for k, v in LOCKED:
+        out.append("| **%s** | %s |" % (k, v))
+    out.append("\n## Feature map (16)\n")
+    out.append("| # | Feature | Area | Pts | Status |\n|---|---|---|---|---|")
+    out.append(m_features().rstrip())
+    out.append("\n## Feature 1 — Collecting data  " + st["active"] + "\n")
+    out.append("Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined "
+               "eval split, all reproducible, in one clean data model.\n")
+    for eid, title, s, stories, acc in FEATURE1:
+        out.append("### Epic %s — %s  %s" % (eid, title, st[s]))
+        for story in stories:
+            out.append("- %s" % story)
+        out.append("- **Acceptance:** %s\n" % acc)
+    out.append("## Features 2–16 — epic outline (stories elaborated just-in-time)\n")
+    for n, name, area, pts, s in FEATURES:
+        if n in OUTLINE:
+            out.append("### Feature %d — %s\n%s\n" % (n, name, OUTLINE[n]))
+    out.append("## Open decisions\n")
+    out.append("| Decision | Needed by | Default / candidate |\n|---|---|---|")
+    for a, b, c in OPEN_DECISIONS:
+        out.append("| %s | %s | %s |" % (a, b, c))
+    out.append("\n## Current epic — 1.1 · Corpus data model\n")
+    out.append("Prompt (paste into web Claude) is on the Assignment page and returns `corpus_schema.py` + its test.\n")
+    return "\n".join(out) + "\n"
+
+
 if __name__ == "__main__":
     with open("assignment.html", "w", encoding="utf-8") as f:
         f.write(build_html())
-    print("Done. assignment.html written.")
+    with open("session6_plan.md", "w", encoding="utf-8") as f:
+        f.write(build_md())
+    print("Done. assignment.html + session6_plan.md written (in sync).")

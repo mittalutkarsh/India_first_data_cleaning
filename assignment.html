@@ -79,20 +79,31 @@ mjx-container { color:var(--ink); }
 <div class="wrap">
   <div class="crumb">Session 6 / Training Data Execution System</div>
   <div class="phead">
-    <div class="eyebrow">Session 6 assignment</div>
+    <div class="eyebrow">Session 6 assignment · delivery plan</div>
     <h1>Training Data Execution System</h1>
-    <p class="dek">A small but complete, reproducible and auditable data plane for V5: documents &rarr; shards &rarr; manifests &rarr; mixture &rarr; packing &rarr; batches &rarr; training &rarr; ledgers &rarr; checkpoint &rarr; crash &rarr; resume &rarr; replay &rarr; audit. This page is the living tracker; we build it step by step and record each step&rsquo;s prompt and evidence here.</p>
+    <p class="dek">A small but complete, reproducible and auditable data plane for V5. This page is the living plan and tracker; it mirrors <code>session6_plan.md</code> and both are generated from one source.</p>
   </div>
   <div class="sec"><h2>What it must prove</h2>
-    <p>The goal is not scale; it is that the data system is correct, reproducible, auditable and efficient. The governing invariant is that <strong>a seed plus a ledger offset reconstructs any batch byte-for-byte</strong> &mdash; which is what makes resume, replay and fork provable. The final run must deliberately crash, resume with the exact next batch, and replay an earlier interval whose batch ids, token spans and hashes match the original.</p></div>
-  <div class="sec"><h2>Decisions (locked)</h2>
+    <p>The goal is not scale; it is that the data system is correct, reproducible, auditable and efficient. The governing invariant is that <strong>a seed plus a ledger offset reconstructs any batch byte-for-byte</strong>. The final run must deliberately crash, resume with the exact next batch, and replay an earlier interval whose batch ids, token spans and hashes match the original.</p></div>
+  <div class="sec"><h2>Hierarchy &amp; conventions</h2>
+    <div class="tblwrap"><table class="stbl"><tr><th>Level</th><th>Meaning</th><th>Size</th></tr>
+<tr><td><b>Feature</b></td><td>a top-level capability = one pipeline stage (16 total)</td><td>large</td></tr>
+<tr><td><b>Epic</b></td><td>a micro-step inside a feature = one web-Claude prompt → one small module + test</td><td>small</td></tr>
+<tr><td><b>Story</b></td><td>the detail / acceptance criteria inside an epic</td><td>tiny</td></tr>
+</table></div>
+    <p>One epic at a time; an epic is <em>done</em> only when its acceptance criteria are proven by a passing test or generated evidence, never hardcoded. <code>run_demo.py</code> and <code>run.log</code> are born at Feature 1 and grow one stage per feature.</p></div>
+  <div class="sec"><h2>Locked decisions</h2>
     <div class="tblwrap"><table class="stbl"><tr><th>Area</th><th>Decision</th></tr>
-<tr><td><b>Stack</b></td><td>Python 3.11 + PyTorch on CPU, determinism pinned (fixed seeds, deterministic algorithms, single thread).</td></tr>
-<tr><td><b>Model</b></td><td>Tiny Mixture-of-Experts transformer, built as a pluggable module at Step 8 (after the data plane is proven).</td></tr>
-<tr><td><b>Tokenizer</b></td><td>Self-contained byte-level BPE, trained once on the toy corpus then frozen — vocab + merges committed and content-hashed.</td></tr>
-<tr><td><b>Method</b></td><td>Contrastive perspective lane (y+/y−) + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry kept as a documented hook (see contrastive_perspective_corpus.md).</td></tr>
-<tr><td><b>Repo</b></td><td>New standalone GitHub repository (the submission), separate from this proposal site. This page is the tracker; the code lives in the submission repo.</td></tr>
-    </table></div></div>
+<tr><td><b>Corpus pool</b></td><td>~10,000,000 tokens (collected, tokenized, sharded).</td></tr>
+<tr><td><b>Training budget</b></td><td>~3,000,000 tokens (keep-fraction ≈ 0.3 of the pool — demonstrates OPUS selection). A single config knob.</td></tr>
+<tr><td><b>Tests</b></td><td>run on a tiny slice; only the one hero run_demo does the full 3M.</td></tr>
+<tr><td><b>Stack</b></td><td>Python 3.11, PyTorch on CPU with determinism pinned, NumPy allowed.</td></tr>
+<tr><td><b>Model</b></td><td>tiny Mixture-of-Experts transformer, pluggable at Feature 10 (after the data plane).</td></tr>
+<tr><td><b>Tokenizer</b></td><td>self-contained frozen byte-level BPE, vocab + merges committed and content-hashed.</td></tr>
+<tr><td><b>Method</b></td><td>contrastive perspective lane + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry = documented hook (contrastive_perspective_corpus.md).</td></tr>
+<tr><td><b>Repo</b></td><td>new standalone GitHub repository (name TBD — placeholder v5-execution-system).</td></tr>
+<tr><td><b>Invariant</b></td><td>a seed + a ledger offset reconstructs any batch byte-for-byte — the basis of resume, replay, and fork.</td></tr>
+</table></div></div>
   <div class="sec"><h2>Architecture</h2>
     <div class="diagram"><pre>
 corpus
@@ -106,60 +117,134 @@ corpus
   -> trainer (tiny MoE transformer)           (+ learning ledger: F1 surprisal, F2 &Delta;S)
   -> checkpoint (tied to ledger offset + RNG)
   -> crash -> resume -> replay -> fork -> audit -> evidence bundle
-</pre></div>
-    <p>The contrastive perspective lane and the surprisal metrics are specified in <code>contrastive_perspective_corpus.md</code>; they enter the system as a data type with its own packing policy (F1/F2), a learning-ledger signal, and an OPUS selection signal.</p></div>
-  <div class="sec"><h2>Roadmap</h2>
-    <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Step</th><th>Area</th><th>Pts</th><th>Status</th></tr>
-<tr><td>1</td><td>Corpus — tiny multi-lane docs (web/code/math/indic) + eval split + contrastive pairs; minimal run_demo + run.log</td><td>Tokenizer integrity</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
-<tr><td>2</td><td>Normalize + per-document content hash (light clean; the content-hasher is introduced here)</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>3</td><td>Frozen byte-level BPE tokenizer + content hash</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>4</td><td>Immutable tokenized shards + manifests (hash, token count, lane, provenance, chauvinism tag)</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>5</td><td>Evaluation / validation firewall — eval shards can never enter a loss-bearing batch</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>6</td><td>Mixture schedule — curriculum stages, lane weights, protected floors (planned shares)</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>7</td><td>OPUS selector — accept / reject / defer + protected-floor override; ΔS surprisal as a selection signal</td><td>Mixture/OPUS</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>8</td><td>Packer — per-type packing policies (incl. contrastive pairs), loss + attention masks, position ids</td><td>Packing/masks</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>9</td><td>Deterministic batch stream + consumption ledger (RNG introduced here; batch id, token spans, offsets, hashes)</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>10</td><td>Trainer (tiny MoE transformer) + learning ledger + F1 per-token surprisal + F2 ΔS per contrastive pair</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>11</td><td>Checkpoints tied to ledger offset + RNG state</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>12</td><td>Deliberate crash → resume; prove the next batch is exactly the expected batch (no skip/repeat)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>13</td><td>Replay an earlier interval; prove batch ids / token spans / hashes match the original run</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>14</td><td>Fork from an earlier checkpoint (branch)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>15</td><td>Throughput + packing efficiency → performance.json</td><td>Throughput</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>16</td><td>Audit + evidence bundle (evidence.json / .md from real artifacts) + one-command run_demo.py + tests + README</td><td>Evidence/tests/docs</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-    </table></div>
-    <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric. A step advances only once its invariant is proven by reproducible evidence.</p></div>
-  <div class="sec"><h2>How each step runs</h2>
-    <ol>
-      <li>Paste the step&rsquo;s prompt (below) into Claude on the web; it returns the code.</li>
-      <li>Bring the code back; we integrate it into the submission repo.</li>
-      <li>We verify the step&rsquo;s invariant (the part graders check &mdash; evidence produced by the implementation, never hardcoded) and record the result here.</li>
-      <li>Only then do we advance to the next step.</li>
-    </ol></div>
-  <div class="sec"><h2>Current step — Step 1 · Corpus</h2>
-    <p>The first concrete artifact: a tiny multi-lane corpus (web / code / math / indic), an eval split quarantined from training, and a handful of contrastive perspective pairs (prefix + y+ / y&minus;). Plus a minimal one-command <code>run_demo.py</code> and <code>run.log</code>, which grow one stage per step. The reproducibility utilities (content-hasher, deterministic RNG) are introduced later, at the step where each is first needed. Prompt to paste into web Claude:</p>
+</pre></div></div>
+  <div class="sec"><h2>Feature map (16)</h2>
+    <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Feature</th><th>Area</th><th>Pts</th><th>Status</th></tr>
+<tr><td>1</td><td>Collecting data</td><td>Tokenizer integrity / data</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
+<tr><td>2</td><td>Normalize + content hash</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>3</td><td>Frozen BPE tokenizer</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>4</td><td>Immutable shards + manifests</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>5</td><td>Evaluation firewall</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>6</td><td>Mixture / curriculum</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>7</td><td>OPUS selector</td><td>Mixture/OPUS</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>8</td><td>Packer (masks, position ids)</td><td>Packing/masks</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>9</td><td>Batch stream + consumption ledger</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>10</td><td>Trainer (MoE) + learning ledger</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>11</td><td>Checkpoints</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>12</td><td>Crash + resume</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>13</td><td>Replay</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>14</td><td>Fork</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>15</td><td>Throughput / packing efficiency</td><td>Throughput</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>16</td><td>Audit + evidence + one-command + tests + README</td><td>Evidence/tests/docs + end-to-end</td><td>200</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+</table></div>
+    <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric.</p></div>
+  <div class="sec"><h2>Feature 1 — Collecting data (epics &amp; stories)</h2>
+    <p>Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined eval split, all reproducible, in one clean data model.</p>
+    <h3>Epic 1.1 — Corpus data model &nbsp; <span class="b b-tight">in progress</span></h3>
+    <ul>
+      <li>Document frozen dataclass: id, lane∈{web,code,math,indic,multilingual}, provenance_tier∈{T0,T1,T2,T3}, split∈{train,eval}, source, text.</li>
+      <li>ContrastivePair frozen dataclass: id, topic, prefix, y_plus, y_minus, vantage, chauvinism.</li>
+      <li>validate_document / validate_contrastive raise ValueError on bad enum, empty required string, or chauvinism != none.</li>
+      <li>Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).</li>
+    </ul>
+    <p class="cap">Acceptance: stdlib only; no I/O; tests pass.</p>
+    <h3>Epic 1.2 — Sources manifest &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Config listing, per lane, the pinned dataset id + snapshot/revision + license + target token count.</li>
+      <li>Validator: lane targets sum to ~10M and every source has a license.</li>
+    </ul>
+    <p class="cap">Acceptance: data only, no downloads yet; test asserts totals and license presence.</p>
+    <h3>Epic 1.3 — Fetch one lane (web/English) &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.</li>
+      <li>Record each raw file's sha256 in a fetch log.</li>
+    </ul>
+    <p class="cap">Acceptance: re-running yields identical file hashes; respects the cap.</p>
+    <h3>Epic 1.4–1.7 — Fetch code / math / indic / multilingual &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Same shape as 1.3, one lane per epic.</li>
+    </ul>
+    <p class="cap">Acceptance: per-lane caps respected; file hashes recorded.</p>
+    <h3>Epic 1.8 — Author contrastive pairs &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.</li>
+    </ul>
+    <p class="cap">Acceptance: all validate; committed as source, not downloaded.</p>
+    <h3>Epic 1.9 — Eval held-out split &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.</li>
+    </ul>
+    <p class="cap">Acceptance: eval docs disjoint from train; recorded separately.</p>
+    <h3>Epic 1.10 — Corpus loader &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Iterate all raw files → Documents in the schema; attach a byte→token estimate.</li>
+    </ul>
+    <p class="cap">Acceptance: loads deterministically; counts stable across runs.</p>
+    <h3>Epic 1.11 — Corpus summary report &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).</li>
+    </ul>
+    <p class="cap">Acceptance: report regenerates identically; totals ≈ 10M.</p>
+    <h3>Epic 1.12 — Wire load_corpus into run_demo.py &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <ul>
+      <li>Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.</li>
+    </ul>
+    <p class="cap">Acceptance: python run_demo.py runs clean; test asserts the PASS event.</p>
+</div>
+  <div class="sec"><h2>Features 2–16 — epic outline</h2>
+    <p class="cap">Provisional epic breakdown; story-level detail is written when each feature becomes current.</p>
+    <div class="tblwrap"><table class="stbl"><tr><th>Feature</th><th>Epics</th></tr>
+<tr><td><b>2 · Normalize + content hash</b></td><td>2.1 canonical text normalizer (Unicode NFC, whitespace) · 2.2 content-hasher (sha256 over canonical bytes) — born here · 2.3 hash each Document + exact-duplicate removal · 2.4 normalized-corpus report + test</td></tr>
+<tr><td><b>3 · Frozen BPE tokenizer</b></td><td>3.1 BPE trainer on a pool sample · 3.2 freeze (serialize vocab+merges) + tokenizer content hash · 3.3 encode/decode with round-trip test · 3.4 tokenizer manifest (hash, vocab size, special tokens) + test</td></tr>
+<tr><td><b>4 · Immutable shards + manifests</b></td><td>4.1 shard writer (fixed-size token shards, content-addressed, immutable) · 4.2 per-shard manifest (hash, token count, lane, provenance, tags, source doc ids) · 4.3 shard-set index · 4.4 immutability / re-hash verification + test</td></tr>
+<tr><td><b>5 · Evaluation firewall</b></td><td>5.1 mark eval shards · 5.2 firewall gate (eval shard ids can never enter a train batch) · 5.3 [PASS] eval_shard_blocked event + test</td></tr>
+<tr><td><b>6 · Mixture / curriculum</b></td><td>6.1 mixture config (lane weights, protected floors, phases) · 6.2 compiler → planned per-lane token targets per phase · 6.3 floor-enforcement logic · 6.4 planned-shares report + test</td></tr>
+<tr><td><b>7 · OPUS selector</b></td><td>7.1 candidate scoring interface · 7.2 accept/reject/defer rule · 7.3 protected-floor override · 7.4 ΔS surprisal signal hook · 7.5 decision ledger + test</td></tr>
+<tr><td><b>8 · Packer (masks, position ids)</b></td><td>8.1 sequence packing to seq_len with doc boundaries · 8.2 loss mask (eval/padding + contrastive framing-span-only) · 8.3 attention mask (block cross-document attention) · 8.4 position ids (reset per document) · 8.5 contrastive-pair packing policy · 8.6 packed-batch report + mask correctness tests</td></tr>
+<tr><td><b>9 · Batch stream + consumption ledger</b></td><td>9.1 deterministic RNG (born here) + shard sampling per mixture · 9.2 batch iterator (batch id, token spans, shard offsets) · 9.3 batch content hash · 9.4 append-only consumption ledger · 9.5 determinism test (same seed → same batch ids/hashes)</td></tr>
+<tr><td><b>10 · Trainer (MoE) + learning ledger</b></td><td>10.1 tiny MoE model (embedding, 1–2 layers, top-k experts, head) using masks + position ids · 10.2 deterministic training step · 10.3 per-token loss = F1 surprisal → learning ledger · 10.4 F2 ΔS per contrastive pair · 10.5 learning ledger links loss → source · 10.6 tests (loss decreases; determinism)</td></tr>
+<tr><td><b>11 · Checkpoints</b></td><td>11.1 checkpoint writer (model + optimizer + RNG snapshot + ledger offset) · 11.2 checkpoint manifest + hash · 11.3 restore · 11.4 restore round-trip test</td></tr>
+<tr><td><b>12 · Crash + resume</b></td><td>12.1 deliberate crash hook (raise at a set batch) · 12.2 resume from checkpoint · 12.3 prove next batch == expected (no skip/repeat) · 12.4 [PASS] resume_next_batch_matched + test</td></tr>
+<tr><td><b>13 · Replay</b></td><td>13.1 replay interval [a,b] from ledger · 13.2 reconstruct batch ids/token spans/hashes · 13.3 prove match vs original + [PASS] replay_hash_matched + test</td></tr>
+<tr><td><b>14 · Fork</b></td><td>14.1 fork from an earlier checkpoint (new branch id) · 14.2 divergent run on the branch · 14.3 lineage recorded + test</td></tr>
+<tr><td><b>15 · Throughput / packing efficiency</b></td><td>15.1 packing-utilization metric · 15.2 useful loss-bearing tokens/sec · 15.3 performance.json + test</td></tr>
+<tr><td><b>16 · Audit + evidence + one-command + tests + README</b></td><td>16.1 audit pass (cross-check ledgers vs manifests) · 16.2 evidence.json from real artifacts · 16.3 evidence.md summary · 16.4 run.log completeness check · 16.5 full run_demo.py wiring (one command) · 16.6 README + invariant test suite</td></tr>
+</table></div></div>
+  <div class="sec"><h2>Open decisions</h2>
+    <div class="tblwrap"><table class="stbl"><tr><th>Decision</th><th>Needed by</th><th>Default / candidate</th></tr>
+<tr><td><b>Repo name</b></td><td>before first commit</td><td>v5-execution-system</td></tr>
+<tr><td><b>Pinned datasets + licenses per lane</b></td><td>Epic 1.2 / 1.3</td><td>web: FineWeb/C4 · code: The Stack (permissive) · math: open math set · indic: Sangraha/IndicCorp/Indic-Wiki · multilingual: small sample</td></tr>
+<tr><td><b>Tokenizer vocab size</b></td><td>Feature 3</td><td>~8k–16k</td></tr>
+<tr><td><b>seq_len, batch size</b></td><td>Feature 8/9</td><td>seq 256, batch 8 (≈2,048 tokens/batch)</td></tr>
+<tr><td><b>MoE dims (d_model, layers, #experts, top-k)</b></td><td>Feature 10</td><td>d_model 128, 2 layers, 4 experts, top-2</td></tr>
+<tr><td><b>Provenance tiers usage</b></td><td>Feature 2/4</td><td>T0 verified · T1 web · T2 synthetic · T3 translated</td></tr>
+</table></div></div>
+  <div class="sec"><h2>Current epic — 1.1 · Corpus data model</h2>
+    <p>Prompt to paste into Claude on the web (returns <code>corpus_schema.py</code> + its test):</p>
     <div class="diagram"><pre>CONTEXT: I am building a small, reproducible &quot;Training Data Execution System&quot; for LLM
-pretraining (a course assignment), Python 3.11, built in small steps. THIS IS STEP 1 ONLY
-— just the toy corpus and a minimal runner. No tokenization yet.
+pretraining (a course assignment), Python 3.11, built in very small steps. THIS IS
+MICRO-STEP 1.1 (Epic 1.1) ONLY — just the corpus data model. No data, no downloads, no
+tokenization, no runner.
 
-TASK
-1. A tiny in-repo corpus organised by lane. A module corpus.py returning documents, each a
-   dict {id, lane, provenance_tier, split, text}. Include: 2-3 short &quot;web&quot;, &quot;code&quot; and
-   &quot;math&quot; docs; one or two &quot;indic&quot; docs; an &quot;eval&quot; split (a couple of docs marked
-   split=&quot;eval&quot;) that must never be trained on; and 3-4 &quot;contrastive&quot; pairs on contested
-   topics — each a shared prefix plus two continuations y_plus (Indian-vantage) and y_minus
-   (Western-default) differing only in a framing span, tagged {vantage, chauvinism:&quot;none&quot;}.
-   Represent a contrastive pair as its own document type. Keep every text 1-3 sentences,
-   fixed/authored, no randomness.
-2. A minimal run_demo.py that creates a submission_artifacts/ folder with a run.log, calls
-   one stage load_corpus(), logs one line per lane like &quot;[INFO] corpus_loaded lane=web
-   docs=3&quot;, and a final &quot;[PASS] corpus_loaded total=N eval=M contrastive=K&quot;.
-3. A tiny pytest test asserting: the corpus loads; the eval split is non-empty and flagged;
-   every contrastive pair has a prefix, y_plus, y_minus, and a vantage tag.
+TASK: Create a single module corpus_schema.py defining the data model:
+ - A frozen dataclass Document with fields: id: str, lane: str (one of
+   &quot;web&quot;,&quot;code&quot;,&quot;math&quot;,&quot;indic&quot;,&quot;multilingual&quot;), provenance_tier: str (one of
+   &quot;T0&quot;,&quot;T1&quot;,&quot;T2&quot;,&quot;T3&quot;), split: str (one of &quot;train&quot;,&quot;eval&quot;), source: str, text: str.
+ - A frozen dataclass ContrastivePair with fields: id: str, topic: str, prefix: str,
+   y_plus: str (Indian-vantage continuation), y_minus: str (Western-default continuation),
+   vantage: str (should equal &quot;indian_plus_western_minus&quot;), chauvinism: str (must equal
+   &quot;none&quot;).
+ - validate_document(doc) and validate_contrastive(pair) that raise ValueError on any
+   invalid field (bad lane/provenance_tier/split enum, empty required strings,
+   chauvinism != &quot;none&quot;).
+ - 2 example Documents and 1 example ContrastivePair as module-level constants (EXAMPLES).
+ - A tiny pytest test asserting: the examples validate; a Document with a bad lane raises
+   ValueError; a ContrastivePair with chauvinism != &quot;none&quot; raises ValueError.
 
-REQUIREMENTS: standard library only for now; deterministic (no randomness); small and
-readable. Return the full code for corpus.py, run_demo.py and the test, plus a one-line
-note on the data model.</pre></div></div>
-  <div class="foot">Session 6 &middot; tracker for the Training Data Execution System. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
+REQUIREMENTS: standard library only (dataclasses, typing); deterministic; no file I/O;
+small and readable. Return the full code for corpus_schema.py and the test, plus a
+one-line note on the data model.</pre></div></div>
+  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>
 </html>
