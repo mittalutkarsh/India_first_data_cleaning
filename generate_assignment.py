@@ -72,9 +72,10 @@ FEATURE1 = [
         "Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).",
     ], "stdlib only; no I/O; tests pass."),
     ("1.2", "Sources manifest", "active", [
-        "Config listing, per lane, the pinned dataset id + snapshot/revision + license + target token count.",
-        "Validator: lane targets sum to ~10M and every source has a license.",
-    ], "data only, no downloads yet; test asserts totals and license presence."),
+        "LaneSource: source_id (unique), lane, dataset, config, revision, license, provenance_tier, target_tokens, gated, notes.",
+        "SOURCES for all five lanes summing to ~10M; Wikipedia sources tier T1 (eval-eligible), crawl sources T2 (train-only).",
+        "validate_sources: lanes/tiers valid, source_ids unique, licenses present, no gated sources, all five lanes covered, total ~10M; eval_eligible() returns the T0/T1 sources.",
+    ], "data only, no downloads; test asserts totals, uniqueness, tier/eval-eligibility, and rejects gated / empty-license / zero-token / dup-id / bad-tier."),
     ("1.3", "Fetch one lane (web/English)", "pending", [
         "Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.",
         "Record each raw file's sha256 in a fetch log.",
@@ -150,44 +151,51 @@ TEMPLATES = [
 
 PROMPT_CURRENT = r'''CONTEXT: I am building a small, reproducible "Training Data Execution System" for LLM
 pretraining (a course assignment), Python 3.11, built in very small steps. Epic 1.1
-already exists in the repo: a module corpus_schema.py that defines, among other things,
-LANES = frozenset({"web","code","math","indic","multilingual"}). THIS IS MICRO-STEP 1.2
-(Epic 1.2) ONLY — a static "sources manifest" that declares which dataset feeds each
-lane. NO downloads, NO network, NO use of the huggingface datasets library yet (that is
-Epic 1.3). Declarations only.
+already exists in the repo: corpus_schema.py, which defines
+LANES = frozenset({"web","code","math","indic","multilingual"}) and
+PROVENANCE_TIERS = frozenset({"T0","T1","T2","T3"}). THIS IS MICRO-STEP 1.2 (Epic 1.2)
+ONLY — a static "sources manifest" declaring which dataset feeds each lane, with its
+provenance tier. NO downloads, NO network, NO huggingface datasets usage (that is Epic
+1.3). Declarations only. Notes: contrastive pairs (Epic 1.8) and the eval split (Epic 1.9,
+carved from T0/T1 sources) are intentionally NOT in this manifest; target_tokens are
+pre-tokenizer estimates; revision="" means the exact snapshot/commit is pinned at fetch
+time (Epic 1.3).
 
-TASK: Create a module sources_manifest.py.
- - Use @dataclass(frozen=True, slots=True, kw_only=True) to match the project style.
- - A frozen dataclass LaneSource with fields: lane: str, dataset: str (a HuggingFace
-   dataset id), config: str (may be "" — e.g. a Wikipedia dump config or a FineWeb sample
-   name), revision: str (may be "" meaning "pin at fetch time"), license: str,
-   target_tokens: int, gated: bool, notes: str (may be "").
- - A module-level SOURCES: tuple[LaneSource, ...] with exactly these entries (lane is one
-   of the five LANES values; the language lives in config, not in lane):
-     lane=web,          dataset="HuggingFaceFW/fineweb",        config="sample-10BT", license="ODC-BY-1.0",  target_tokens=4_000_000, gated=False
-     lane=code,         dataset="codeparrot/github-code-clean", config="",            license="permissive-only (MIT/Apache/BSD filtered)", target_tokens=2_000_000, gated=False, notes="exact permissive + ungated source confirmed at fetch (Epic 1.3)"
-     lane=math,         dataset="open-web-math/open-web-math",  config="",            license="ODC-BY-1.0",  target_tokens=1_200_000, gated=False
-     lane=indic,        dataset="wikimedia/wikipedia",          config="20231101.hi", license="CC-BY-SA-3.0", target_tokens=1_000_000, gated=False
-     lane=indic,        dataset="wikimedia/wikipedia",          config="20231101.bn", license="CC-BY-SA-3.0", target_tokens=700_000,  gated=False
-     lane=indic,        dataset="wikimedia/wikipedia",          config="20231101.ta", license="CC-BY-SA-3.0", target_tokens=500_000,  gated=False
-     lane=multilingual, dataset="wikimedia/wikipedia",          config="20231101.es", license="CC-BY-SA-3.0", target_tokens=300_000,  gated=False
-     lane=multilingual, dataset="wikimedia/wikipedia",          config="20231101.fr", license="CC-BY-SA-3.0", target_tokens=300_000,  gated=False
-   (all revision="" for now; notes="" unless given above.)
+TASK: Create sources_manifest.py.
+ - Use @dataclass(frozen=True, slots=True, kw_only=True).
+ - LaneSource fields: source_id: str (a short unique key), lane: str, dataset: str (HF id),
+   config: str (may be ""), revision: str (may be ""), license: str, provenance_tier: str
+   (one of PROVENANCE_TIERS), target_tokens: int, gated: bool, notes: str (may be "").
+ - SOURCES: tuple[LaneSource, ...] with exactly these entries (lane is one of the five
+   LANES; the language lives in config, not in lane; all revision=""):
+     source_id="web-fineweb",      lane="web",          dataset="HuggingFaceFW/fineweb",        config="sample-10BT", license="ODC-BY-1.0",  provenance_tier="T2", target_tokens=4_000_000, gated=False
+     source_id="code-github",      lane="code",         dataset="codeparrot/github-code-clean", config="",            license="permissive-only (MIT/Apache/BSD filtered)", provenance_tier="T2", target_tokens=2_000_000, gated=False, notes="exact permissive + ungated source confirmed at fetch (Epic 1.3)"
+     source_id="math-openwebmath", lane="math",         dataset="open-web-math/open-web-math",  config="",            license="ODC-BY-1.0",  provenance_tier="T2", target_tokens=1_200_000, gated=False
+     source_id="indic-wiki-hi",    lane="indic",        dataset="wikimedia/wikipedia",          config="20231101.hi", license="CC-BY-SA-3.0", provenance_tier="T1", target_tokens=1_000_000, gated=False
+     source_id="indic-wiki-bn",    lane="indic",        dataset="wikimedia/wikipedia",          config="20231101.bn", license="CC-BY-SA-3.0", provenance_tier="T1", target_tokens=700_000,  gated=False
+     source_id="indic-wiki-ta",    lane="indic",        dataset="wikimedia/wikipedia",          config="20231101.ta", license="CC-BY-SA-3.0", provenance_tier="T1", target_tokens=500_000,  gated=False
+     source_id="mling-wiki-es",    lane="multilingual", dataset="wikimedia/wikipedia",          config="20231101.es", license="CC-BY-SA-3.0", provenance_tier="T1", target_tokens=300_000,  gated=False
+     source_id="mling-wiki-fr",    lane="multilingual", dataset="wikimedia/wikipedia",          config="20231101.fr", license="CC-BY-SA-3.0", provenance_tier="T1", target_tokens=300_000,  gated=False
  - POOL_TARGET_TOKENS = 10_000_000 and POOL_TOLERANCE = 0.05.
  - lane_totals(sources) -> dict[str, int] summing target_tokens per lane.
- - validate_sources(sources) raising ValueError if: any source.lane not in LANES (import
-   LANES from corpus_schema); any license empty/whitespace; any dataset empty; any
-   target_tokens <= 0; or the grand total of target_tokens is not within POOL_TOLERANCE of
+ - eval_eligible(sources) -> tuple[LaneSource, ...] returning only sources whose
+   provenance_tier is in {"T0","T1"} (the sources the eval split may later be carved from).
+ - validate_sources(sources) raising ValueError if: any lane not in LANES; any
+   provenance_tier not in PROVENANCE_TIERS (import both from corpus_schema); any source_id
+   empty or duplicated; any dataset empty; any license empty/whitespace; any
+   target_tokens <= 0; any gated is True (we require ungated sources); any of the five
+   LANES has no source; or the grand total not within POOL_TOLERANCE of
    POOL_TARGET_TOKENS. On success return sources unchanged.
  - A pytest test asserting: validate_sources(SOURCES) passes; the grand total is
-   ~10_000_000 within tolerance; lane_totals covers all five lanes; every source has a
-   non-empty license; a source with an empty license raises ValueError; a source with
-   target_tokens=0 raises ValueError.
+   ~10_000_000 within tolerance; lane_totals covers all five lanes; source_ids are unique;
+   eval_eligible(SOURCES) returns only the T1 Wikipedia sources and excludes the T2
+   web/code/math sources; and each of these mutations raises ValueError — empty license,
+   target_tokens=0, gated=True, a duplicate source_id, a bad provenance_tier.
 
-REQUIREMENTS: standard library only (dataclasses, typing) plus importing LANES from
-corpus_schema; deterministic; NO network, NO file I/O, NO datasets library. Return the
-full code for sources_manifest.py and the test, plus a one-line note that the manifest is
-a declaration of intent, not a downloader.'''
+REQUIREMENTS: standard library only (dataclasses, typing) plus importing LANES and
+PROVENANCE_TIERS from corpus_schema; deterministic; NO network, NO file I/O, NO datasets
+library. Return the full code for sources_manifest.py and the test, plus a one-line note
+that the manifest is a declaration of intent, not a downloader.'''
 
 
 def badge(status):
