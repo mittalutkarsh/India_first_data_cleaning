@@ -76,11 +76,11 @@ FEATURE1 = [
         "SOURCES for all five lanes summing to ~10M; Wikipedia sources tier T1 (eval-eligible), crawl sources T2 (train-only).",
         "validate_sources: lanes/tiers valid, source_ids unique, licenses present, no gated sources, all five lanes covered, total ~10M; eval_eligible() returns the T0/T1 sources.",
     ], "data only, no downloads; test asserts totals, uniqueness, tier/eval-eligibility, and rejects gated / empty-license / zero-token / dup-id / bad-tier."),
-    ("1.3", "Fetch one lane (web/English)", "active", [
+    ("1.3", "Fetch one lane (web/English)", "done", [
         "Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.",
         "Record each raw file's sha256 in a fetch log.",
     ], "re-running yields identical file hashes; respects the cap."),
-    ("1.4–1.7", "Fetch code / math / indic / multilingual", "pending", [
+    ("1.4–1.7", "Fetch code / math / indic / multilingual", "active", [
         "Same shape as 1.3, one lane per epic.",
     ], "per-lane caps respected; file hashes recorded."),
     ("1.8", "Author contrastive pairs", "pending", [
@@ -354,12 +354,13 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.3 · Fetch one lane (web/English)</h2>\n'
-        '    <p><strong>Epics 1.1 and 1.2 done and pushed</strong> (24 tests pass). Epic 1.3 fetches a single source '
-        '(<code>web-fineweb</code>): stream from HuggingFace, cap by a byte-based token estimate, pin + record the '
-        'revision and the file&rsquo;s sha256. The core logic is testable offline via an injected document iterator '
-        '(only the real run touches the network). Prompt to paste into Claude on the web (returns <code>fetch.py</code> '
-        '+ its test):</p>\n'
+        '  <div class="sec"><h2>Current epic — 1.4–1.7 · Fetch the remaining lanes</h2>\n'
+        '    <p><strong>Epics 1.1–1.3 done and pushed</strong> &mdash; 46 offline tests pass, and the live FineWeb '
+        'fetch is verified (revision pinned, sha256 recorded). The fetch pattern is now proven on one lane; 1.4–1.7 '
+        'reuse <code>fetch_source</code> for code, math, indic, and multilingual &mdash; likely no new code, just '
+        'fetching each remaining source from the manifest (and confirming the code lane&rsquo;s permissive+ungated '
+        'source resolves). The next prompt is prepared on request.</p>\n'
+        '    <p class="cap">Reference &mdash; the completed Epic 1.3 prompt:</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '

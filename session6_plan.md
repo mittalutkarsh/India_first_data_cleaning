@@ -64,12 +64,12 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - validate_sources: lanes/tiers valid, source_ids unique, licenses present, no gated sources, all five lanes covered, total ~10M; eval_eligible() returns the T0/T1 sources.
 - **Acceptance:** data only, no downloads; test asserts totals, uniqueness, tier/eval-eligibility, and rejects gated / empty-license / zero-token / dup-id / bad-tier.
 
-### Epic 1.3 — Fetch one lane (web/English)  ◐
+### Epic 1.3 — Fetch one lane (web/English)  ☑
 - Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.
 - Record each raw file's sha256 in a fetch log.
 - **Acceptance:** re-running yields identical file hashes; respects the cap.
 
-### Epic 1.4–1.7 — Fetch code / math / indic / multilingual  ☐
+### Epic 1.4–1.7 — Fetch code / math / indic / multilingual  ◐
 - Same shape as 1.3, one lane per epic.
 - **Acceptance:** per-lane caps respected; file hashes recorded.
 
