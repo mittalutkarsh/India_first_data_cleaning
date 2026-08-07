@@ -234,55 +234,78 @@ corpus
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
   <div class="sec"><h2>Current epic — 1.3 · Fetch one lane (web/English)</h2>
-    <p><strong>Epics 1.1 and 1.2 are done and pushed</strong> &mdash; 24 tests pass (stdlib only, no network). Epic 1.3 is the first real download: a fetcher that reads one source from the manifest (<code>web-fineweb</code>), streams documents to disk up to the token cap, pins the exact revision, and records each raw file&rsquo;s sha256. Its prompt is prepared next &mdash; a few fetch-mechanics decisions come first: (a) stream vs full download, (b) the cap unit (tokens estimated from bytes, since no tokenizer exists yet), and (c) the raw-file layout + fetch-log format.</p>
-    <p class="cap">Reference &mdash; the completed Epic 1.2 prompt:</p>
+    <p><strong>Epics 1.1 and 1.2 done and pushed</strong> (24 tests pass). Epic 1.3 fetches a single source (<code>web-fineweb</code>): stream from HuggingFace, cap by a byte-based token estimate, pin + record the revision and the file&rsquo;s sha256. The core logic is testable offline via an injected document iterator (only the real run touches the network). Prompt to paste into Claude on the web (returns <code>fetch.py</code> + its test):</p>
     <div class="diagram"><pre>CONTEXT: I am building a small, reproducible &quot;Training Data Execution System&quot; for LLM
-pretraining (a course assignment), Python 3.11, built in very small steps. Epic 1.1
-already exists in the repo: corpus_schema.py, which defines
-LANES = frozenset({&quot;web&quot;,&quot;code&quot;,&quot;math&quot;,&quot;indic&quot;,&quot;multilingual&quot;}) and
-PROVENANCE_TIERS = frozenset({&quot;T0&quot;,&quot;T1&quot;,&quot;T2&quot;,&quot;T3&quot;}). THIS IS MICRO-STEP 1.2 (Epic 1.2)
-ONLY — a static &quot;sources manifest&quot; declaring which dataset feeds each lane, with its
-provenance tier. NO downloads, NO network, NO huggingface datasets usage (that is Epic
-1.3). Declarations only. Notes: contrastive pairs (Epic 1.8) and the eval split (Epic 1.9,
-carved from T0/T1 sources) are intentionally NOT in this manifest; target_tokens are
-pre-tokenizer estimates; revision=&quot;&quot; means the exact snapshot/commit is pinned at fetch
-time (Epic 1.3).
+pretraining (a course assignment), Python 3.11, built in very small steps. Two modules
+already exist in the repo:
+  * corpus_schema.py — defines Document (fields: id, lane, provenance_tier, split, source,
+    text) and validate_document(doc).
+  * sources_manifest.py — defines LaneSource, SOURCES, and validate_sources(sources). One
+    entry has source_id=&quot;web-fineweb&quot;, lane=&quot;web&quot;, dataset=&quot;HuggingFaceFW/fineweb&quot;,
+    config=&quot;sample-10BT&quot;, revision=&quot;&quot;, provenance_tier=&quot;T2&quot;, target_tokens=4_000_000.
+THIS IS EPIC 1.3 ONLY — the first REAL fetch, for a SINGLE source (web-fineweb). Later
+epics repeat this for the other lanes; do NOT fetch them now.
 
-TASK: Create sources_manifest.py.
- - Use @dataclass(frozen=True, slots=True, kw_only=True).
- - LaneSource fields: source_id: str (a short unique key), lane: str, dataset: str (HF id),
-   config: str (may be &quot;&quot;), revision: str (may be &quot;&quot;), license: str, provenance_tier: str
-   (one of PROVENANCE_TIERS), target_tokens: int, gated: bool, notes: str (may be &quot;&quot;).
- - SOURCES: tuple[LaneSource, ...] with exactly these entries (lane is one of the five
-   LANES; the language lives in config, not in lane; all revision=&quot;&quot;):
-     source_id=&quot;web-fineweb&quot;,      lane=&quot;web&quot;,          dataset=&quot;HuggingFaceFW/fineweb&quot;,        config=&quot;sample-10BT&quot;, license=&quot;ODC-BY-1.0&quot;,  provenance_tier=&quot;T2&quot;, target_tokens=4_000_000, gated=False
-     source_id=&quot;code-github&quot;,      lane=&quot;code&quot;,         dataset=&quot;codeparrot/github-code-clean&quot;, config=&quot;&quot;,            license=&quot;permissive-only (MIT/Apache/BSD filtered)&quot;, provenance_tier=&quot;T2&quot;, target_tokens=2_000_000, gated=False, notes=&quot;exact permissive + ungated source confirmed at fetch (Epic 1.3)&quot;
-     source_id=&quot;math-openwebmath&quot;, lane=&quot;math&quot;,         dataset=&quot;open-web-math/open-web-math&quot;,  config=&quot;&quot;,            license=&quot;ODC-BY-1.0&quot;,  provenance_tier=&quot;T2&quot;, target_tokens=1_200_000, gated=False
-     source_id=&quot;indic-wiki-hi&quot;,    lane=&quot;indic&quot;,        dataset=&quot;wikimedia/wikipedia&quot;,          config=&quot;20231101.hi&quot;, license=&quot;CC-BY-SA-3.0&quot;, provenance_tier=&quot;T1&quot;, target_tokens=1_000_000, gated=False
-     source_id=&quot;indic-wiki-bn&quot;,    lane=&quot;indic&quot;,        dataset=&quot;wikimedia/wikipedia&quot;,          config=&quot;20231101.bn&quot;, license=&quot;CC-BY-SA-3.0&quot;, provenance_tier=&quot;T1&quot;, target_tokens=700_000,  gated=False
-     source_id=&quot;indic-wiki-ta&quot;,    lane=&quot;indic&quot;,        dataset=&quot;wikimedia/wikipedia&quot;,          config=&quot;20231101.ta&quot;, license=&quot;CC-BY-SA-3.0&quot;, provenance_tier=&quot;T1&quot;, target_tokens=500_000,  gated=False
-     source_id=&quot;mling-wiki-es&quot;,    lane=&quot;multilingual&quot;, dataset=&quot;wikimedia/wikipedia&quot;,          config=&quot;20231101.es&quot;, license=&quot;CC-BY-SA-3.0&quot;, provenance_tier=&quot;T1&quot;, target_tokens=300_000,  gated=False
-     source_id=&quot;mling-wiki-fr&quot;,    lane=&quot;multilingual&quot;, dataset=&quot;wikimedia/wikipedia&quot;,          config=&quot;20231101.fr&quot;, license=&quot;CC-BY-SA-3.0&quot;, provenance_tier=&quot;T1&quot;, target_tokens=300_000,  gated=False
- - POOL_TARGET_TOKENS = 10_000_000 and POOL_TOLERANCE = 0.05.
- - lane_totals(sources) -&gt; dict[str, int] summing target_tokens per lane.
- - eval_eligible(sources) -&gt; tuple[LaneSource, ...] returning only sources whose
-   provenance_tier is in {&quot;T0&quot;,&quot;T1&quot;} (the sources the eval split may later be carved from).
- - validate_sources(sources) raising ValueError if: any lane not in LANES; any
-   provenance_tier not in PROVENANCE_TIERS (import both from corpus_schema); any source_id
-   empty or duplicated; any dataset empty; any license empty/whitespace; any
-   target_tokens &lt;= 0; any gated is True (we require ungated sources); any of the five
-   LANES has no source; or the grand total not within POOL_TOLERANCE of
-   POOL_TARGET_TOKENS. On success return sources unchanged.
- - A pytest test asserting: validate_sources(SOURCES) passes; the grand total is
-   ~10_000_000 within tolerance; lane_totals covers all five lanes; source_ids are unique;
-   eval_eligible(SOURCES) returns only the T1 Wikipedia sources and excludes the T2
-   web/code/math sources; and each of these mutations raises ValueError — empty license,
-   target_tokens=0, gated=True, a duplicate source_id, a bad provenance_tier.
+DESIGN FOR OFFLINE TESTABILITY (important): the core write/cap/hash/log logic must run
+with NO network, by injecting a document iterator. Only the real run touches HuggingFace.
 
-REQUIREMENTS: standard library only (dataclasses, typing) plus importing LANES and
-PROVENANCE_TIERS from corpus_schema; deterministic; NO network, NO file I/O, NO datasets
-library. Return the full code for sources_manifest.py and the test, plus a one-line note
-that the manifest is a declaration of intent, not a downloader.</pre></div></div>
+TASK: Create fetch.py.
+ - estimate_tokens(text: str) -&gt; int: max(1, len(text.encode(&quot;utf-8&quot;)) // 4). A
+   pre-tokenizer, byte-based token estimate (no tokenizer exists yet).
+ - fetch_source(source, *, out_root=&quot;data/raw&quot;, doc_iter=None, force=False) -&gt; dict.
+   Behaviour, in order:
+   1. Caching: if force is False AND out_root/&lt;source_id&gt;/documents.jsonl already exists
+      AND fetch_log.jsonl already has a record for this source_id, then SKIP entirely
+      (no download, no consuming doc_iter) and return the existing summary with
+      cached=True.
+   2. Resolve revision: if source.revision != &quot;&quot; use it as-is; else (only when doc_iter is
+      None) resolve the dataset&#x27;s current commit sha via huggingface_hub
+      (HfApi().dataset_info(source.dataset).sha) and use that. Record the resolved value.
+   3. Obtain documents: if doc_iter is not None, iterate it (each item is a dict with a
+      &quot;text&quot; key, or a plain str) — this is how tests inject data offline. Otherwise build
+      a streaming iterator with the datasets library:
+      load_dataset(source.dataset, name=(source.config or None), split=&quot;train&quot;,
+      streaming=True, revision=&lt;resolved&gt;), yielding each record&#x27;s &quot;text&quot;.
+   4. For each text, in order, with running index i: build a Document(
+      id=f&quot;{source.source_id}-{i:07d}&quot;, lane=source.lane,
+      provenance_tier=source.provenance_tier, split=&quot;train&quot;,
+      source=f&quot;{source.dataset}@{revision}#{source.config}&quot;, text=text); call
+      validate_document on it; write its dict as ONE json line to
+      out_root/&lt;source_id&gt;/documents.jsonl. Accumulate estimate_tokens(text); STOP as soon
+      as the cumulative estimate &gt;= source.target_tokens.
+   5. Compute sha256 of the finished documents.jsonl. Append one json line to
+      out_root/fetch_log.jsonl: {source_id, dataset, config, revision, path, bytes,
+      sha256, doc_count, est_tokens, target_tokens}.
+   6. Return {source_id, revision, path, bytes, sha256, doc_count, est_tokens,
+      cached: False}.
+ - main() under if __name__ == &quot;__main__&quot;: load SOURCES, validate_sources(SOURCES), pick
+   the source_id=&quot;web-fineweb&quot; entry, and call fetch_source on it (the real download).
+
+REPRODUCIBILITY: a pinned revision + the deterministic take-order + the token cap make
+documents.jsonl byte-identical across runs, so its sha256 is stable; a second run is a
+cached no-op.
+
+TESTS — test_fetch.py, MUST run offline (no network, no datasets/huggingface_hub import at
+test time). Use pytest tmp_path for out_root, a fake doc_iter (a fixed list of ~50 short
+dicts like {&quot;text&quot;: &quot;...&quot;}), and pass a web-fineweb-like LaneSource via
+dataclasses.replace(...) with a small target_tokens (e.g. 200) and revision=&quot;pinned-test&quot;.
+Assert:
+   * estimate_tokens matches the bytes//4 formula on a known string and is monotonic.
+   * fetch_source caps correctly (stops at/just past target; not all 50 docs consumed).
+   * documents.jsonl exists and every line parses to a dict that constructs a Document
+     which validate_document accepts.
+   * fetch_log.jsonl has one record whose sha256 and byte size match the file when
+     recomputed.
+   * calling fetch_source a second time with force=False returns cached=True and leaves
+     the file unchanged.
+
+REQUIREMENTS: import Document, validate_document from corpus_schema and SOURCES,
+validate_sources from sources_manifest. Use hashlib (sha256), json, pathlib. The datasets
+and huggingface_hub libraries are used ONLY on the real path (import them lazily inside the
+doc_iter-is-None branch so tests need neither). Deterministic JSON: sort_keys=True,
+ensure_ascii=False, separators=(&quot;,&quot;,&quot;:&quot;), one object per line. Add datasets and
+huggingface_hub to requirements.txt. Return fetch.py, test_fetch.py, the requirements.txt
+additions, and a one-line note on how reproducibility is achieved.</pre></div></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>
