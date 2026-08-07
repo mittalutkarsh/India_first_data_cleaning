@@ -69,11 +69,11 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - Record each raw file's sha256 in a fetch log.
 - **Acceptance:** re-running yields identical file hashes; respects the cap.
 
-### Epic 1.4–1.7 — Fetch code / math / indic / multilingual  ◐
+### Epic 1.4–1.7 — Fetch code / math / indic / multilingual  ☑
 - Same shape as 1.3, one lane per epic.
 - **Acceptance:** per-lane caps respected; file hashes recorded.
 
-### Epic 1.8 — Author contrastive pairs  ☐
+### Epic 1.8 — Author contrastive pairs  ◐
 - ~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.
 - **Acceptance:** all validate; committed as source, not downloaded.
 

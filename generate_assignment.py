@@ -80,10 +80,10 @@ FEATURE1 = [
         "Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.",
         "Record each raw file's sha256 in a fetch log.",
     ], "re-running yields identical file hashes; respects the cap."),
-    ("1.4–1.7", "Fetch code / math / indic / multilingual", "active", [
+    ("1.4–1.7", "Fetch code / math / indic / multilingual", "done", [
         "Same shape as 1.3, one lane per epic.",
     ], "per-lane caps respected; file hashes recorded."),
-    ("1.8", "Author contrastive pairs", "pending", [
+    ("1.8", "Author contrastive pairs", "active", [
         "~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.",
     ], "all validate; committed as source, not downloaded."),
     ("1.9", "Eval held-out split", "pending", [
@@ -343,14 +343,12 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.4–1.7 · Fetch the remaining lanes</h2>\n'
-        '    <p><strong>Epics 1.1–1.3 done and pushed</strong> &mdash; the web lane is on disk (4M tokens, pinned + '
-        'hashed). 1.4–1.7 generalize the working fetcher to all lanes with a minimal change: a per-source '
-        '<code>text_field</code> (so code&rsquo;s <code>content</code> column is handled) and a <code>fetch_all</code> '
-        'loop over the manifest. Then we run it to download code, math, indic, and multilingual. Prompt to paste into '
-        'Claude on the web (returns the full updated <code>sources_manifest.py</code> and <code>fetch.py</code> + new '
-        'tests):</p>\n'
-        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
+        '  <div class="sec"><h2>Current epic — 1.8 · Author contrastive pairs</h2>\n'
+        '    <p><strong>Feature 1 data is fetched.</strong> All five lanes are on disk and hash-verified &mdash; the '
+        'full ~10M-token pool (13,087 docs): web 4.0M, code 2.0M (CodeSearchNet; the declared script-based/gated code '
+        'sources were swapped at fetch), math 1.2M, indic 2.2M, multilingual 0.6M. 59 offline tests pass. Next is Epic '
+        '1.8: hand-author the contrastive perspective pairs (prefix + y+ / y&minus;, tagged, chauvinism none), which '
+        'are authored source, not downloaded. The next prompt is prepared on request.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'

@@ -162,12 +162,12 @@ corpus
       <li>Record each raw file's sha256 in a fetch log.</li>
     </ul>
     <p class="cap">Acceptance: re-running yields identical file hashes; respects the cap.</p>
-    <h3>Epic 1.4–1.7 — Fetch code / math / indic / multilingual &nbsp; <span class="b b-tight">in progress</span></h3>
+    <h3>Epic 1.4–1.7 — Fetch code / math / indic / multilingual &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>Same shape as 1.3, one lane per epic.</li>
     </ul>
     <p class="cap">Acceptance: per-lane caps respected; file hashes recorded.</p>
-    <h3>Epic 1.8 — Author contrastive pairs &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 1.8 — Author contrastive pairs &nbsp; <span class="b b-tight">in progress</span></h3>
     <ul>
       <li>~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.</li>
     </ul>
@@ -233,68 +233,8 @@ corpus
     <p class="cap">Use when web Claude has returned the code.</p>
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
-  <div class="sec"><h2>Current epic — 1.4–1.7 · Fetch the remaining lanes</h2>
-    <p><strong>Epics 1.1–1.3 done and pushed</strong> &mdash; the web lane is on disk (4M tokens, pinned + hashed). 1.4–1.7 generalize the working fetcher to all lanes with a minimal change: a per-source <code>text_field</code> (so code&rsquo;s <code>content</code> column is handled) and a <code>fetch_all</code> loop over the manifest. Then we run it to download code, math, indic, and multilingual. Prompt to paste into Claude on the web (returns the full updated <code>sources_manifest.py</code> and <code>fetch.py</code> + new tests):</p>
-    <div class="diagram"><pre>CONTEXT: reproducible &quot;Training Data Execution System&quot;, Python 3.11, built in small
-steps. The repo already has these WORKING modules (46 offline tests pass):
-  * corpus_schema.py — Document(id, lane, provenance_tier, split, source, text),
-    validate_document, LANES, PROVENANCE_TIERS.
-  * sources_manifest.py — frozen dataclass LaneSource(source_id, lane, dataset, config,
-    revision, license, provenance_tier, target_tokens, gated, notes); a tuple SOURCES of 8
-    entries; POOL_TARGET_TOKENS, POOL_TOLERANCE, EVAL_TIERS; lane_totals(sources),
-    eval_eligible(sources), validate_sources(sources).
-  * fetch.py — estimate_tokens(text)=max(1,len(utf8)//4);
-    fetch_source(source, *, out_root=&quot;data/raw&quot;, doc_iter=None, force=False) -&gt; summary
-    dict (streams docs, caps at source.target_tokens, writes
-    out_root/&lt;source_id&gt;/documents.jsonl one JSON Document per line, appends a sha256
-    record to out_root/fetch_log.jsonl, caches on re-run). Internal helpers:
-    _extract_text(item, *, index) [str, or dict with &quot;text&quot;], _sha256, _last_log_record,
-    _resolve_revision(source, doc_iter) [uses source.revision, else resolves via
-    huggingface_hub only when doc_iter is None], _stream_hf(source, revision)
-    [load_dataset(..., streaming=True), yields row[&quot;text&quot;]]. datasets/huggingface_hub are
-    imported lazily only on the real path. main() fetches only web-fineweb.
-
-THIS IS EPIC 1.4–1.7: generalize the fetcher to handle ALL lanes, and account for datasets
-that expose their text under a different column name (FineWeb &quot;text&quot;,
-codeparrot/github-code-clean &quot;content&quot;, Wikipedia &quot;text&quot;). Keep everything offline-testable
-and DO NOT break the 46 passing tests.
-
-CHANGES:
-1. sources_manifest.py — add a field text_field: str to LaneSource (the upstream text
-   column name). Set it on every SOURCES entry: &quot;content&quot; for source_id=&quot;code-github&quot;,
-   &quot;text&quot; for all others. validate_sources must also reject an empty/whitespace text_field.
-   Everything else unchanged. Return the FULL updated sources_manifest.py.
-2. fetch.py:
-   - _extract_text(item, *, text_field, index): if item is a str, return it; if a dict,
-     return item[text_field] IF that key exists and its value is a str (EVEN an empty
-     string — the caller skips blanks); if the key is missing or the value is not a str,
-     raise ValueError; otherwise raise. (Do NOT raise on empty string.)
-   - _stream_hf(source, revision): yield the RAW rows from load_dataset (do not pre-extract
-     a field).
-   - In the write loop, get text via _extract_text(item, text_field=source.text_field,
-     index=index).
-   - Add fetch_all(sources, *, out_root=&quot;data/raw&quot;, force=False, doc_iters=None) -&gt;
-     list[dict]: call validate_sources(sources); for each source in order call
-     fetch_source(source, out_root=out_root, force=force,
-     doc_iter=(doc_iters or {}).get(source.source_id)); return the list of summaries.
-     doc_iters is an optional dict mapping source_id -&gt; iterable, used ONLY by tests to
-     inject offline; in production it is None so every source uses the real stream.
-   - main(): call fetch_all(SOURCES) and print the summaries.
-   Return the FULL updated fetch.py.
-3. Tests — return only the NEW test functions to ADD (not whole files):
-   - test_sources_manifest.py: every SOURCES entry has a non-empty text_field;
-     code-github has text_field=&quot;content&quot;; a source with text_field=&quot;&quot; raises.
-   - test_fetch.py (offline): a source with text_field=&quot;content&quot; and a doc_iter of
-     {&quot;content&quot;: &quot;...&quot;} dicts fetches correctly and yields valid Documents; a dict missing
-     the declared text_field raises ValueError; and a fetch_all test that, given two fake
-     pinned LaneSources with small targets and a doc_iters mapping, writes both sources&#x27;
-     documents.jsonl and returns two summaries.
-
-REQUIREMENTS: preserve existing behavior and all 46 passing tests (the current fetch tests
-inject {&quot;text&quot;: ...} dicts with a web source whose text_field will be &quot;text&quot;, so they must
-still pass). Deterministic JSON, lazy datasets/huggingface_hub imports, stdlib +
-corpus_schema/sources_manifest otherwise. Return: full sources_manifest.py, full fetch.py,
-the new test functions to add, and a one-line note.</pre></div></div>
+  <div class="sec"><h2>Current epic — 1.8 · Author contrastive pairs</h2>
+    <p><strong>Feature 1 data is fetched.</strong> All five lanes are on disk and hash-verified &mdash; the full ~10M-token pool (13,087 docs): web 4.0M, code 2.0M (CodeSearchNet; the declared script-based/gated code sources were swapped at fetch), math 1.2M, indic 2.2M, multilingual 0.6M. 59 offline tests pass. Next is Epic 1.8: hand-author the contrastive perspective pairs (prefix + y+ / y&minus;, tagged, chauvinism none), which are authored source, not downloaded. The next prompt is prepared on request.</p></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>
