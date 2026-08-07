@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Session 6 — Training Data Execution System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
+  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; } .nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:820px; margin:0 auto; padding:0 24px 80px; }
+.crumb { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding:18px 0 0; }
+.phead { padding:8px 0 14px; border-bottom:2px solid var(--ink); }
+.eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(26px,3.6vw,38px); margin:8px 0 8px; }
+.phead .dek { font-size:15px; color:#33334a; margin:0; }
+.sec { margin:28px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:20px; margin:0 0 6px; }
+h3 { font-size:15px; margin:22px 0 4px; color:var(--indigo); }
+p { margin:13px 0; } strong { font-weight:600; }
+ol, ul { margin:12px 0; padding-left:22px; } li { margin:6px 0; }
+.diagram { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
+.diagram pre { margin:0; font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.55; color:#26263c; white-space:pre; }
+.tblwrap { overflow-x:auto; }
+.egbox { border:1px solid var(--line); border-left:3px solid var(--indigo-soft); border-radius:0 8px 8px 0; background:#fff; padding:11px 14px; margin:10px 0; font-size:13.5px; line-height:1.55; }
+.yes { color:var(--teal); font-weight:600; } .no { color:var(--rose); font-weight:600; }
+.q { font-family:"IBM Plex Mono",monospace; font-size:12.5px; }
+.tbl { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.tbl th, .tbl td { padding:8px 11px; border-bottom:1px solid var(--line); text-align:right; }
+.tbl th:first-child, .tbl td:first-child { text-align:left; }
+.tbl th { font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+.b { font-weight:600; padding:1px 7px; border-radius:5px; }
+.b-ok { background:#e6f5ef; color:#0f7a54; } .b-tight { background:#fbeede; color:#9a5a12; }
+.b-starved { background:#fceef2; color:var(--rose); } .b-inf { background:#f7e0e6; color:#8a1a3a; }
+.cap { font-size:13px; color:var(--muted); margin-top:-6px; font-style:italic; }
+.callout { margin:16px 0; border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; padding:12px 16px; font-size:14px; color:#4a3a1e; }
+.foot { margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted); }
+code { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--panel); padding:1px 5px; border-radius:4px; }
+.fig { margin:20px 0; padding:16px 16px 6px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+.fig svg { display:block; }
+.fig figcaption { font-size:12.5px; color:var(--muted); margin-top:10px; padding-top:8px; border-top:1px solid var(--line); line-height:1.5; }
+.fig figcaption b { color:var(--ink); }
+.eq { margin:14px 0; overflow-x:auto; }
+mjx-container { color:var(--ink); }
+.stbl { width:100%; border-collapse:collapse; font-family:"Inter",sans-serif; font-size:12.5px; line-height:1.45; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.stbl th, .stbl td { text-align:left; vertical-align:top; padding:9px 11px; border-bottom:1px solid var(--line); }
+.stbl th { font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); font-weight:600; }
+.stbl td:first-child { white-space:nowrap; }
+.stbl .lanetag { font-family:"IBM Plex Mono",monospace; font-size:10px; }
+.stbl .tgt { font-weight:600; color:var(--indigo); }
+</style>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="overview.html">Overview</a>
+  <a href="data.html">Data</a>
+  <a href="index.html">Cleaning</a>
+  <a href="language.html">Language</a>
+  <a href="quality.html">Quality</a>
+  <a href="dedup.html">Dedup</a>
+  <a href="pii.html">PII</a>
+  <a href="decontam.html">Decontam</a>
+  <a href="tokenizer.html">Tokenizer</a>
+  <a href="manifest.html">Manifest</a>
+  <a href="v5_brief.html">V5 Plan</a>
+  <a href="v5_playbook.html">V5 Plan — Proposal</a>
+  <a href="assignment.html" class="active">Assignment</a>
+</div></div>
+<div class="wrap">
+  <div class="crumb">Session 6 / Training Data Execution System</div>
+  <div class="phead">
+    <div class="eyebrow">Session 6 assignment</div>
+    <h1>Training Data Execution System</h1>
+    <p class="dek">A small but complete, reproducible and auditable data plane for V5: documents &rarr; shards &rarr; manifests &rarr; mixture &rarr; packing &rarr; batches &rarr; training &rarr; ledgers &rarr; checkpoint &rarr; crash &rarr; resume &rarr; replay &rarr; audit. This page is the living tracker; we build it step by step and record each step&rsquo;s prompt and evidence here.</p>
+  </div>
+  <div class="sec"><h2>What it must prove</h2>
+    <p>The goal is not scale; it is that the data system is correct, reproducible, auditable and efficient. The governing invariant is that <strong>a seed plus a ledger offset reconstructs any batch byte-for-byte</strong> &mdash; which is what makes resume, replay and fork provable. The final run must deliberately crash, resume with the exact next batch, and replay an earlier interval whose batch ids, token spans and hashes match the original.</p></div>
+  <div class="sec"><h2>Decisions (locked)</h2>
+    <div class="tblwrap"><table class="stbl"><tr><th>Area</th><th>Decision</th></tr>
+<tr><td><b>Stack</b></td><td>Python 3.11 + PyTorch on CPU, determinism pinned (fixed seeds, deterministic algorithms, single thread).</td></tr>
+<tr><td><b>Model</b></td><td>Tiny Mixture-of-Experts transformer, built as a pluggable module at Step 8 (after the data plane is proven).</td></tr>
+<tr><td><b>Tokenizer</b></td><td>Self-contained byte-level BPE, trained once on the toy corpus then frozen — vocab + merges committed and content-hashed.</td></tr>
+<tr><td><b>Method</b></td><td>Contrastive perspective lane (y+/y−) + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry kept as a documented hook (see contrastive_perspective_corpus.md).</td></tr>
+<tr><td><b>Repo</b></td><td>New standalone GitHub repository (the submission), separate from this proposal site. This page is the tracker; the code lives in the submission repo.</td></tr>
+    </table></div></div>
+  <div class="sec"><h2>Architecture</h2>
+    <div class="diagram"><pre>
+corpus
+  -> [frozen byte-level BPE tokenizer]        (content-hashed, frozen)
+  -> immutable tokenized shards + manifests   (hash, token count, lane, provenance, tags)
+  -> evaluation firewall                      (eval shards quarantined from loss)
+  -> mixture / curriculum compiler            (lanes, weights, protected floors)
+  -> OPUS selector                            (accept / reject / defer / floor-override; uses &Delta;S)
+  -> packer                                   (loss masks, attention masks, position ids)
+  -> deterministic batch stream               (+ consumption ledger)
+  -> trainer (tiny MoE transformer)           (+ learning ledger: F1 surprisal, F2 &Delta;S)
+  -> checkpoint (tied to ledger offset + RNG)
+  -> crash -> resume -> replay -> fork -> audit -> evidence bundle
+</pre></div>
+    <p>The contrastive perspective lane and the surprisal metrics are specified in <code>contrastive_perspective_corpus.md</code>; they enter the system as a data type with its own packing policy (F1/F2), a learning-ledger signal, and an OPUS selection signal.</p></div>
+  <div class="sec"><h2>Roadmap</h2>
+    <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Step</th><th>Area</th><th>Pts</th><th>Status</th></tr>
+<tr><td>0</td><td>Scaffold — repo layout, config, deterministic RNG + hashing, run.log logger, run_demo.py skeleton</td><td>End-to-end</td><td>150</td><td><span class="b b-tight">in progress</span></td></tr>
+<tr><td>1</td><td>Tiny corpus (multiple lanes + eval set + contrastive pairs) + frozen BPE tokenizer with content hash</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>2</td><td>Tokenize → immutable shards + manifests (content hash, token count, lane, provenance, chauvinism tag)</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>3</td><td>Evaluation / validation firewall — eval shards can never enter a loss-bearing batch</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>4</td><td>Mixture schedule — curriculum stages, lane weights, protected floors (planned shares)</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>5</td><td>OPUS selector — accept / reject / defer + protected-floor override; ΔS surprisal as a selection signal</td><td>Mixture/OPUS</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>6</td><td>Packer — per-type packing policies (incl. contrastive pairs), loss + attention masks, position ids</td><td>Packing/masks</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>7</td><td>Deterministic batch stream + consumption ledger (batch id, token spans, shard offsets, hashes)</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>8</td><td>Trainer (tiny MoE transformer) + learning ledger + F1 per-token surprisal + F2 ΔS per contrastive pair</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>9</td><td>Checkpoints tied to ledger offset + RNG state</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>10</td><td>Deliberate crash → resume; prove the next batch is exactly the expected batch (no skip/repeat)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>11</td><td>Replay an earlier interval; prove batch ids / token spans / hashes match the original run</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>12</td><td>Fork from an earlier checkpoint (branch)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>13</td><td>Throughput + packing efficiency → performance.json</td><td>Throughput</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>14</td><td>Audit + evidence bundle — evidence.json / evidence.md generated from real artifacts</td><td>Evidence</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>15</td><td>Invariant tests + README + one-command run_demo.py wiring</td><td>Tests/docs</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+    </table></div>
+    <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric. A step advances only once its invariant is proven by reproducible evidence.</p></div>
+  <div class="sec"><h2>How each step runs</h2>
+    <ol>
+      <li>Paste the step&rsquo;s prompt (below) into Claude on the web; it returns the code.</li>
+      <li>Bring the code back; we integrate it into the submission repo.</li>
+      <li>We verify the step&rsquo;s invariant (the part graders check &mdash; evidence produced by the implementation, never hardcoded) and record the result here.</li>
+      <li>Only then do we advance to the next step.</li>
+    </ol></div>
+  <div class="sec"><h2>Current step — Step 0 · Scaffold</h2>
+    <p>Foundation the whole system builds on: deterministic RNG with derivable sub-streams and snapshot/restore, a canonical content-hasher, the <code>run.log</code> event logger, the <code>submission_artifacts/</code> layout, and a stubbed one-command <code>run_demo.py</code>. Prompt to paste into web Claude:</p>
+    <div class="diagram"><pre>CONTEXT
+I am building a &quot;Training Data Execution System&quot; — a reproducible, auditable data plane
+for LLM pretraining — as a course assignment. It must be correct, reproducible, and
+auditable, and run with one command. Stack: Python 3.11, PyTorch on CPU with determinism
+pinned, NumPy allowed. It is a new standalone repo. The full pipeline (built over later
+steps, NOT now) is:
+
+  corpus -&gt; frozen byte-level BPE tokenizer -&gt; immutable tokenized shards + manifests
+  -&gt; evaluation firewall -&gt; mixture/curriculum compiler (lanes, protected floors)
+  -&gt; OPUS selector (accept/reject/defer + floor override) -&gt; packer (loss &amp; attention
+  masks, position ids) -&gt; deterministic batch stream + consumption ledger
+  -&gt; trainer (tiny MoE transformer) + learning ledger (per-token loss / surprisal)
+  -&gt; checkpoints tied to ledger offset -&gt; crash -&gt; resume -&gt; replay -&gt; fork -&gt; audit
+  -&gt; evidence bundle.
+
+The final demo must deliberately crash, resume with the EXACT next batch (no skip or
+repeat), and replay an earlier interval whose batch ids, token spans, and hashes match
+the original run. Everything must be reconstructible from a seed + a ledger offset.
+
+SCOPE OF THIS PROMPT — STEP 0 ONLY: the project scaffold and the determinism / hashing /
+logging foundation. Do NOT implement tokenization, packing, training, etc. Only the
+skeleton the later steps build on.
+
+PRODUCE
+1. A repo file tree.
+2. Full code for these foundation modules:
+   - config.py: a frozen dataclass Config (global seed, artifact-root path, and
+     placeholders for budget, lane weights, protected floors). Loadable from a JSON dict.
+     Include a method returning a canonical, content-hashable representation.
+   - hashing.py: canonical_hash(obj) that serialises any JSON-able object to canonical
+     bytes (sorted keys, UTF-8, compact separators) and returns a sha256 hex digest;
+     plus hash_bytes and hash_file helpers. A hash must NEVER depend on wall-clock time,
+     dict insertion order, or absolute paths.
+   - determinism.py: set_global_determinism(seed) that seeds Python random, NumPy and
+     torch, sets torch deterministic flags, single thread, CPU. Also a DeterministicRNG
+     class that (a) derives named independent sub-streams, e.g. rng.derive(&quot;packer&quot;), so
+     each subsystem is reproducible in isolation, and (b) can snapshot() and restore(state)
+     its full state (needed later for checkpoint/resume).
+   - eventlog.py: an EventLog that appends human-readable lines to
+     submission_artifacts/run.log AND accumulates structured events in memory for the
+     evidence bundle. Support a pass(event_name, **fields) that writes a line like
+     &quot;[PASS] tokenizer_hash_verified key=value ...&quot; and an info(msg, **fields). Timestamps
+     may appear in the log text but must NOT feed any hash. Provide to_list() returning the
+     structured events.
+   - artifacts.py: represent and create the submission_artifacts/ layout: run.log,
+     evidence.json, evidence.md, manifests/, ledgers/, checkpoints/, performance.json.
+     ensure_layout(root) creates the directories.
+   - run_demo.py: the one-command entry point. It sets determinism from config, creates
+     the artifact layout, opens the EventLog, then calls an ordered list of STAGE STUBS
+     (each logs an [INFO] &quot;&lt;stage&gt; started&quot; and a [PASS] placeholder). Stages, in order:
+     create_shards, validate_manifests, block_eval, compile_mixture, run_opus,
+     pack_batches, train, checkpoint, crash, resume, replay, fork, audit,
+     measure_performance, write_evidence. Each stub takes a shared context object.
+3. A tiny pytest smoke test proving: determinism (same seed =&gt; identical derived
+   sub-stream sequence; snapshot/restore round-trips exactly) and hashing (canonical_hash
+   is dict-key-order independent and stable across processes).
+
+REQUIREMENTS: deterministic; no wall-clock or randomness in any hash; small and readable;
+standard library + numpy + torch only. Return the COMPLETE code for every file plus a
+one-line description of each module&#x27;s role.</pre></div></div>
+  <div class="foot">Session 6 &middot; tracker for the Training Data Execution System. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
+</div>
+</body>
+</html>

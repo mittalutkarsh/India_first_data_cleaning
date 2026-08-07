@@ -106,6 +106,7 @@ NAV = (
     '  <a href="manifest.html">Manifest</a>\n'
     '  <a href="v5_brief.html">V5 Plan</a>\n'
     '  <a href="v5_playbook.html" class="active">V5 Plan — Proposal</a>\n'
+    '  <a href="assignment.html">Assignment</a>\n'
     '</div></div>\n'
 )
 

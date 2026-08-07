@@ -326,6 +326,7 @@ def build_html(shards):
         '  <a href=\"manifest.html\" class=\"active\">Manifest</a>\n'
         '  <a href=\"v5_brief.html\">V5 Plan</a>\n'
         '  <a href=\"v5_playbook.html\">V5 Plan — Proposal</a>\n'
+        '  <a href=\"assignment.html\">Assignment</a>\n'
         '</div></div>\n'
         '<div class="wrap">\n'
         '  <div class="phead">\n'

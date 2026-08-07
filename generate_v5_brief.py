@@ -15,6 +15,8 @@ NAV = (
     '  <a href="tokenizer.html">Tokenizer</a>\n'
     '  <a href="manifest.html">Manifest</a>\n'
     '  <a href="v5_brief.html" class="active">V5 Plan</a>\n'
+    '  <a href="v5_playbook.html">V5 Plan — Proposal</a>\n'
+    '  <a href="assignment.html">Assignment</a>\n'
     '</div></div>\n'
 )
 
