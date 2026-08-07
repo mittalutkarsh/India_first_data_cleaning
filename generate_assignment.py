@@ -173,7 +173,8 @@ def h_locked():
 def h_features():
     out = ""
     for n, name, area, pts, st in FEATURES:
-        out += '<tr><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>\n' % (n, name, area, pts, badge(st))
+        out += '<tr><td>%d</td><td>%s</td><td>%s</td><td>%d</td><td>%s</td></tr>\n' % (
+            n, html.escape(name), html.escape(area), pts, badge(st))
     return out
 
 
@@ -190,7 +191,7 @@ def h_outline():
     out = ""
     for n, name, area, pts, st in FEATURES:
         if n in OUTLINE:
-            out += '<tr><td><b>%d · %s</b></td><td>%s</td></tr>\n' % (n, name, OUTLINE[n])
+            out += '<tr><td><b>%d · %s</b></td><td>%s</td></tr>\n' % (n, html.escape(name), html.escape(OUTLINE[n]))
     return out
 
 
