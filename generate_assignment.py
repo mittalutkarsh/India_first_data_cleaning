@@ -149,77 +149,66 @@ TEMPLATES = [
      "<N.M> done and set the next epic active in the plan."),
 ]
 
-PROMPT_CURRENT = r'''CONTEXT: I am building a small, reproducible "Training Data Execution System" for LLM
-pretraining (a course assignment), Python 3.11, built in very small steps. Two modules
-already exist in the repo:
-  * corpus_schema.py — defines Document (fields: id, lane, provenance_tier, split, source,
-    text) and validate_document(doc).
-  * sources_manifest.py — defines LaneSource, SOURCES, and validate_sources(sources). One
-    entry has source_id="web-fineweb", lane="web", dataset="HuggingFaceFW/fineweb",
-    config="sample-10BT", revision="", provenance_tier="T2", target_tokens=4_000_000.
-THIS IS EPIC 1.3 ONLY — the first REAL fetch, for a SINGLE source (web-fineweb). Later
-epics repeat this for the other lanes; do NOT fetch them now.
+PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+steps. The repo already has these WORKING modules (46 offline tests pass):
+  * corpus_schema.py — Document(id, lane, provenance_tier, split, source, text),
+    validate_document, LANES, PROVENANCE_TIERS.
+  * sources_manifest.py — frozen dataclass LaneSource(source_id, lane, dataset, config,
+    revision, license, provenance_tier, target_tokens, gated, notes); a tuple SOURCES of 8
+    entries; POOL_TARGET_TOKENS, POOL_TOLERANCE, EVAL_TIERS; lane_totals(sources),
+    eval_eligible(sources), validate_sources(sources).
+  * fetch.py — estimate_tokens(text)=max(1,len(utf8)//4);
+    fetch_source(source, *, out_root="data/raw", doc_iter=None, force=False) -> summary
+    dict (streams docs, caps at source.target_tokens, writes
+    out_root/<source_id>/documents.jsonl one JSON Document per line, appends a sha256
+    record to out_root/fetch_log.jsonl, caches on re-run). Internal helpers:
+    _extract_text(item, *, index) [str, or dict with "text"], _sha256, _last_log_record,
+    _resolve_revision(source, doc_iter) [uses source.revision, else resolves via
+    huggingface_hub only when doc_iter is None], _stream_hf(source, revision)
+    [load_dataset(..., streaming=True), yields row["text"]]. datasets/huggingface_hub are
+    imported lazily only on the real path. main() fetches only web-fineweb.
 
-DESIGN FOR OFFLINE TESTABILITY (important): the core write/cap/hash/log logic must run
-with NO network, by injecting a document iterator. Only the real run touches HuggingFace.
+THIS IS EPIC 1.4–1.7: generalize the fetcher to handle ALL lanes, and account for datasets
+that expose their text under a different column name (FineWeb "text",
+codeparrot/github-code-clean "content", Wikipedia "text"). Keep everything offline-testable
+and DO NOT break the 46 passing tests.
 
-TASK: Create fetch.py.
- - estimate_tokens(text: str) -> int: max(1, len(text.encode("utf-8")) // 4). A
-   pre-tokenizer, byte-based token estimate (no tokenizer exists yet).
- - fetch_source(source, *, out_root="data/raw", doc_iter=None, force=False) -> dict.
-   Behaviour, in order:
-   1. Caching: if force is False AND out_root/<source_id>/documents.jsonl already exists
-      AND fetch_log.jsonl already has a record for this source_id, then SKIP entirely
-      (no download, no consuming doc_iter) and return the existing summary with
-      cached=True.
-   2. Resolve revision: if source.revision != "" use it as-is; else (only when doc_iter is
-      None) resolve the dataset's current commit sha via huggingface_hub
-      (HfApi().dataset_info(source.dataset).sha) and use that. Record the resolved value.
-   3. Obtain documents: if doc_iter is not None, iterate it (each item is a dict with a
-      "text" key, or a plain str) — this is how tests inject data offline. Otherwise build
-      a streaming iterator with the datasets library:
-      load_dataset(source.dataset, name=(source.config or None), split="train",
-      streaming=True, revision=<resolved>), yielding each record's "text".
-   4. For each text, in order, with running index i: build a Document(
-      id=f"{source.source_id}-{i:07d}", lane=source.lane,
-      provenance_tier=source.provenance_tier, split="train",
-      source=f"{source.dataset}@{revision}#{source.config}", text=text); call
-      validate_document on it; write its dict as ONE json line to
-      out_root/<source_id>/documents.jsonl. Accumulate estimate_tokens(text); STOP as soon
-      as the cumulative estimate >= source.target_tokens.
-   5. Compute sha256 of the finished documents.jsonl. Append one json line to
-      out_root/fetch_log.jsonl: {source_id, dataset, config, revision, path, bytes,
-      sha256, doc_count, est_tokens, target_tokens}.
-   6. Return {source_id, revision, path, bytes, sha256, doc_count, est_tokens,
-      cached: False}.
- - main() under if __name__ == "__main__": load SOURCES, validate_sources(SOURCES), pick
-   the source_id="web-fineweb" entry, and call fetch_source on it (the real download).
+CHANGES:
+1. sources_manifest.py — add a field text_field: str to LaneSource (the upstream text
+   column name). Set it on every SOURCES entry: "content" for source_id="code-github",
+   "text" for all others. validate_sources must also reject an empty/whitespace text_field.
+   Everything else unchanged. Return the FULL updated sources_manifest.py.
+2. fetch.py:
+   - _extract_text(item, *, text_field, index): if item is a str, return it; if a dict,
+     return item[text_field] IF that key exists and its value is a str (EVEN an empty
+     string — the caller skips blanks); if the key is missing or the value is not a str,
+     raise ValueError; otherwise raise. (Do NOT raise on empty string.)
+   - _stream_hf(source, revision): yield the RAW rows from load_dataset (do not pre-extract
+     a field).
+   - In the write loop, get text via _extract_text(item, text_field=source.text_field,
+     index=index).
+   - Add fetch_all(sources, *, out_root="data/raw", force=False, doc_iters=None) ->
+     list[dict]: call validate_sources(sources); for each source in order call
+     fetch_source(source, out_root=out_root, force=force,
+     doc_iter=(doc_iters or {}).get(source.source_id)); return the list of summaries.
+     doc_iters is an optional dict mapping source_id -> iterable, used ONLY by tests to
+     inject offline; in production it is None so every source uses the real stream.
+   - main(): call fetch_all(SOURCES) and print the summaries.
+   Return the FULL updated fetch.py.
+3. Tests — return only the NEW test functions to ADD (not whole files):
+   - test_sources_manifest.py: every SOURCES entry has a non-empty text_field;
+     code-github has text_field="content"; a source with text_field="" raises.
+   - test_fetch.py (offline): a source with text_field="content" and a doc_iter of
+     {"content": "..."} dicts fetches correctly and yields valid Documents; a dict missing
+     the declared text_field raises ValueError; and a fetch_all test that, given two fake
+     pinned LaneSources with small targets and a doc_iters mapping, writes both sources'
+     documents.jsonl and returns two summaries.
 
-REPRODUCIBILITY: a pinned revision + the deterministic take-order + the token cap make
-documents.jsonl byte-identical across runs, so its sha256 is stable; a second run is a
-cached no-op.
-
-TESTS — test_fetch.py, MUST run offline (no network, no datasets/huggingface_hub import at
-test time). Use pytest tmp_path for out_root, a fake doc_iter (a fixed list of ~50 short
-dicts like {"text": "..."}), and pass a web-fineweb-like LaneSource via
-dataclasses.replace(...) with a small target_tokens (e.g. 200) and revision="pinned-test".
-Assert:
-   * estimate_tokens matches the bytes//4 formula on a known string and is monotonic.
-   * fetch_source caps correctly (stops at/just past target; not all 50 docs consumed).
-   * documents.jsonl exists and every line parses to a dict that constructs a Document
-     which validate_document accepts.
-   * fetch_log.jsonl has one record whose sha256 and byte size match the file when
-     recomputed.
-   * calling fetch_source a second time with force=False returns cached=True and leaves
-     the file unchanged.
-
-REQUIREMENTS: import Document, validate_document from corpus_schema and SOURCES,
-validate_sources from sources_manifest. Use hashlib (sha256), json, pathlib. The datasets
-and huggingface_hub libraries are used ONLY on the real path (import them lazily inside the
-doc_iter-is-None branch so tests need neither). Deterministic JSON: sort_keys=True,
-ensure_ascii=False, separators=(",",":"), one object per line. Add datasets and
-huggingface_hub to requirements.txt. Return fetch.py, test_fetch.py, the requirements.txt
-additions, and a one-line note on how reproducibility is achieved.'''
+REQUIREMENTS: preserve existing behavior and all 46 passing tests (the current fetch tests
+inject {"text": ...} dicts with a web source whose text_field will be "text", so they must
+still pass). Deterministic JSON, lazy datasets/huggingface_hub imports, stdlib +
+corpus_schema/sources_manifest otherwise. Return: full sources_manifest.py, full fetch.py,
+the new test functions to add, and a one-line note.'''
 
 
 def badge(status):
@@ -355,12 +344,12 @@ def build_html():
         + h_templates() + '</div>\n'
 
         '  <div class="sec"><h2>Current epic — 1.4–1.7 · Fetch the remaining lanes</h2>\n'
-        '    <p><strong>Epics 1.1–1.3 done and pushed</strong> &mdash; 46 offline tests pass, and the live FineWeb '
-        'fetch is verified (revision pinned, sha256 recorded). The fetch pattern is now proven on one lane; 1.4–1.7 '
-        'reuse <code>fetch_source</code> for code, math, indic, and multilingual &mdash; likely no new code, just '
-        'fetching each remaining source from the manifest (and confirming the code lane&rsquo;s permissive+ungated '
-        'source resolves). The next prompt is prepared on request.</p>\n'
-        '    <p class="cap">Reference &mdash; the completed Epic 1.3 prompt:</p>\n'
+        '    <p><strong>Epics 1.1–1.3 done and pushed</strong> &mdash; the web lane is on disk (4M tokens, pinned + '
+        'hashed). 1.4–1.7 generalize the working fetcher to all lanes with a minimal change: a per-source '
+        '<code>text_field</code> (so code&rsquo;s <code>content</code> column is handled) and a <code>fetch_all</code> '
+        'loop over the manifest. Then we run it to download code, math, indic, and multilingual. Prompt to paste into '
+        'Claude on the web (returns the full updated <code>sources_manifest.py</code> and <code>fetch.py</code> + new '
+        'tests):</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
