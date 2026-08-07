@@ -110,22 +110,22 @@ corpus
     <p>The contrastive perspective lane and the surprisal metrics are specified in <code>contrastive_perspective_corpus.md</code>; they enter the system as a data type with its own packing policy (F1/F2), a learning-ledger signal, and an OPUS selection signal.</p></div>
   <div class="sec"><h2>Roadmap</h2>
     <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Step</th><th>Area</th><th>Pts</th><th>Status</th></tr>
-<tr><td>0</td><td>Scaffold — repo layout, config, deterministic RNG + hashing, run.log logger, run_demo.py skeleton</td><td>End-to-end</td><td>150</td><td><span class="b b-tight">in progress</span></td></tr>
-<tr><td>1</td><td>Tiny corpus (multiple lanes + eval set + contrastive pairs) + frozen BPE tokenizer with content hash</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>2</td><td>Tokenize → immutable shards + manifests (content hash, token count, lane, provenance, chauvinism tag)</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>3</td><td>Evaluation / validation firewall — eval shards can never enter a loss-bearing batch</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>4</td><td>Mixture schedule — curriculum stages, lane weights, protected floors (planned shares)</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>5</td><td>OPUS selector — accept / reject / defer + protected-floor override; ΔS surprisal as a selection signal</td><td>Mixture/OPUS</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>6</td><td>Packer — per-type packing policies (incl. contrastive pairs), loss + attention masks, position ids</td><td>Packing/masks</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>7</td><td>Deterministic batch stream + consumption ledger (batch id, token spans, shard offsets, hashes)</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>8</td><td>Trainer (tiny MoE transformer) + learning ledger + F1 per-token surprisal + F2 ΔS per contrastive pair</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>9</td><td>Checkpoints tied to ledger offset + RNG state</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>10</td><td>Deliberate crash → resume; prove the next batch is exactly the expected batch (no skip/repeat)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>11</td><td>Replay an earlier interval; prove batch ids / token spans / hashes match the original run</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>12</td><td>Fork from an earlier checkpoint (branch)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>13</td><td>Throughput + packing efficiency → performance.json</td><td>Throughput</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>14</td><td>Audit + evidence bundle — evidence.json / evidence.md generated from real artifacts</td><td>Evidence</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>15</td><td>Invariant tests + README + one-command run_demo.py wiring</td><td>Tests/docs</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>1</td><td>Corpus — tiny multi-lane docs (web/code/math/indic) + eval split + contrastive pairs; minimal run_demo + run.log</td><td>Tokenizer integrity</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
+<tr><td>2</td><td>Normalize + per-document content hash (light clean; the content-hasher is introduced here)</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>3</td><td>Frozen byte-level BPE tokenizer + content hash</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>4</td><td>Immutable tokenized shards + manifests (hash, token count, lane, provenance, chauvinism tag)</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>5</td><td>Evaluation / validation firewall — eval shards can never enter a loss-bearing batch</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>6</td><td>Mixture schedule — curriculum stages, lane weights, protected floors (planned shares)</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>7</td><td>OPUS selector — accept / reject / defer + protected-floor override; ΔS surprisal as a selection signal</td><td>Mixture/OPUS</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>8</td><td>Packer — per-type packing policies (incl. contrastive pairs), loss + attention masks, position ids</td><td>Packing/masks</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>9</td><td>Deterministic batch stream + consumption ledger (RNG introduced here; batch id, token spans, offsets, hashes)</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>10</td><td>Trainer (tiny MoE transformer) + learning ledger + F1 per-token surprisal + F2 ΔS per contrastive pair</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>11</td><td>Checkpoints tied to ledger offset + RNG state</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>12</td><td>Deliberate crash → resume; prove the next batch is exactly the expected batch (no skip/repeat)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>13</td><td>Replay an earlier interval; prove batch ids / token spans / hashes match the original run</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>14</td><td>Fork from an earlier checkpoint (branch)</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>15</td><td>Throughput + packing efficiency → performance.json</td><td>Throughput</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>16</td><td>Audit + evidence bundle (evidence.json / .md from real artifacts) + one-command run_demo.py + tests + README</td><td>Evidence/tests/docs</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
     </table></div>
     <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric. A step advances only once its invariant is proven by reproducible evidence.</p></div>
   <div class="sec"><h2>How each step runs</h2>
@@ -135,68 +135,30 @@ corpus
       <li>We verify the step&rsquo;s invariant (the part graders check &mdash; evidence produced by the implementation, never hardcoded) and record the result here.</li>
       <li>Only then do we advance to the next step.</li>
     </ol></div>
-  <div class="sec"><h2>Current step — Step 0 · Scaffold</h2>
-    <p>Foundation the whole system builds on: deterministic RNG with derivable sub-streams and snapshot/restore, a canonical content-hasher, the <code>run.log</code> event logger, the <code>submission_artifacts/</code> layout, and a stubbed one-command <code>run_demo.py</code>. Prompt to paste into web Claude:</p>
-    <div class="diagram"><pre>CONTEXT
-I am building a &quot;Training Data Execution System&quot; — a reproducible, auditable data plane
-for LLM pretraining — as a course assignment. It must be correct, reproducible, and
-auditable, and run with one command. Stack: Python 3.11, PyTorch on CPU with determinism
-pinned, NumPy allowed. It is a new standalone repo. The full pipeline (built over later
-steps, NOT now) is:
+  <div class="sec"><h2>Current step — Step 1 · Corpus</h2>
+    <p>The first concrete artifact: a tiny multi-lane corpus (web / code / math / indic), an eval split quarantined from training, and a handful of contrastive perspective pairs (prefix + y+ / y&minus;). Plus a minimal one-command <code>run_demo.py</code> and <code>run.log</code>, which grow one stage per step. The reproducibility utilities (content-hasher, deterministic RNG) are introduced later, at the step where each is first needed. Prompt to paste into web Claude:</p>
+    <div class="diagram"><pre>CONTEXT: I am building a small, reproducible &quot;Training Data Execution System&quot; for LLM
+pretraining (a course assignment), Python 3.11, built in small steps. THIS IS STEP 1 ONLY
+— just the toy corpus and a minimal runner. No tokenization yet.
 
-  corpus -&gt; frozen byte-level BPE tokenizer -&gt; immutable tokenized shards + manifests
-  -&gt; evaluation firewall -&gt; mixture/curriculum compiler (lanes, protected floors)
-  -&gt; OPUS selector (accept/reject/defer + floor override) -&gt; packer (loss &amp; attention
-  masks, position ids) -&gt; deterministic batch stream + consumption ledger
-  -&gt; trainer (tiny MoE transformer) + learning ledger (per-token loss / surprisal)
-  -&gt; checkpoints tied to ledger offset -&gt; crash -&gt; resume -&gt; replay -&gt; fork -&gt; audit
-  -&gt; evidence bundle.
+TASK
+1. A tiny in-repo corpus organised by lane. A module corpus.py returning documents, each a
+   dict {id, lane, provenance_tier, split, text}. Include: 2-3 short &quot;web&quot;, &quot;code&quot; and
+   &quot;math&quot; docs; one or two &quot;indic&quot; docs; an &quot;eval&quot; split (a couple of docs marked
+   split=&quot;eval&quot;) that must never be trained on; and 3-4 &quot;contrastive&quot; pairs on contested
+   topics — each a shared prefix plus two continuations y_plus (Indian-vantage) and y_minus
+   (Western-default) differing only in a framing span, tagged {vantage, chauvinism:&quot;none&quot;}.
+   Represent a contrastive pair as its own document type. Keep every text 1-3 sentences,
+   fixed/authored, no randomness.
+2. A minimal run_demo.py that creates a submission_artifacts/ folder with a run.log, calls
+   one stage load_corpus(), logs one line per lane like &quot;[INFO] corpus_loaded lane=web
+   docs=3&quot;, and a final &quot;[PASS] corpus_loaded total=N eval=M contrastive=K&quot;.
+3. A tiny pytest test asserting: the corpus loads; the eval split is non-empty and flagged;
+   every contrastive pair has a prefix, y_plus, y_minus, and a vantage tag.
 
-The final demo must deliberately crash, resume with the EXACT next batch (no skip or
-repeat), and replay an earlier interval whose batch ids, token spans, and hashes match
-the original run. Everything must be reconstructible from a seed + a ledger offset.
-
-SCOPE OF THIS PROMPT — STEP 0 ONLY: the project scaffold and the determinism / hashing /
-logging foundation. Do NOT implement tokenization, packing, training, etc. Only the
-skeleton the later steps build on.
-
-PRODUCE
-1. A repo file tree.
-2. Full code for these foundation modules:
-   - config.py: a frozen dataclass Config (global seed, artifact-root path, and
-     placeholders for budget, lane weights, protected floors). Loadable from a JSON dict.
-     Include a method returning a canonical, content-hashable representation.
-   - hashing.py: canonical_hash(obj) that serialises any JSON-able object to canonical
-     bytes (sorted keys, UTF-8, compact separators) and returns a sha256 hex digest;
-     plus hash_bytes and hash_file helpers. A hash must NEVER depend on wall-clock time,
-     dict insertion order, or absolute paths.
-   - determinism.py: set_global_determinism(seed) that seeds Python random, NumPy and
-     torch, sets torch deterministic flags, single thread, CPU. Also a DeterministicRNG
-     class that (a) derives named independent sub-streams, e.g. rng.derive(&quot;packer&quot;), so
-     each subsystem is reproducible in isolation, and (b) can snapshot() and restore(state)
-     its full state (needed later for checkpoint/resume).
-   - eventlog.py: an EventLog that appends human-readable lines to
-     submission_artifacts/run.log AND accumulates structured events in memory for the
-     evidence bundle. Support a pass(event_name, **fields) that writes a line like
-     &quot;[PASS] tokenizer_hash_verified key=value ...&quot; and an info(msg, **fields). Timestamps
-     may appear in the log text but must NOT feed any hash. Provide to_list() returning the
-     structured events.
-   - artifacts.py: represent and create the submission_artifacts/ layout: run.log,
-     evidence.json, evidence.md, manifests/, ledgers/, checkpoints/, performance.json.
-     ensure_layout(root) creates the directories.
-   - run_demo.py: the one-command entry point. It sets determinism from config, creates
-     the artifact layout, opens the EventLog, then calls an ordered list of STAGE STUBS
-     (each logs an [INFO] &quot;&lt;stage&gt; started&quot; and a [PASS] placeholder). Stages, in order:
-     create_shards, validate_manifests, block_eval, compile_mixture, run_opus,
-     pack_batches, train, checkpoint, crash, resume, replay, fork, audit,
-     measure_performance, write_evidence. Each stub takes a shared context object.
-3. A tiny pytest smoke test proving: determinism (same seed =&gt; identical derived
-   sub-stream sequence; snapshot/restore round-trips exactly) and hashing (canonical_hash
-   is dict-key-order independent and stable across processes).
-
-REQUIREMENTS: deterministic; no wall-clock or randomness in any hash; small and readable;
-standard library + numpy + torch only. Return the COMPLETE code for every file plus a
-one-line description of each module&#x27;s role.</pre></div></div>
+REQUIREMENTS: standard library only for now; deterministic (no randomness); small and
+readable. Return the full code for corpus.py, run_demo.py and the test, plus a one-line
+note on the data model.</pre></div></div>
   <div class="foot">Session 6 &middot; tracker for the Training Data Execution System. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>
