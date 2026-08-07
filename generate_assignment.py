@@ -149,28 +149,45 @@ TEMPLATES = [
 ]
 
 PROMPT_CURRENT = r'''CONTEXT: I am building a small, reproducible "Training Data Execution System" for LLM
-pretraining (a course assignment), Python 3.11, built in very small steps. THIS IS
-MICRO-STEP 1.1 (Epic 1.1) ONLY — just the corpus data model. No data, no downloads, no
-tokenization, no runner.
+pretraining (a course assignment), Python 3.11, built in very small steps. Epic 1.1
+already exists in the repo: a module corpus_schema.py that defines, among other things,
+LANES = frozenset({"web","code","math","indic","multilingual"}). THIS IS MICRO-STEP 1.2
+(Epic 1.2) ONLY — a static "sources manifest" that declares which dataset feeds each
+lane. NO downloads, NO network, NO use of the huggingface datasets library yet (that is
+Epic 1.3). Declarations only.
 
-TASK: Create a single module corpus_schema.py defining the data model:
- - A frozen dataclass Document with fields: id: str, lane: str (one of
-   "web","code","math","indic","multilingual"), provenance_tier: str (one of
-   "T0","T1","T2","T3"), split: str (one of "train","eval"), source: str, text: str.
- - A frozen dataclass ContrastivePair with fields: id: str, topic: str, prefix: str,
-   y_plus: str (Indian-vantage continuation), y_minus: str (Western-default continuation),
-   vantage: str (should equal "indian_plus_western_minus"), chauvinism: str (must equal
-   "none").
- - validate_document(doc) and validate_contrastive(pair) that raise ValueError on any
-   invalid field (bad lane/provenance_tier/split enum, empty required strings,
-   chauvinism != "none").
- - 2 example Documents and 1 example ContrastivePair as module-level constants (EXAMPLES).
- - A tiny pytest test asserting: the examples validate; a Document with a bad lane raises
-   ValueError; a ContrastivePair with chauvinism != "none" raises ValueError.
+TASK: Create a module sources_manifest.py.
+ - Use @dataclass(frozen=True, slots=True, kw_only=True) to match the project style.
+ - A frozen dataclass LaneSource with fields: lane: str, dataset: str (a HuggingFace
+   dataset id), config: str (may be "" — e.g. a Wikipedia dump config or a FineWeb sample
+   name), revision: str (may be "" meaning "pin at fetch time"), license: str,
+   target_tokens: int, gated: bool, notes: str (may be "").
+ - A module-level SOURCES: tuple[LaneSource, ...] with exactly these entries (lane is one
+   of the five LANES values; the language lives in config, not in lane):
+     lane=web,          dataset="HuggingFaceFW/fineweb",        config="sample-10BT", license="ODC-BY-1.0",  target_tokens=4_000_000, gated=False
+     lane=code,         dataset="codeparrot/github-code-clean", config="",            license="permissive-only (MIT/Apache/BSD filtered)", target_tokens=2_000_000, gated=False, notes="exact permissive + ungated source confirmed at fetch (Epic 1.3)"
+     lane=math,         dataset="open-web-math/open-web-math",  config="",            license="ODC-BY-1.0",  target_tokens=1_200_000, gated=False
+     lane=indic,        dataset="wikimedia/wikipedia",          config="20231101.hi", license="CC-BY-SA-3.0", target_tokens=1_000_000, gated=False
+     lane=indic,        dataset="wikimedia/wikipedia",          config="20231101.bn", license="CC-BY-SA-3.0", target_tokens=700_000,  gated=False
+     lane=indic,        dataset="wikimedia/wikipedia",          config="20231101.ta", license="CC-BY-SA-3.0", target_tokens=500_000,  gated=False
+     lane=multilingual, dataset="wikimedia/wikipedia",          config="20231101.es", license="CC-BY-SA-3.0", target_tokens=300_000,  gated=False
+     lane=multilingual, dataset="wikimedia/wikipedia",          config="20231101.fr", license="CC-BY-SA-3.0", target_tokens=300_000,  gated=False
+   (all revision="" for now; notes="" unless given above.)
+ - POOL_TARGET_TOKENS = 10_000_000 and POOL_TOLERANCE = 0.05.
+ - lane_totals(sources) -> dict[str, int] summing target_tokens per lane.
+ - validate_sources(sources) raising ValueError if: any source.lane not in LANES (import
+   LANES from corpus_schema); any license empty/whitespace; any dataset empty; any
+   target_tokens <= 0; or the grand total of target_tokens is not within POOL_TOLERANCE of
+   POOL_TARGET_TOKENS. On success return sources unchanged.
+ - A pytest test asserting: validate_sources(SOURCES) passes; the grand total is
+   ~10_000_000 within tolerance; lane_totals covers all five lanes; every source has a
+   non-empty license; a source with an empty license raises ValueError; a source with
+   target_tokens=0 raises ValueError.
 
-REQUIREMENTS: standard library only (dataclasses, typing); deterministic; no file I/O;
-small and readable. Return the full code for corpus_schema.py and the test, plus a
-one-line note on the data model.'''
+REQUIREMENTS: standard library only (dataclasses, typing) plus importing LANES from
+corpus_schema; deterministic; NO network, NO file I/O, NO datasets library. Return the
+full code for sources_manifest.py and the test, plus a one-line note that the manifest is
+a declaration of intent, not a downloader.'''
 
 
 def badge(status):
@@ -306,10 +323,11 @@ def build_html():
         + h_templates() + '</div>\n'
 
         '  <div class="sec"><h2>Current epic — 1.2 · Sources manifest</h2>\n'
-        '    <p><strong>Epic 1.1 is done</strong> &mdash; <code>corpus_schema.py</code> in the '
-        '<code>v5-execution-system</code> repo, 4 tests pass (stdlib only, no I/O). Next is Epic 1.2: a config that '
-        'lists, per lane, the pinned dataset + revision + license + target token count. Its web prompt is written once '
-        'the per-lane sources are pinned (that decision is in progress). Prior epic&rsquo;s prompt for reference:</p>\n'
+        '    <p><strong>Epic 1.1 is done and pushed</strong> &mdash; <code>corpus_schema.py</code> in the '
+        '<code>v5-execution-system</code> repo, 5 tests pass (stdlib only, no I/O; rule 3 enforced: eval requires '
+        'tier T0/T1). Epic 1.2 declares, per lane, the pinned dataset + config/revision + license + target token count '
+        '(data only, no download). Prompt to paste into Claude on the web (returns <code>sources_manifest.py</code> + '
+        'its test):</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
