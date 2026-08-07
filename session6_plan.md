@@ -58,13 +58,13 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).
 - **Acceptance:** stdlib only; no I/O; tests pass.
 
-### Epic 1.2 — Sources manifest  ◐
+### Epic 1.2 — Sources manifest  ☑
 - LaneSource: source_id (unique), lane, dataset, config, revision, license, provenance_tier, target_tokens, gated, notes.
 - SOURCES for all five lanes summing to ~10M; Wikipedia sources tier T1 (eval-eligible), crawl sources T2 (train-only).
 - validate_sources: lanes/tiers valid, source_ids unique, licenses present, no gated sources, all five lanes covered, total ~10M; eval_eligible() returns the T0/T1 sources.
 - **Acceptance:** data only, no downloads; test asserts totals, uniqueness, tier/eval-eligibility, and rejects gated / empty-license / zero-token / dup-id / bad-tier.
 
-### Epic 1.3 — Fetch one lane (web/English)  ☐
+### Epic 1.3 — Fetch one lane (web/English)  ◐
 - Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.
 - Record each raw file's sha256 in a fetch log.
 - **Acceptance:** re-running yields identical file hashes; respects the cap.

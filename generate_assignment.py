@@ -71,12 +71,12 @@ FEATURE1 = [
         "validate_document / validate_contrastive raise ValueError on bad enum, empty required string, or chauvinism != none.",
         "Module-level EXAMPLES (2 Documents, 1 ContrastivePair) + pytest (examples validate; bad lane raises; chauvinism≠none raises).",
     ], "stdlib only; no I/O; tests pass."),
-    ("1.2", "Sources manifest", "active", [
+    ("1.2", "Sources manifest", "done", [
         "LaneSource: source_id (unique), lane, dataset, config, revision, license, provenance_tier, target_tokens, gated, notes.",
         "SOURCES for all five lanes summing to ~10M; Wikipedia sources tier T1 (eval-eligible), crawl sources T2 (train-only).",
         "validate_sources: lanes/tiers valid, source_ids unique, licenses present, no gated sources, all five lanes covered, total ~10M; eval_eligible() returns the T0/T1 sources.",
     ], "data only, no downloads; test asserts totals, uniqueness, tier/eval-eligibility, and rejects gated / empty-license / zero-token / dup-id / bad-tier."),
-    ("1.3", "Fetch one lane (web/English)", "pending", [
+    ("1.3", "Fetch one lane (web/English)", "active", [
         "Downloader pulls the pinned English source to data/raw/web/, streaming to a token/byte cap.",
         "Record each raw file's sha256 in a fetch log.",
     ], "re-running yields identical file hashes; respects the cap."),
@@ -330,12 +330,14 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.2 · Sources manifest</h2>\n'
-        '    <p><strong>Epic 1.1 is done and pushed</strong> &mdash; <code>corpus_schema.py</code> in the '
-        '<code>v5-execution-system</code> repo, 5 tests pass (stdlib only, no I/O; rule 3 enforced: eval requires '
-        'tier T0/T1). Epic 1.2 declares, per lane, the pinned dataset + config/revision + license + target token count '
-        '(data only, no download). Prompt to paste into Claude on the web (returns <code>sources_manifest.py</code> + '
-        'its test):</p>\n'
+        '  <div class="sec"><h2>Current epic — 1.3 · Fetch one lane (web/English)</h2>\n'
+        '    <p><strong>Epics 1.1 and 1.2 are done and pushed</strong> &mdash; 24 tests pass (stdlib only, no '
+        'network). Epic 1.3 is the first real download: a fetcher that reads one source from the manifest '
+        '(<code>web-fineweb</code>), streams documents to disk up to the token cap, pins the exact revision, and '
+        'records each raw file&rsquo;s sha256. Its prompt is prepared next &mdash; a few fetch-mechanics decisions '
+        'come first: (a) stream vs full download, (b) the cap unit (tokens estimated from bytes, since no tokenizer '
+        'exists yet), and (c) the raw-file layout + fetch-log format.</p>\n'
+        '    <p class="cap">Reference &mdash; the completed Epic 1.2 prompt:</p>\n'
         '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
