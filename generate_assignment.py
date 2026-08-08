@@ -149,7 +149,7 @@ TEMPLATES = [
      "<N.M> done and set the next epic active in the plan."),
 ]
 
-PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+PROMPT_1_4_7 = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
 steps. The repo already has these WORKING modules (46 offline tests pass):
   * corpus_schema.py — Document(id, lane, provenance_tier, split, source, text),
     validate_document, LANES, PROVENANCE_TIERS.
@@ -209,6 +209,52 @@ inject {"text": ...} dicts with a web source whose text_field will be "text", so
 still pass). Deterministic JSON, lazy datasets/huggingface_hub imports, stdlib +
 corpus_schema/sources_manifest otherwise. Return: full sources_manifest.py, full fetch.py,
 the new test functions to add, and a one-line note.'''
+
+
+PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+steps. corpus_schema.py already exists and defines: a frozen dataclass
+ContrastivePair(id, topic, prefix, y_plus, y_minus, vantage, chauvinism); a validator
+validate_contrastive(pair) that raises ValueError on any empty field, on vantage != VANTAGE,
+on chauvinism != CHAUVINISM, and on y_plus == y_minus; and the constants
+VANTAGE = "indian_plus_western_minus" and CHAUVINISM = "none".
+
+THIS IS EPIC 1.8 ONLY — author the contrastive perspective corpus. It is HAND-WRITTEN, not
+downloaded. No fetching, no tokenizer, no file I/O, no network.
+
+METHOD (from the project's B.4 spec): minimal contrastive pairs on contested,
+globally-framed topics. Same prefix; two continuations that differ ONLY in a localized
+framing span. y_plus = the Indian-vantage continuation; y_minus = the Western-default
+continuation. DESIGN GUARD: y_plus must be a FACTUAL, historically defensible Indian
+framing, NEVER a chauvinistic one (the contrast is about vantage point, not about
+disparaging anyone); that is what chauvinism="none" asserts. Model example:
+  prefix : "The economic impact of British colonial rule on India was"
+  y_plus : "a large-scale wealth transfer that deindustrialised Bengal's textile economy
+            and lowered per-capita income for decades."
+  y_minus: "a mixed legacy that introduced railways, a civil service, and modern
+            administrative institutions."
+
+TASK: Create contrastive_pairs.py.
+ - Import ContrastivePair, validate_contrastive, VANTAGE, CHAUVINISM from corpus_schema.
+ - A module-level tuple CONTRASTIVE_PAIRS of 30-40 ContrastivePair instances on DISTINCT
+   contested topics where an Indian vantage and a Western-default framing genuinely
+   diverge -- for example: colonial economic impact, the financial year, Partition,
+   non-alignment / the Cold War, the spice and textile trade, traditional medicine
+   (Ayurveda/Siddha), the lakh/crore numbering system, date and measurement conventions,
+   cricket, staple foods and spice, festivals, how particular historical figures or events
+   are framed, "mother tongue" vs "vernacular", the monsoon and agriculture, the space
+   programme. Choose a good, varied set.
+ - Each pair: a unique id ("pair-0001", ...), a short topic, a shared prefix, a factual
+   Indian-vantage y_plus, a plausible Western-default y_minus (both defensible, differing
+   only in framing), vantage=VANTAGE, chauvinism=CHAUVINISM. Keep each continuation 1-2
+   sentences; y_plus and y_minus must not be identical.
+ - A helper validate_all(pairs=CONTRASTIVE_PAIRS) that runs validate_contrastive on each
+   and also raises ValueError on any duplicate id; returns the pairs.
+ - A pytest test asserting: at least 30 pairs; validate_all(CONTRASTIVE_PAIRS) passes; all
+   ids unique; every vantage==VANTAGE and chauvinism==CHAUVINISM; y_plus != y_minus for
+   every pair; and a duplicate-id list is rejected by validate_all.
+
+REQUIREMENTS: standard library only plus corpus_schema; deterministic; no file I/O, no
+network. Return contrastive_pairs.py and its test, plus a one-line note.'''
 
 
 def badge(status):
@@ -344,11 +390,12 @@ def build_html():
         + h_templates() + '</div>\n'
 
         '  <div class="sec"><h2>Current epic — 1.8 · Author contrastive pairs</h2>\n'
-        '    <p><strong>Feature 1 data is fetched.</strong> All five lanes are on disk and hash-verified &mdash; the '
-        'full ~10M-token pool (13,087 docs): web 4.0M, code 2.0M (CodeSearchNet; the declared script-based/gated code '
-        'sources were swapped at fetch), math 1.2M, indic 2.2M, multilingual 0.6M. 59 offline tests pass. Next is Epic '
-        '1.8: hand-author the contrastive perspective pairs (prefix + y+ / y&minus;, tagged, chauvinism none), which '
-        'are authored source, not downloaded. The next prompt is prepared on request.</p></div>\n'
+        '    <p><strong>Feature 1 data is fetched</strong> &mdash; all five lanes on disk and hash-verified '
+        '(~10M-token pool, 13,087 docs; 59 offline tests pass). Epic 1.8 hand-authors the contrastive perspective '
+        'corpus (B.4): 30&ndash;40 pairs, each a shared prefix with a factual Indian-vantage <code>y_plus</code> and a '
+        'Western-default <code>y_minus</code>, tagged and chauvinism-free. Authored source, not downloaded. Prompt to '
+        'paste into Claude on the web (returns <code>contrastive_pairs.py</code> + its test):</p>\n'
+        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
