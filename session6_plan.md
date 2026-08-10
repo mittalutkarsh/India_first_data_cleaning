@@ -30,8 +30,8 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 
 | # | Feature | Area | Pts | Status |
 |---|---|---|---|---|
-| 1 | Collecting data | Tokenizer integrity / data | 100 | ◐ |
-| 2 | Clean & filter | Shards/manifests | 100 | ☐ |
+| 1 | Collecting data | Tokenizer integrity / data | 100 | ☑ |
+| 2 | Clean & filter | Shards/manifests | 100 | ◐ |
 | 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ☐ |
 | 4 | Immutable shards + manifests | Shards/manifests | 100 | ☐ |
 | 5 | Evaluation firewall | Firewall | 50 | ☐ |
@@ -89,7 +89,7 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).
 - **Acceptance:** report regenerates identically; totals ≈ 10M.
 
-### Epic 1.12 — Wire load_corpus into run_demo.py  ◐
+### Epic 1.12 — Wire load_corpus into run_demo.py  ☑
 - Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.
 - **Acceptance:** python run_demo.py runs clean; test asserts the PASS event.
 

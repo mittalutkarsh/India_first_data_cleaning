@@ -124,8 +124,8 @@ corpus
 </pre></div></div>
   <div class="sec"><h2>Feature map (16)</h2>
     <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Feature</th><th>Area</th><th>Pts</th><th>Status</th></tr>
-<tr><td>1</td><td>Collecting data</td><td>Tokenizer integrity / data</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
-<tr><td>2</td><td>Clean &amp; filter</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>1</td><td>Collecting data</td><td>Tokenizer integrity / data</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>2</td><td>Clean &amp; filter</td><td>Shards/manifests</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
 <tr><td>3</td><td>Frozen BPE tokenizer</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>4</td><td>Immutable shards + manifests</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>5</td><td>Evaluation firewall</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
@@ -190,7 +190,7 @@ corpus
       <li>Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).</li>
     </ul>
     <p class="cap">Acceptance: report regenerates identically; totals ≈ 10M.</p>
-    <h3>Epic 1.12 — Wire load_corpus into run_demo.py &nbsp; <span class="b b-tight">in progress</span></h3>
+    <h3>Epic 1.12 — Wire load_corpus into run_demo.py &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.</li>
     </ul>
@@ -236,69 +236,9 @@ corpus
     <p class="cap">Use when web Claude has returned the code.</p>
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
-  <div class="sec"><h2>Current epic — 1.12 · Wire load_corpus into run_demo.py</h2>
-    <p><strong>Epic 1.11 done and pushed</strong> &mdash; the deterministic corpus summary is generated: real lane train-token shares 40/20/21/12/6 (matching the V5 mixture), eval 1.542%, 36 contrastive pairs; 119 offline tests pass. Epic 1.12 is the last of Feature 1: a minimal one-command <code>run_demo.py</code> that creates <code>submission_artifacts/run.log</code>, runs the load-corpus stage (loader + summary), logs per-lane <code>[INFO]</code> lines and a final <code>[PASS] corpus_loaded total=N eval=M contrastive=K</code>, with an end-to-end test. This is the runner that grows one stage per feature. The next prompt is prepared on request.</p>
-    <div class="diagram"><pre>CONTEXT: reproducible &quot;Training Data Execution System&quot;, Python 3.11, built in small
-steps. Existing modules:
- - corpus_loader.py: corpus_counts(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;,
-   sources=SOURCES) -&gt; dict {per lane {train_docs,eval_docs,train_tokens,eval_tokens},
-   &quot;contrastive&quot;:{pairs,est_tokens}, &quot;totals&quot;:{docs,tokens,eval_docs,eval_tokens}}.
- - corpus_report.py: write_corpus_summary(*, raw_root, eval_root, sources, out_path) -&gt;
-   report dict (writes deterministic JSON; report[&quot;kind&quot;]==&quot;corpus_summary&quot;).
- - sources_manifest.SOURCES; corpus_schema.LANES.
-
-THIS IS EPIC 1.12 ONLY — the first version of the one-command runner, and the last epic
-of Feature 1. It wires the corpus stage into run_demo.py, writing to submission_artifacts/.
-This runner grows one stage per feature; today it has exactly one stage (load corpus).
-No network.
-
-TASK: Create run_demo.py.
- - ARTIFACTS_ROOT = &quot;submission_artifacts&quot;.
- - A small RunLog class:
-   * RunLog(path): open `path` for writing (a fresh file per run) and keep an in-memory
-     list `events`.
-   * info(msg, **fields): write the line &quot;[INFO] &quot; + msg + (&quot; &quot; + space-joined &quot;k=v&quot; if
-     fields) to the file AND stdout; append {&quot;level&quot;:&quot;INFO&quot;,&quot;msg&quot;:msg,**fields} to events.
-   * passed(event, **fields): write &quot;[PASS] &quot; + event + (&quot; &quot; + space-joined &quot;k=v&quot;);
-     append {&quot;level&quot;:&quot;PASS&quot;,&quot;event&quot;:event,**fields}.
-   * close().
-   Lines carry NO timestamp, and MUST NOT contain absolute paths (log basenames only), so
-   run.log is byte-identical regardless of where artifacts_root lives.
- - stage_load_corpus(log, *, raw_root, eval_root, sources, summary_path) -&gt; dict:
-   compute counts = corpus_counts(...); for each lane in sorted(LANES) call
-   log.info(&quot;corpus_lane&quot;, lane=lane, train_docs=..., eval_docs=..., train_tokens=...,
-   eval_tokens=...); write the summary via write_corpus_summary(..., out_path=summary_path);
-   log.info(&quot;corpus_summary_written&quot;, file=&lt;basename of summary_path&gt;); then
-   log.passed(&quot;corpus_loaded&quot;, total=counts[&quot;totals&quot;][&quot;docs&quot;],
-   eval=counts[&quot;totals&quot;][&quot;eval_docs&quot;], contrastive=counts[&quot;contrastive&quot;][&quot;pairs&quot;]);
-   return counts.
- - run(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;, sources=SOURCES,
-   artifacts_root=ARTIFACTS_ROOT) -&gt; int: create artifacts_root and an
-   artifacts_root/manifests/ subdir; open RunLog at artifacts_root/run.log;
-   log.info(&quot;run_start&quot;); stage_load_corpus(log, ...,
-   summary_path=artifacts_root/manifests/corpus_summary.json); log.info(&quot;run_complete&quot;);
-   close the log; return 0.
- - main() under if __name__ == &quot;__main__&quot;: raise SystemExit(run()).
-
-TESTS — test_run_demo.py, offline. Build a small fake corpus in tmp_path (a data/raw with
-two source dirs of a few &quot;split&quot;:&quot;train&quot; Document JSONL lines + a
-data/eval/eval_manifest.jsonl header + a couple eval ids from a T1 source), and an
-artifacts_root under tmp_path:
- * run(raw_root=..., eval_root=..., sources=&lt;the two&gt;, artifacts_root=...) returns 0.
- * artifacts_root/run.log exists, contains a line starting &quot;[PASS] corpus_loaded&quot;, and
-   contains one &quot;[INFO] corpus_lane&quot; line per lane in LANES.
- * compute corpus_counts on the fixture and assert run.log contains
-   f&quot;total={totals[&#x27;docs&#x27;]}&quot;, f&quot;eval={totals[&#x27;eval_docs&#x27;]}&quot;, and
-   f&quot;contrastive={contrastive_pairs}&quot;.
- * artifacts_root/manifests/corpus_summary.json exists and is valid JSON with
-   kind==&quot;corpus_summary&quot;.
- * determinism: run into two fresh artifact roots and assert the two run.log files are
-   byte-identical (no timestamps, no absolute paths).
- * a RunLog unit test: info/passed produce the expected line text and populate events.
-
-REQUIREMENTS: stdlib (pathlib, json) + corpus_loader + corpus_report + corpus_schema +
-sources_manifest; deterministic; no network. Return run_demo.py and test_run_demo.py, plus
-a one-line note.</pre></div></div>
+  <div class="sec"><h2>Feature 1 complete &mdash; next: Feature 2 (Clean &amp; filter)</h2>
+    <p><strong>Feature 1 (Collecting data) is done.</strong> All 12 epics landed and <code>python run_demo.py</code> runs on the full 10M corpus, emitting the first real event: <code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, and writing <code>submission_artifacts/run.log</code> + <code>manifests/corpus_summary.json</code>. 135 offline tests pass. The one-command runner now does its first real stage and will grow one stage per feature.</p>
+    <p><strong>Next is Feature 2 &mdash; Clean &amp; filter</strong> (normalize, content-hash, quality filter, near-dup dedup, PII scrub, decontamination, cleaning report). Its epics are still a provisional outline (below); the first step is to elaborate them into stories (Template A), then work Epic 2.1. Tell me to expand Feature 2 and I&rsquo;ll break it into micro-steps and prepare the 2.1 prompt.</p></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>

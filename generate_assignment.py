@@ -45,8 +45,8 @@ LOCKED = [
 
 # num, name, area, points, status (done|active|pending)
 FEATURES = [
-    (1, "Collecting data", "Tokenizer integrity / data", 100, "active"),
-    (2, "Clean & filter", "Shards/manifests", 100, "pending"),
+    (1, "Collecting data", "Tokenizer integrity / data", 100, "done"),
+    (2, "Clean & filter", "Shards/manifests", 100, "active"),
     (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "pending"),
     (4, "Immutable shards + manifests", "Shards/manifests", 100, "pending"),
     (5, "Evaluation firewall", "Firewall", 50, "pending"),
@@ -95,7 +95,7 @@ FEATURE1 = [
     ("1.11", "Corpus summary report", "done", [
         "Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).",
     ], "report regenerates identically; totals ≈ 10M."),
-    ("1.12", "Wire load_corpus into run_demo.py", "active", [
+    ("1.12", "Wire load_corpus into run_demo.py", "done", [
         "Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.",
     ], "python run_demo.py runs clean; test asserts the PASS event."),
 ]
@@ -741,15 +741,16 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.12 · Wire load_corpus into run_demo.py</h2>\n'
-        '    <p><strong>Epic 1.11 done and pushed</strong> &mdash; the deterministic corpus summary is generated: real '
-        'lane train-token shares 40/20/21/12/6 (matching the V5 mixture), eval 1.542%, 36 contrastive pairs; 119 '
-        'offline tests pass. Epic 1.12 is the last of Feature 1: a minimal one-command <code>run_demo.py</code> that '
-        'creates <code>submission_artifacts/run.log</code>, runs the load-corpus stage (loader + summary), logs per-lane '
-        '<code>[INFO]</code> lines and a final <code>[PASS] corpus_loaded total=N eval=M contrastive=K</code>, with an '
-        'end-to-end test. This is the runner that grows one stage per feature. The next prompt is prepared on '
-        'request.</p>\n'
-        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
+        '  <div class="sec"><h2>Feature 1 complete &mdash; next: Feature 2 (Clean &amp; filter)</h2>\n'
+        '    <p><strong>Feature 1 (Collecting data) is done.</strong> All 12 epics landed and '
+        '<code>python run_demo.py</code> runs on the full 10M corpus, emitting the first real event: '
+        '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, and writing '
+        '<code>submission_artifacts/run.log</code> + <code>manifests/corpus_summary.json</code>. 135 offline tests '
+        'pass. The one-command runner now does its first real stage and will grow one stage per feature.</p>\n'
+        '    <p><strong>Next is Feature 2 &mdash; Clean &amp; filter</strong> (normalize, content-hash, quality '
+        'filter, near-dup dedup, PII scrub, decontamination, cleaning report). Its epics are still a provisional '
+        'outline (below); the first step is to elaborate them into stories (Template A), then work Epic 2.1. Tell me '
+        'to expand Feature 2 and I&rsquo;ll break it into micro-steps and prepare the 2.1 prompt.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
