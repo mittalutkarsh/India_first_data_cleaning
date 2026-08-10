@@ -237,7 +237,60 @@ corpus
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
   <div class="sec"><h2>Current epic — 1.11 · Corpus summary report</h2>
-    <p><strong>Epic 1.10 done and pushed</strong> &mdash; the corpus loader unifies everything: <code>iter_documents</code> yields every Document with split routed by the eval manifest (eval XOR train), and <code>corpus_counts</code> tallies per lane. Verified on the real corpus (13,058 train + 29 eval docs; eval only from the T1 indic/multilingual lanes &mdash; web/code/math contribute 0 eval by rule 3; 104 offline tests pass). Epic 1.11 writes a <strong>corpus summary report</strong> to <code>data/corpus_summary.json</code> (per-lane/split docs + est. tokens, contrastive count, totals) &mdash; a regenerable, deterministic snapshot of the pool. The next prompt is prepared on request.</p></div>
+    <p><strong>Epic 1.10 done and pushed</strong> &mdash; the corpus loader unifies everything: <code>iter_documents</code> yields every Document with split routed by the eval manifest (eval XOR train), and <code>corpus_counts</code> tallies per lane. Verified on the real corpus (13,058 train + 29 eval docs; eval only from the T1 indic/multilingual lanes &mdash; web/code/math contribute 0 eval by rule 3; 104 offline tests pass). Epic 1.11 writes a <strong>corpus summary report</strong> to <code>data/corpus_summary.json</code> (per-lane/split docs + est. tokens, contrastive count, totals) &mdash; a regenerable, deterministic snapshot of the pool. Prompt to paste into Claude on the web (returns <code>corpus_report.py</code> + its test):</p>
+    <div class="diagram"><pre>CONTEXT: reproducible &quot;Training Data Execution System&quot;, Python 3.11, built in small
+steps. corpus_loader.py exists and provides corpus_counts(*, raw_root=&quot;data/raw&quot;,
+eval_root=&quot;data/eval&quot;, sources=SOURCES) -&gt; dict whose keys are: one entry per lane
+{train_docs, eval_docs, train_tokens, eval_tokens}; a &quot;contrastive&quot; entry
+{pairs, est_tokens}; and a &quot;totals&quot; entry {docs, tokens, eval_docs, eval_tokens}.
+corpus_schema.LANES and sources_manifest.SOURCES are available.
+
+THIS IS EPIC 1.11 ONLY — persist a deterministic, regenerable corpus summary report to
+disk. Reads via corpus_counts; writes one JSON file. No network.
+
+TASK: Create corpus_report.py.
+ - build_summary(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;, sources=SOURCES) -&gt; dict:
+   * call corpus_counts(...);
+   * return a report dict:
+       {
+         &quot;kind&quot;: &quot;corpus_summary&quot;,
+         &quot;version&quot;: 1,
+         &quot;lanes&quot;: {lane: counts[lane] for lane in sorted(LANES)},
+         &quot;contrastive&quot;: counts[&quot;contrastive&quot;],
+         &quot;totals&quot;: counts[&quot;totals&quot;],
+         &quot;derived&quot;: {
+           &quot;train_docs&quot;: totals[&quot;docs&quot;] - totals[&quot;eval_docs&quot;],
+           &quot;train_tokens&quot;: totals[&quot;tokens&quot;] - totals[&quot;eval_tokens&quot;],
+           &quot;eval_token_fraction&quot;: round(totals[&quot;eval_tokens&quot;]/totals[&quot;tokens&quot;], 6)
+                                  if totals[&quot;tokens&quot;] else 0.0,
+           &quot;lane_train_token_share&quot;: {lane: round(lanes[lane][&quot;train_tokens&quot;]/T, 6)
+                                      for lane in sorted(LANES)}  # T = total train tokens
+                                      # each share is 0.0 when T == 0
+         },
+       }
+ - write_corpus_summary(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;, sources=SOURCES,
+   out_path=&quot;data/corpus_summary.json&quot;) -&gt; dict:
+   * build_summary(...); create parent dirs; write JSON with
+     json.dumps(report, sort_keys=True, indent=2, ensure_ascii=False) + &quot;\n&quot;,
+     newline=&quot;\n&quot;. Deterministic: regenerating over the same corpus yields a
+     byte-identical file. Return the report.
+ - load_corpus_summary(path=&quot;data/corpus_summary.json&quot;) -&gt; dict.
+
+TESTS — test_corpus_report.py, offline. Build a small fake corpus in tmp_path the way
+corpus_loader is fed (a data/raw with two source dirs of a few &quot;split&quot;:&quot;train&quot; Document
+JSONL lines each, and a data/eval/eval_manifest.jsonl with a header + a couple eval ids
+from a T1 source):
+ * build_summary: &quot;totals&quot; equals corpus_counts[&quot;totals&quot;]; &quot;lanes&quot; covers all of LANES;
+   derived.train_docs + totals.eval_docs == totals.docs; eval_token_fraction ==
+   round(eval_tokens/tokens, 6); lane_train_token_share values sum to ~1.0 (within
+   rounding) when there are train tokens; &quot;contrastive&quot; matches corpus_counts.
+ * write_corpus_summary writes valid JSON that round-trips via load_corpus_summary and,
+   parsed, equals build_summary(...).
+ * determinism: calling write_corpus_summary twice produces byte-identical files.
+
+REQUIREMENTS: stdlib (json, pathlib) + corpus_loader + corpus_schema + sources_manifest;
+deterministic; no network. Return corpus_report.py and test_corpus_report.py, plus a
+one-line note.</pre></div></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>
