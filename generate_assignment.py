@@ -257,7 +257,7 @@ REQUIREMENTS: standard library only plus corpus_schema; deterministic; no file I
 network. Return contrastive_pairs.py and its test, plus a one-line note.'''
 
 
-PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+PROMPT_1_9 = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
 steps. Existing modules: corpus_schema.py (Document(id, lane, provenance_tier, split,
 source, text), validate_document, PROVENANCE_TIERS); sources_manifest.py (SOURCES,
 eval_eligible(sources) -> the T0/T1 sources, EVAL_TIERS = {"T0","T1"}); fetch.py
@@ -327,6 +327,76 @@ TESTS — test_eval_split.py, offline (no network):
 REQUIREMENTS: stdlib (hashlib, json, pathlib) + corpus_schema + sources_manifest + fetch;
 deterministic; no network. Return eval_split.py and test_eval_split.py, plus a one-line
 note that the fetched files are never mutated — eval is recorded, not moved.'''
+
+
+PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+steps. Existing modules:
+ - corpus_schema.py: Document(id, lane, provenance_tier, split, source, text),
+   validate_document, ContrastivePair, LANES.
+ - sources_manifest.py: SOURCES (each LaneSource has source_id, lane, provenance_tier, ...).
+ - fetch.py: estimate_tokens(text)=max(1,len(utf8)//4). Fetched data at
+   data/raw/<source_id>/documents.jsonl (one JSON Document per line, split="train").
+ - contrastive_pairs.py: CONTRASTIVE_PAIRS (a tuple of 36 ContrastivePair).
+ - eval_split.py wrote data/eval/eval_manifest.jsonl: a header line {"kind":"header",...}
+   then one line per eval doc {id, source_id, lane, provenance_tier, split:"eval",
+   est_tokens}. Eval ids are RECORDED, not moved; the raw files still say split="train".
+
+THIS IS EPIC 1.10 ONLY — the corpus loader. One deterministic reader that yields every
+Document across the lanes with split routed by the eval manifest (a recorded id ->
+split="eval", else "train"; a document is eval XOR train), and that also exposes the
+contrastive pairs. It reads only; it writes nothing.
+
+TASK: Create corpus_loader.py.
+ - A frozen dataclass LoadedDocument with fields: document: Document, est_tokens: int.
+ - load_eval_ids(eval_root="data/eval") -> frozenset[str]: read
+   eval_root/eval_manifest.jsonl, skip the header line (the one whose "kind" == "header"),
+   return the set of entry "id"s. A missing manifest -> empty frozenset.
+ - iter_documents(*, raw_root="data/raw", eval_root="data/eval", sources=SOURCES) ->
+   Iterator[LoadedDocument]:
+   * eval_ids = load_eval_ids(eval_root).
+   * For each source in sources sorted by source_id, read
+     raw_root/<source_id>/documents.jsonl in file order (skip a source whose file is
+     absent). For each row build a Document with split = "eval" if row["id"] in eval_ids
+     else "train" (override whatever the file says); other fields from the row; call
+     validate_document (this also re-checks rule 3 for any eval doc); yield
+     LoadedDocument(document, estimate_tokens(row["text"])).
+   * Track which eval_ids were actually seen; after the loop, if any eval id was never
+     seen, raise ValueError (the manifest references a document absent from raw — a
+     consistency bug).
+ - Re-export CONTRASTIVE_PAIRS from contrastive_pairs.
+ - corpus_counts(*, raw_root="data/raw", eval_root="data/eval", sources=SOURCES) -> dict:
+   iterate iter_documents once and tally, per lane, {"train_docs","eval_docs",
+   "train_tokens","eval_tokens"}; add a "contrastive" entry {"pairs": len(CONTRASTIVE_PAIRS),
+   "est_tokens": sum over each pair of estimate_tokens(prefix+" "+y_plus) +
+   estimate_tokens(prefix+" "+y_minus)}; and a "totals" entry {"docs","tokens",
+   "eval_docs","eval_tokens"}. Deterministic.
+ - load_corpus(*, raw_root="data/raw", eval_root="data/eval", sources=SOURCES) ->
+   CorpusView: a small frozen dataclass bundling a documents() method that returns
+   iter_documents(...), a contrastive tuple (CONTRASTIVE_PAIRS), and a counts() method
+   returning corpus_counts(...).
+
+TESTS — test_corpus_loader.py, offline, building a fake raw_root + eval manifest in
+tmp_path:
+ * lay out two source dirs (a T2 web-like and a T1 wiki-like) with a few Document lines
+   each (split="train"), and an eval_root/eval_manifest.jsonl with a header + a couple of
+   entries whose ids are real T1 docs.
+ * iter_documents yields every raw doc exactly once; ids in the manifest have
+   split="eval", all others "train"; every yielded document passes validate_document;
+   est_tokens > 0.
+ * eval XOR train: no id appears with both splits, and the set of eval-split ids equals
+   the manifest ids.
+ * determinism: two full iterations produce the identical sequence of
+   (id, split, est_tokens).
+ * a manifest referencing an id absent from raw makes list(iter_documents(...)) raise
+   ValueError.
+ * corpus_counts: per-lane train/eval doc and token tallies are correct for the fixture;
+   the contrastive count == len(CONTRASTIVE_PAIRS); totals add up.
+ * load_corpus(...).documents() and .counts() agree with the standalone functions, and
+   .contrastive == CONTRASTIVE_PAIRS.
+
+REQUIREMENTS: stdlib (json, pathlib, dataclasses) + corpus_schema + fetch +
+sources_manifest + contrastive_pairs; deterministic; reads only, writes nothing; no
+network. Return corpus_loader.py and test_corpus_loader.py, plus a one-line note.'''
 
 
 def badge(status):
@@ -560,7 +630,8 @@ def build_html():
         '<em>ingredients</em> &mdash; five fetched lanes, 36 contrastive pairs, and the eval manifest. Epic 1.10 is the '
         '<strong>corpus loader</strong>: one deterministic reader that yields every Document across the lanes, applies '
         'the eval manifest (a recorded id &rarr; <code>split="eval"</code>, else train), and folds the contrastive '
-        'pairs in. The next prompt is prepared on request.</p></div>\n'
+        'pairs in. Prompt to paste into Claude on the web (returns <code>corpus_loader.py</code> + its test):</p>\n'
+        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
