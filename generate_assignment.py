@@ -211,7 +211,7 @@ corpus_schema/sources_manifest otherwise. Return: full sources_manifest.py, full
 the new test functions to add, and a one-line note.'''
 
 
-PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+PROMPT_1_8 = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
 steps. corpus_schema.py already exists and defines: a frozen dataclass
 ContrastivePair(id, topic, prefix, y_plus, y_minus, vantage, chauvinism); a validator
 validate_contrastive(pair) that raises ValueError on any empty field, on vantage != VANTAGE,
@@ -255,6 +255,78 @@ TASK: Create contrastive_pairs.py.
 
 REQUIREMENTS: standard library only plus corpus_schema; deterministic; no file I/O, no
 network. Return contrastive_pairs.py and its test, plus a one-line note.'''
+
+
+PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+steps. Existing modules: corpus_schema.py (Document(id, lane, provenance_tier, split,
+source, text), validate_document, PROVENANCE_TIERS); sources_manifest.py (SOURCES,
+eval_eligible(sources) -> the T0/T1 sources, EVAL_TIERS = {"T0","T1"}); fetch.py
+(estimate_tokens(text)=max(1,len(utf8)//4); fetched data lives at
+data/raw/<source_id>/documents.jsonl, one JSON Document per line with split="train";
+data/raw/fetch_log.jsonl records per-source est_tokens). All five lanes are on disk
+(~10M tokens); the eval-eligible sources are the Wikipedia lanes (tier T1).
+
+THIS IS EPIC 1.9 ONLY — carve a small, quarantined EVAL split. Rule 3 (corpus_schema):
+eval may be drawn ONLY from T0/T1 sources. The fetched documents.jsonl are IMMUTABLE — do
+NOT modify them; instead RECORD which document ids are eval, deterministically, so the
+loader (a later epic) routes them to split="eval" and everything else to train
+(a document is eval XOR train).
+
+TASK: Create eval_split.py.
+ - EVAL_TARGET_FRACTION = 0.015  (about 1.5% of the pool).
+ - A PURE function select_eval(candidates, *, total_pool_tokens,
+   target_fraction=EVAL_TARGET_FRACTION, seed="v5-eval-2026") -> dict:
+   * candidates: iterable of dicts with keys id, source_id, lane, provenance_tier,
+     est_tokens (int).
+   * RULE-3 GUARD: if any candidate's provenance_tier not in EVAL_TIERS (import from
+     sources_manifest), raise ValueError.
+   * Deterministic, NO RNG: key each candidate by
+     sha256(f"{seed}:{id}".encode()).hexdigest(); sort by that key; take in that order,
+     accumulating est_tokens, until the cumulative first reaches/exceeds
+     round(target_fraction * total_pool_tokens); stop.
+   * Return {"eval_ids": tuple of selected ids sorted by id, "selected_tokens",
+     "target_tokens", "candidate_tokens", "seed",
+     "fingerprint": sha256 of "\n".join(sorted eval_ids)}.
+   * Selected ids are a subset of candidate ids; everything not selected is train.
+ - A wrapper carve_eval(*, raw_root="data/raw", eval_root="data/eval", sources=SOURCES,
+   seed="v5-eval-2026") -> dict that:
+   * gets eval-eligible source_ids via eval_eligible(sources) (do NOT call
+     validate_sources — a subset must work);
+   * builds candidates by reading raw_root/<source_id>/documents.jsonl for each eligible
+     source (source_id is the directory name; est_tokens = estimate_tokens(doc["text"]);
+     carry id, lane, provenance_tier);
+   * computes total_pool_tokens = sum of est_tokens over ALL records in
+     raw_root/fetch_log.jsonl;
+   * calls select_eval;
+   * writes eval_root/eval_manifest.jsonl: a header line
+     {"kind":"header", seed, target_fraction, target_tokens, candidate_tokens,
+     selected_tokens, selected_count, fingerprint}, then one line per eval doc
+     {id, source_id, lane, provenance_tier, split:"eval", est_tokens};
+   * also writes the eval documents to eval_root/<source_id>/documents.jsonl with split
+     flipped to "eval" (construct a Document and validate_document it — this re-checks
+     rule 3); deterministic JSON (sort_keys=True, ensure_ascii=False,
+     separators=(",",":")), newline="\n";
+   * idempotent: if eval_root/eval_manifest.jsonl exists with a matching fingerprint,
+     skip and return cached=True;
+   * returns a summary (selected_count, selected_tokens, fingerprint, sources).
+
+TESTS — test_eval_split.py, offline (no network):
+ * select_eval on ~50 fake T1 candidates with a known total: stops at/just past
+   target_fraction*total; eval_ids subset of candidates; same seed => identical eval_ids
+   and fingerprint; two different seeds => different fingerprints; selected token sum is
+   within one candidate of the target.
+ * a candidate with provenance_tier "T2" makes select_eval raise ValueError.
+ * disjointness: non-selected candidates share no id with eval_ids.
+ * carve_eval on a tmp_path raw_root you build: two fake eval-eligible source dirs (e.g.
+   indic-wiki-hi, mling-wiki-es) each with a documents.jsonl of a few T1 Document lines,
+   plus a fetch_log.jsonl with est_tokens; pass sources = a small tuple of matching
+   T1 LaneSource so eval_eligible returns those two; assert eval_manifest.jsonl has a
+   header + eval lines, every eval doc has split="eval" and validate_document passes,
+   eval ids come only from the eligible sources, and a second call returns cached=True.
+
+REQUIREMENTS: stdlib (hashlib, json, pathlib) + corpus_schema + sources_manifest + fetch;
+deterministic; no network. Return eval_split.py and test_eval_split.py, plus a one-line
+note that the fetched files are never mutated — eval is recorded, not moved.'''
 
 
 def badge(status):
@@ -487,7 +559,10 @@ def build_html():
         'five fetched lanes (~10M tokens) plus the contrastive pairs. Epic 1.9 carves the <strong>eval split</strong> '
         '&mdash; a small held-out slice taken only from the T0/T1 eval-eligible sources (the Wikipedia lanes), marked '
         '<code>split="eval"</code> and quarantined so it can never enter a loss-bearing batch (the firewall, Feature '
-        '5, enforces this later). The next prompt is prepared on request.</p></div>\n'
+        '5, enforces this later). Selection is deterministic (hash-ordered, no RNG) and the fetched files are never '
+        'mutated &mdash; eval is <em>recorded</em>, not moved. Prompt to paste into Claude on the web (returns '
+        '<code>eval_split.py</code> + its test):</p>\n'
+        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
