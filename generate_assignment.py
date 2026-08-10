@@ -306,7 +306,7 @@ def svg_where_we_are():
     s += txt(762, 120, "▲ the only step that trains a model", 10.5, mut, "middle")
 
     # Band 2 — what pretraining is
-    s += txt(8, 156, "WHAT ‘PRETRAINING’ MEANS", 11, mut, weight="600", mono=1)
+    s += txt(8, 156, "WHAT ‘PRETRAINING’ WILL DO — LATER, AT FEATURE 10  (no model exists yet)", 11, mut, weight="600", mono=1)
     s += rect(8, 166, 884, 96, "#FFFFFF", line)
     chips = ["The", "monsoon", "reaches", "Kerala", "in", "?"]
     cx = 30
@@ -321,8 +321,8 @@ def svg_where_we_are():
             s += ('<line x1="%d" y1="198" x2="%d" y2="198" stroke="%s" stroke-width="1.2" '
                   'marker-end="url(#wa)"/>' % (cx + w, cx + w + 8, mut))
         cx += w + 10
-    s += txt(30, 236, "The model reads running text left → right and predicts the next token, nudging its weights.", 11.5, ink)
-    s += txt(30, 252, "No questions, no chat format — that comes later (fine-tuning), and is out of scope here.", 11.5, mut, ital=1)
+    s += txt(30, 236, "Later, the tiny MoE model built at Feature 10 will read running text and predict the next token.", 11.5, ink)
+    s += txt(30, 252, "There is NO model now — Epic 1.8 only writes data. (Questions/chat are a still-later phase, out of scope.)", 11.5, mut, ital=1)
 
     # Band 3 — anatomy of a contrastive pair
     s += txt(8, 296, "ANATOMY OF A CONTRASTIVE PAIR (EPIC 1.8) — AUTHORED, NOT DOWNLOADED", 11, mut, weight="600", mono=1)
