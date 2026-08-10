@@ -399,7 +399,7 @@ sources_manifest + contrastive_pairs; deterministic; reads only, writes nothing;
 network. Return corpus_loader.py and test_corpus_loader.py, plus a one-line note.'''
 
 
-PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+PROMPT_1_11 = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
 steps. corpus_loader.py exists and provides corpus_counts(*, raw_root="data/raw",
 eval_root="data/eval", sources=SOURCES) -> dict whose keys are: one entry per lane
 {train_docs, eval_docs, train_tokens, eval_tokens}; a "contrastive" entry
@@ -452,6 +452,69 @@ from a T1 source):
 REQUIREMENTS: stdlib (json, pathlib) + corpus_loader + corpus_schema + sources_manifest;
 deterministic; no network. Return corpus_report.py and test_corpus_report.py, plus a
 one-line note.'''
+
+
+PROMPT_CURRENT = r'''CONTEXT: reproducible "Training Data Execution System", Python 3.11, built in small
+steps. Existing modules:
+ - corpus_loader.py: corpus_counts(*, raw_root="data/raw", eval_root="data/eval",
+   sources=SOURCES) -> dict {per lane {train_docs,eval_docs,train_tokens,eval_tokens},
+   "contrastive":{pairs,est_tokens}, "totals":{docs,tokens,eval_docs,eval_tokens}}.
+ - corpus_report.py: write_corpus_summary(*, raw_root, eval_root, sources, out_path) ->
+   report dict (writes deterministic JSON; report["kind"]=="corpus_summary").
+ - sources_manifest.SOURCES; corpus_schema.LANES.
+
+THIS IS EPIC 1.12 ONLY — the first version of the one-command runner, and the last epic
+of Feature 1. It wires the corpus stage into run_demo.py, writing to submission_artifacts/.
+This runner grows one stage per feature; today it has exactly one stage (load corpus).
+No network.
+
+TASK: Create run_demo.py.
+ - ARTIFACTS_ROOT = "submission_artifacts".
+ - A small RunLog class:
+   * RunLog(path): open `path` for writing (a fresh file per run) and keep an in-memory
+     list `events`.
+   * info(msg, **fields): write the line "[INFO] " + msg + (" " + space-joined "k=v" if
+     fields) to the file AND stdout; append {"level":"INFO","msg":msg,**fields} to events.
+   * passed(event, **fields): write "[PASS] " + event + (" " + space-joined "k=v");
+     append {"level":"PASS","event":event,**fields}.
+   * close().
+   Lines carry NO timestamp, and MUST NOT contain absolute paths (log basenames only), so
+   run.log is byte-identical regardless of where artifacts_root lives.
+ - stage_load_corpus(log, *, raw_root, eval_root, sources, summary_path) -> dict:
+   compute counts = corpus_counts(...); for each lane in sorted(LANES) call
+   log.info("corpus_lane", lane=lane, train_docs=..., eval_docs=..., train_tokens=...,
+   eval_tokens=...); write the summary via write_corpus_summary(..., out_path=summary_path);
+   log.info("corpus_summary_written", file=<basename of summary_path>); then
+   log.passed("corpus_loaded", total=counts["totals"]["docs"],
+   eval=counts["totals"]["eval_docs"], contrastive=counts["contrastive"]["pairs"]);
+   return counts.
+ - run(*, raw_root="data/raw", eval_root="data/eval", sources=SOURCES,
+   artifacts_root=ARTIFACTS_ROOT) -> int: create artifacts_root and an
+   artifacts_root/manifests/ subdir; open RunLog at artifacts_root/run.log;
+   log.info("run_start"); stage_load_corpus(log, ...,
+   summary_path=artifacts_root/manifests/corpus_summary.json); log.info("run_complete");
+   close the log; return 0.
+ - main() under if __name__ == "__main__": raise SystemExit(run()).
+
+TESTS — test_run_demo.py, offline. Build a small fake corpus in tmp_path (a data/raw with
+two source dirs of a few "split":"train" Document JSONL lines + a
+data/eval/eval_manifest.jsonl header + a couple eval ids from a T1 source), and an
+artifacts_root under tmp_path:
+ * run(raw_root=..., eval_root=..., sources=<the two>, artifacts_root=...) returns 0.
+ * artifacts_root/run.log exists, contains a line starting "[PASS] corpus_loaded", and
+   contains one "[INFO] corpus_lane" line per lane in LANES.
+ * compute corpus_counts on the fixture and assert run.log contains
+   f"total={totals['docs']}", f"eval={totals['eval_docs']}", and
+   f"contrastive={contrastive_pairs}".
+ * artifacts_root/manifests/corpus_summary.json exists and is valid JSON with
+   kind=="corpus_summary".
+ * determinism: run into two fresh artifact roots and assert the two run.log files are
+   byte-identical (no timestamps, no absolute paths).
+ * a RunLog unit test: info/passed produce the expected line text and populate events.
+
+REQUIREMENTS: stdlib (pathlib, json) + corpus_loader + corpus_report + corpus_schema +
+sources_manifest; deterministic; no network. Return run_demo.py and test_run_demo.py, plus
+a one-line note.'''
 
 
 def badge(status):
@@ -685,7 +748,8 @@ def build_html():
         'creates <code>submission_artifacts/run.log</code>, runs the load-corpus stage (loader + summary), logs per-lane '
         '<code>[INFO]</code> lines and a final <code>[PASS] corpus_loaded total=N eval=M contrastive=K</code>, with an '
         'end-to-end test. This is the runner that grows one stage per feature. The next prompt is prepared on '
-        'request.</p></div>\n'
+        'request.</p>\n'
+        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
