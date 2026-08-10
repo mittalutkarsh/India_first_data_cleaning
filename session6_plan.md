@@ -85,11 +85,11 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - Iterate all raw files → Documents in the schema; attach a byte→token estimate.
 - **Acceptance:** loads deterministically; counts stable across runs.
 
-### Epic 1.11 — Corpus summary report  ◐
+### Epic 1.11 — Corpus summary report  ☑
 - Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).
 - **Acceptance:** report regenerates identically; totals ≈ 10M.
 
-### Epic 1.12 — Wire load_corpus into run_demo.py  ☐
+### Epic 1.12 — Wire load_corpus into run_demo.py  ◐
 - Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.
 - **Acceptance:** python run_demo.py runs clean; test asserts the PASS event.
 

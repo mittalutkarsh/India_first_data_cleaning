@@ -92,10 +92,10 @@ FEATURE1 = [
     ("1.10", "Corpus loader", "done", [
         "Iterate all raw files → Documents in the schema; attach a byte→token estimate.",
     ], "loads deterministically; counts stable across runs."),
-    ("1.11", "Corpus summary report", "active", [
+    ("1.11", "Corpus summary report", "done", [
         "Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).",
     ], "report regenerates identically; totals ≈ 10M."),
-    ("1.12", "Wire load_corpus into run_demo.py", "pending", [
+    ("1.12", "Wire load_corpus into run_demo.py", "active", [
         "Minimal run_demo.py creates submission_artifacts/run.log, runs load_corpus, logs per-lane [INFO] lines and a final [PASS] corpus_loaded total=N eval=M contrastive=K; end-to-end test.",
     ], "python run_demo.py runs clean; test asserts the PASS event."),
 ]
@@ -678,15 +678,14 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.11 · Corpus summary report</h2>\n'
-        '    <p><strong>Epic 1.10 done and pushed</strong> &mdash; the corpus loader unifies everything: '
-        '<code>iter_documents</code> yields every Document with split routed by the eval manifest (eval XOR train), and '
-        '<code>corpus_counts</code> tallies per lane. Verified on the real corpus (13,058 train + 29 eval docs; eval '
-        'only from the T1 indic/multilingual lanes &mdash; web/code/math contribute 0 eval by rule 3; 104 offline tests '
-        'pass). Epic 1.11 writes a <strong>corpus summary report</strong> to <code>data/corpus_summary.json</code> '
-        '(per-lane/split docs + est. tokens, contrastive count, totals) &mdash; a regenerable, deterministic snapshot '
-        'of the pool. Prompt to paste into Claude on the web (returns <code>corpus_report.py</code> + its test):</p>\n'
-        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
+        '  <div class="sec"><h2>Current epic — 1.12 · Wire load_corpus into run_demo.py</h2>\n'
+        '    <p><strong>Epic 1.11 done and pushed</strong> &mdash; the deterministic corpus summary is generated: real '
+        'lane train-token shares 40/20/21/12/6 (matching the V5 mixture), eval 1.542%, 36 contrastive pairs; 119 '
+        'offline tests pass. Epic 1.12 is the last of Feature 1: a minimal one-command <code>run_demo.py</code> that '
+        'creates <code>submission_artifacts/run.log</code>, runs the load-corpus stage (loader + summary), logs per-lane '
+        '<code>[INFO]</code> lines and a final <code>[PASS] corpus_loaded total=N eval=M contrastive=K</code>, with an '
+        'end-to-end test. This is the runner that grows one stage per feature. The next prompt is prepared on '
+        'request.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
