@@ -86,10 +86,10 @@ FEATURE1 = [
     ("1.8", "Author contrastive pairs", "done", [
         "~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.",
     ], "all validate; committed as source, not downloaded."),
-    ("1.9", "Eval held-out split", "active", [
+    ("1.9", "Eval held-out split", "done", [
         "Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.",
     ], "eval docs disjoint from train; recorded separately."),
-    ("1.10", "Corpus loader", "pending", [
+    ("1.10", "Corpus loader", "active", [
         "Iterate all raw files → Documents in the schema; attach a byte→token estimate.",
     ], "loads deterministically; counts stable across runs."),
     ("1.11", "Corpus summary report", "pending", [
@@ -553,16 +553,14 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.9 · Eval held-out split</h2>\n'
-        '    <p><strong>Epic 1.8 done and pushed</strong> &mdash; 36 hand-authored contrastive pairs '
-        '(<code>contrastive_pairs.py</code>), 71 offline tests pass. That completes the corpus <em>ingredients</em>: '
-        'five fetched lanes (~10M tokens) plus the contrastive pairs. Epic 1.9 carves the <strong>eval split</strong> '
-        '&mdash; a small held-out slice taken only from the T0/T1 eval-eligible sources (the Wikipedia lanes), marked '
-        '<code>split="eval"</code> and quarantined so it can never enter a loss-bearing batch (the firewall, Feature '
-        '5, enforces this later). Selection is deterministic (hash-ordered, no RNG) and the fetched files are never '
-        'mutated &mdash; eval is <em>recorded</em>, not moved. Prompt to paste into Claude on the web (returns '
-        '<code>eval_split.py</code> + its test):</p>\n'
-        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
+        '  <div class="sec"><h2>Current epic — 1.10 · Corpus loader</h2>\n'
+        '    <p><strong>Epic 1.9 done and pushed</strong> &mdash; the eval split is carved deterministically: 29 docs / '
+        '~155K tokens, all from the T1 Wikipedia lanes (rule 3), recorded in <code>data/eval/eval_manifest.jsonl</code> '
+        'with a fingerprint; the fetched files were never mutated. 88 offline tests pass. That completes all the corpus '
+        '<em>ingredients</em> &mdash; five fetched lanes, 36 contrastive pairs, and the eval manifest. Epic 1.10 is the '
+        '<strong>corpus loader</strong>: one deterministic reader that yields every Document across the lanes, applies '
+        'the eval manifest (a recorded id &rarr; <code>split="eval"</code>, else train), and folds the contrastive '
+        'pairs in. The next prompt is prepared on request.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
