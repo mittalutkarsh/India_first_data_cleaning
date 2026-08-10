@@ -100,9 +100,48 @@ FEATURE1 = [
     ], "python run_demo.py runs clean; test asserts the PASS event."),
 ]
 
-# feature num -> provisional epic outline
+# id, title, status, [stories], acceptance — elaborated when the feature became current
+FEATURE2 = [
+    ("2.1", "Canonical normalization", "active", [
+        "normalize_text(text) -> str: Unicode NFC, strip control chars (keep \\n and \\t), collapse runs of whitespace, trim ends.",
+        "Deterministic and idempotent: normalize_text(normalize_text(x)) == normalize_text(x).",
+        "normalize_document(doc) -> Document: normalized text, all other fields (id/lane/tier/split/source) unchanged.",
+        "pytest: NFC composition, control-char removal, whitespace collapse, idempotence, and pass-through of the non-text fields.",
+    ], "stdlib (unicodedata); pure, no I/O; idempotent; tests pass."),
+    ("2.2", "Content hash + exact-duplicate removal", "pending", [
+        "content_hash(text) -> str: sha256 over the NFC-normalized UTF-8 bytes — stable across runs and machines (the content-hasher is born here).",
+        "dedup_exact(docs) -> (kept, drops): keep the first occurrence of each content_hash in deterministic order; each later exact duplicate becomes a drop {id, stage:'exact_dup', duplicate_of}.",
+        "pytest: identical texts hash-equal; re-ordering keeps the same survivor; drop records name the survivor; the hash is order/clock-independent.",
+    ], "stdlib (hashlib); deterministic; content hash independent of dict order or wall-clock."),
+    ("2.3", "Quality filter", "pending", [
+        "quality_ok(text) -> (bool, reason|None): heuristics with named thresholds — min length (chars/words), max symbol-to-word ratio, max non-text-char fraction, max line/word repetition.",
+        "filter_quality(docs) -> (kept, drops): drop failing docs recording {id, stage:'quality', reason} (the specific failing heuristic).",
+        "pytest: a normal doc passes; a too-short, a symbol-spam, and a repetition-spam doc each fail with the right reason; thresholds exercised at the boundary.",
+    ], "stdlib; deterministic; thresholds documented; a test per rejection reason."),
+    ("2.4", "Near-duplicate dedup (MinHash / LSH)", "pending", [
+        "A pure-Python MinHash over char/token n-gram shingles (fixed num_perm, fixed seed) + a Jaccard estimate — deterministic, no external library.",
+        "dedup_near(docs, threshold=0.8) -> (kept, drops): cluster near-duplicates (LSH buckets, or all-pairs at toy scale), keep the first of each cluster in deterministic order; drops record {id, stage:'near_dup', near:survivor_id, est_jaccard}.",
+        "pytest: two near-identical docs -> one dropped naming its survivor; two unrelated docs -> both kept; determinism; behaviour at the threshold boundary.",
+    ], "stdlib only (hand-rolled MinHash); deterministic (fixed seed/permutations); tests pass."),
+    ("2.5", "PII scrub", "pending", [
+        "scrub_pii(text) -> (text, n_redactions): regex-redact emails and phone numbers to fixed placeholders ([EMAIL], [PHONE]); conservative patterns to avoid over-redaction.",
+        "scrub_document(doc) -> (Document, n): a Document with scrubbed text and a redaction count.",
+        "pytest: an email and a phone are redacted; ordinary numbers/text are left alone; idempotent (scrubbing twice adds nothing); the count is correct.",
+    ], "stdlib (re); deterministic; idempotent; no over-redaction of benign cases."),
+    ("2.6", "Decontamination (train vs eval + contrastive)", "pending", [
+        "Build the set of n-grams (e.g. 13-grams) from the eval docs + the contrastive continuations; a train doc is contaminated if it shares at least K of them.",
+        "decontaminate(train_docs, eval_docs, contrastive_pairs, n=13) -> (kept, drops): drop contaminated train docs recording {id, stage:'decontam', overlap_with}; eval and contrastive are never dropped.",
+        "pytest: a train doc copying an eval span is dropped; an unrelated train doc is kept; eval/contrastive are protected; determinism.",
+    ], "stdlib; deterministic; only train docs can be dropped; eval/contrastive protected."),
+    ("2.7", "Clean pipeline + report + run_demo stage", "pending", [
+        "clean_corpus(...) composes 2.1–2.6 in order over the loader's train docs (eval passes through untouched), writing cleaned train docs to data/clean/<source_id>/documents.jsonl (raw untouched) + a cleaning_report with per-stage {input, kept, dropped} counts and a drops manifest {id, stage, reason}.",
+        "Deterministic + idempotent: a second run yields a byte-identical cleaned set and report.",
+        "Wire a clean stage into run_demo: log per-stage [INFO] drop counts and a final [PASS] corpus_cleaned kept=… dropped=…; end-to-end test.",
+    ], "reads raw + eval, writes only under data/clean and submission_artifacts; deterministic; run_demo emits [PASS] corpus_cleaned; tests pass."),
+]
+
+# feature num -> provisional epic outline (features not yet elaborated)
 OUTLINE = {
-    2: "2.1 canonical normalization (Unicode NFC, whitespace, strip control chars) · 2.2 content-hasher (sha256 over canonical bytes) — born here — + exact-duplicate removal · 2.3 quality filter (min length, symbol/word ratio, repetition heuristics) · 2.4 near-duplicate dedup (MinHash / LSH) · 2.5 PII scrub (emails, phone numbers → redact) · 2.6 decontamination (n-gram overlap of train vs eval + contrastive; drop leaked docs) · 2.7 cleaning report (per-stage drop counts) + test",
     3: "3.1 BPE trainer on a pool sample · 3.2 freeze (serialize vocab+merges) + tokenizer content hash · 3.3 encode/decode with round-trip test · 3.4 tokenizer manifest (hash, vocab size, special tokens) + test",
     4: "4.1 shard writer (fixed-size token shards, content-addressed, immutable) · 4.2 per-shard manifest (hash, token count, lane, provenance, tags, source doc ids) · 4.3 shard-set index · 4.4 immutability / re-hash verification + test",
     5: "5.1 mark eval shards · 5.2 firewall gate (eval shard ids can never enter a train batch) · 5.3 [PASS] eval_shard_blocked event + test",
@@ -623,13 +662,21 @@ def h_features():
     return out
 
 
-def h_feature1():
+def _h_feature(rows):
     out = ""
-    for eid, title, st, stories, acc in FEATURE1:
-        out += '    <h3>Epic %s — %s &nbsp; %s</h3>\n' % (eid, title, badge(st))
-        out += '    <ul>\n' + "".join('      <li>%s</li>\n' % s for s in stories) + '    </ul>\n'
-        out += '    <p class="cap">Acceptance: %s</p>\n' % acc
+    for eid, title, st, stories, acc in rows:
+        out += '    <h3>Epic %s — %s &nbsp; %s</h3>\n' % (eid, html.escape(title), badge(st))
+        out += '    <ul>\n' + "".join('      <li>%s</li>\n' % html.escape(s) for s in stories) + '    </ul>\n'
+        out += '    <p class="cap">Acceptance: %s</p>\n' % html.escape(acc)
     return out
+
+
+def h_feature1():
+    return _h_feature(FEATURE1)
+
+
+def h_feature2():
+    return _h_feature(FEATURE2)
 
 
 def h_outline():
@@ -722,12 +769,20 @@ def build_html():
         + h_features() + '</table></div>\n'
         '    <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric.</p></div>\n'
 
-        '  <div class="sec"><h2>Feature 1 — Collecting data (epics &amp; stories)</h2>\n'
+        '  <div class="sec"><h2>Feature 1 — Collecting data (epics &amp; stories) &nbsp;'
+        '<span class="b b-ok">complete</span></h2>\n'
         '    <p>Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined eval '
         'split, all reproducible, in one clean data model.</p>\n'
         + h_feature1() + '</div>\n'
 
-        '  <div class="sec"><h2>Features 2–16 — epic outline</h2>\n'
+        '  <div class="sec"><h2>Feature 2 — Clean &amp; filter (epics &amp; stories)</h2>\n'
+        '    <p>Turn the raw pool into a cleaned training corpus: normalize, content-hash + exact-dedup, quality '
+        'filter, near-duplicate dedup, PII scrub, and decontaminate train against eval + contrastive &mdash; each a '
+        'deterministic stage that records what it dropped. Raw stays immutable; cleaning writes a new corpus under '
+        '<code>data/clean/</code> plus a report.</p>\n'
+        + h_feature2() + '</div>\n'
+
+        '  <div class="sec"><h2>Features 3–16 — epic outline</h2>\n'
         '    <p class="cap">Provisional epic breakdown; story-level detail is written when each feature becomes current.</p>\n'
         '    <div class="tblwrap"><table class="stbl"><tr><th>Feature</th><th>Epics</th></tr>\n'
         + h_outline() + '</table></div></div>\n'
@@ -747,10 +802,9 @@ def build_html():
         '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, and writing '
         '<code>submission_artifacts/run.log</code> + <code>manifests/corpus_summary.json</code>. 135 offline tests '
         'pass. The one-command runner now does its first real stage and will grow one stage per feature.</p>\n'
-        '    <p><strong>Next is Feature 2 &mdash; Clean &amp; filter</strong> (normalize, content-hash, quality '
-        'filter, near-dup dedup, PII scrub, decontamination, cleaning report). Its epics are still a provisional '
-        'outline (below); the first step is to elaborate them into stories (Template A), then work Epic 2.1. Tell me '
-        'to expand Feature 2 and I&rsquo;ll break it into micro-steps and prepare the 2.1 prompt.</p></div>\n'
+        '    <p><strong>Feature 2 (Clean &amp; filter) is now expanded into seven epics</strong> (2.1&ndash;2.7, with '
+        'stories, in the section below). Epic 2.1 (canonical normalization) is the active step. Ask for the Epic 2.1 '
+        'prompt and I&rsquo;ll hand it over for web Claude.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
@@ -786,7 +840,7 @@ def build_md():
     out.append("\n## Feature map (16)\n")
     out.append("| # | Feature | Area | Pts | Status |\n|---|---|---|---|---|")
     out.append(m_features().rstrip())
-    out.append("\n## Feature 1 — Collecting data  " + st["active"] + "\n")
+    out.append("\n## Feature 1 — Collecting data  " + st["done"] + "\n")
     out.append("Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and a quarantined "
                "eval split, all reproducible, in one clean data model.\n")
     for eid, title, s, stories, acc in FEATURE1:
@@ -794,7 +848,16 @@ def build_md():
         for story in stories:
             out.append("- %s" % story)
         out.append("- **Acceptance:** %s\n" % acc)
-    out.append("## Features 2–16 — epic outline (stories elaborated just-in-time)\n")
+    out.append("## Feature 2 — Clean & filter  " + st["active"] + "\n")
+    out.append("Turn the raw pool into a cleaned training corpus (normalize, content-hash + exact-dedup, quality "
+               "filter, near-dup dedup, PII scrub, decontaminate train vs eval + contrastive). Raw stays immutable; "
+               "cleaning writes a new corpus under data/clean/ plus a report.\n")
+    for eid, title, s, stories, acc in FEATURE2:
+        out.append("### Epic %s — %s  %s" % (eid, title, st[s]))
+        for story in stories:
+            out.append("- %s" % story)
+        out.append("- **Acceptance:** %s\n" % acc)
+    out.append("## Features 3–16 — epic outline (stories elaborated just-in-time)\n")
     for n, name, area, pts, s in FEATURES:
         if n in OUTLINE:
             out.append("### Feature %d — %s\n%s\n" % (n, name, OUTLINE[n]))
