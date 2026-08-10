@@ -81,11 +81,11 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.
 - **Acceptance:** eval docs disjoint from train; recorded separately.
 
-### Epic 1.10 — Corpus loader  ◐
+### Epic 1.10 — Corpus loader  ☑
 - Iterate all raw files → Documents in the schema; attach a byte→token estimate.
 - **Acceptance:** loads deterministically; counts stable across runs.
 
-### Epic 1.11 — Corpus summary report  ☐
+### Epic 1.11 — Corpus summary report  ◐
 - Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).
 - **Acceptance:** report regenerates identically; totals ≈ 10M.
 

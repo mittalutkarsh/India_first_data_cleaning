@@ -180,12 +180,12 @@ corpus
       <li>Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.</li>
     </ul>
     <p class="cap">Acceptance: eval docs disjoint from train; recorded separately.</p>
-    <h3>Epic 1.10 — Corpus loader &nbsp; <span class="b b-tight">in progress</span></h3>
+    <h3>Epic 1.10 — Corpus loader &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>Iterate all raw files → Documents in the schema; attach a byte→token estimate.</li>
     </ul>
     <p class="cap">Acceptance: loads deterministically; counts stable across runs.</p>
-    <h3>Epic 1.11 — Corpus summary report &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 1.11 — Corpus summary report &nbsp; <span class="b b-tight">in progress</span></h3>
     <ul>
       <li>Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).</li>
     </ul>
@@ -236,76 +236,8 @@ corpus
     <p class="cap">Use when web Claude has returned the code.</p>
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
-  <div class="sec"><h2>Current epic — 1.10 · Corpus loader</h2>
-    <p><strong>Epic 1.9 done and pushed</strong> &mdash; the eval split is carved deterministically: 29 docs / ~155K tokens, all from the T1 Wikipedia lanes (rule 3), recorded in <code>data/eval/eval_manifest.jsonl</code> with a fingerprint; the fetched files were never mutated. 88 offline tests pass. That completes all the corpus <em>ingredients</em> &mdash; five fetched lanes, 36 contrastive pairs, and the eval manifest. Epic 1.10 is the <strong>corpus loader</strong>: one deterministic reader that yields every Document across the lanes, applies the eval manifest (a recorded id &rarr; <code>split="eval"</code>, else train), and folds the contrastive pairs in. Prompt to paste into Claude on the web (returns <code>corpus_loader.py</code> + its test):</p>
-    <div class="diagram"><pre>CONTEXT: reproducible &quot;Training Data Execution System&quot;, Python 3.11, built in small
-steps. Existing modules:
- - corpus_schema.py: Document(id, lane, provenance_tier, split, source, text),
-   validate_document, ContrastivePair, LANES.
- - sources_manifest.py: SOURCES (each LaneSource has source_id, lane, provenance_tier, ...).
- - fetch.py: estimate_tokens(text)=max(1,len(utf8)//4). Fetched data at
-   data/raw/&lt;source_id&gt;/documents.jsonl (one JSON Document per line, split=&quot;train&quot;).
- - contrastive_pairs.py: CONTRASTIVE_PAIRS (a tuple of 36 ContrastivePair).
- - eval_split.py wrote data/eval/eval_manifest.jsonl: a header line {&quot;kind&quot;:&quot;header&quot;,...}
-   then one line per eval doc {id, source_id, lane, provenance_tier, split:&quot;eval&quot;,
-   est_tokens}. Eval ids are RECORDED, not moved; the raw files still say split=&quot;train&quot;.
-
-THIS IS EPIC 1.10 ONLY — the corpus loader. One deterministic reader that yields every
-Document across the lanes with split routed by the eval manifest (a recorded id -&gt;
-split=&quot;eval&quot;, else &quot;train&quot;; a document is eval XOR train), and that also exposes the
-contrastive pairs. It reads only; it writes nothing.
-
-TASK: Create corpus_loader.py.
- - A frozen dataclass LoadedDocument with fields: document: Document, est_tokens: int.
- - load_eval_ids(eval_root=&quot;data/eval&quot;) -&gt; frozenset[str]: read
-   eval_root/eval_manifest.jsonl, skip the header line (the one whose &quot;kind&quot; == &quot;header&quot;),
-   return the set of entry &quot;id&quot;s. A missing manifest -&gt; empty frozenset.
- - iter_documents(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;, sources=SOURCES) -&gt;
-   Iterator[LoadedDocument]:
-   * eval_ids = load_eval_ids(eval_root).
-   * For each source in sources sorted by source_id, read
-     raw_root/&lt;source_id&gt;/documents.jsonl in file order (skip a source whose file is
-     absent). For each row build a Document with split = &quot;eval&quot; if row[&quot;id&quot;] in eval_ids
-     else &quot;train&quot; (override whatever the file says); other fields from the row; call
-     validate_document (this also re-checks rule 3 for any eval doc); yield
-     LoadedDocument(document, estimate_tokens(row[&quot;text&quot;])).
-   * Track which eval_ids were actually seen; after the loop, if any eval id was never
-     seen, raise ValueError (the manifest references a document absent from raw — a
-     consistency bug).
- - Re-export CONTRASTIVE_PAIRS from contrastive_pairs.
- - corpus_counts(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;, sources=SOURCES) -&gt; dict:
-   iterate iter_documents once and tally, per lane, {&quot;train_docs&quot;,&quot;eval_docs&quot;,
-   &quot;train_tokens&quot;,&quot;eval_tokens&quot;}; add a &quot;contrastive&quot; entry {&quot;pairs&quot;: len(CONTRASTIVE_PAIRS),
-   &quot;est_tokens&quot;: sum over each pair of estimate_tokens(prefix+&quot; &quot;+y_plus) +
-   estimate_tokens(prefix+&quot; &quot;+y_minus)}; and a &quot;totals&quot; entry {&quot;docs&quot;,&quot;tokens&quot;,
-   &quot;eval_docs&quot;,&quot;eval_tokens&quot;}. Deterministic.
- - load_corpus(*, raw_root=&quot;data/raw&quot;, eval_root=&quot;data/eval&quot;, sources=SOURCES) -&gt;
-   CorpusView: a small frozen dataclass bundling a documents() method that returns
-   iter_documents(...), a contrastive tuple (CONTRASTIVE_PAIRS), and a counts() method
-   returning corpus_counts(...).
-
-TESTS — test_corpus_loader.py, offline, building a fake raw_root + eval manifest in
-tmp_path:
- * lay out two source dirs (a T2 web-like and a T1 wiki-like) with a few Document lines
-   each (split=&quot;train&quot;), and an eval_root/eval_manifest.jsonl with a header + a couple of
-   entries whose ids are real T1 docs.
- * iter_documents yields every raw doc exactly once; ids in the manifest have
-   split=&quot;eval&quot;, all others &quot;train&quot;; every yielded document passes validate_document;
-   est_tokens &gt; 0.
- * eval XOR train: no id appears with both splits, and the set of eval-split ids equals
-   the manifest ids.
- * determinism: two full iterations produce the identical sequence of
-   (id, split, est_tokens).
- * a manifest referencing an id absent from raw makes list(iter_documents(...)) raise
-   ValueError.
- * corpus_counts: per-lane train/eval doc and token tallies are correct for the fixture;
-   the contrastive count == len(CONTRASTIVE_PAIRS); totals add up.
- * load_corpus(...).documents() and .counts() agree with the standalone functions, and
-   .contrastive == CONTRASTIVE_PAIRS.
-
-REQUIREMENTS: stdlib (json, pathlib, dataclasses) + corpus_schema + fetch +
-sources_manifest + contrastive_pairs; deterministic; reads only, writes nothing; no
-network. Return corpus_loader.py and test_corpus_loader.py, plus a one-line note.</pre></div></div>
+  <div class="sec"><h2>Current epic — 1.11 · Corpus summary report</h2>
+    <p><strong>Epic 1.10 done and pushed</strong> &mdash; the corpus loader unifies everything: <code>iter_documents</code> yields every Document with split routed by the eval manifest (eval XOR train), and <code>corpus_counts</code> tallies per lane. Verified on the real corpus (13,058 train + 29 eval docs; eval only from the T1 indic/multilingual lanes &mdash; web/code/math contribute 0 eval by rule 3; 104 offline tests pass). Epic 1.11 writes a <strong>corpus summary report</strong> to <code>data/corpus_summary.json</code> (per-lane/split docs + est. tokens, contrastive count, totals) &mdash; a regenerable, deterministic snapshot of the pool. The next prompt is prepared on request.</p></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>

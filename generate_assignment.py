@@ -89,10 +89,10 @@ FEATURE1 = [
     ("1.9", "Eval held-out split", "done", [
         "Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.",
     ], "eval docs disjoint from train; recorded separately."),
-    ("1.10", "Corpus loader", "active", [
+    ("1.10", "Corpus loader", "done", [
         "Iterate all raw files → Documents in the schema; attach a byte→token estimate.",
     ], "loads deterministically; counts stable across runs."),
-    ("1.11", "Corpus summary report", "pending", [
+    ("1.11", "Corpus summary report", "active", [
         "Write data/corpus_summary.json (docs + est. tokens per lane/split, contrastive count).",
     ], "report regenerates identically; totals ≈ 10M."),
     ("1.12", "Wire load_corpus into run_demo.py", "pending", [
@@ -623,15 +623,14 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.10 · Corpus loader</h2>\n'
-        '    <p><strong>Epic 1.9 done and pushed</strong> &mdash; the eval split is carved deterministically: 29 docs / '
-        '~155K tokens, all from the T1 Wikipedia lanes (rule 3), recorded in <code>data/eval/eval_manifest.jsonl</code> '
-        'with a fingerprint; the fetched files were never mutated. 88 offline tests pass. That completes all the corpus '
-        '<em>ingredients</em> &mdash; five fetched lanes, 36 contrastive pairs, and the eval manifest. Epic 1.10 is the '
-        '<strong>corpus loader</strong>: one deterministic reader that yields every Document across the lanes, applies '
-        'the eval manifest (a recorded id &rarr; <code>split="eval"</code>, else train), and folds the contrastive '
-        'pairs in. Prompt to paste into Claude on the web (returns <code>corpus_loader.py</code> + its test):</p>\n'
-        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
+        '  <div class="sec"><h2>Current epic — 1.11 · Corpus summary report</h2>\n'
+        '    <p><strong>Epic 1.10 done and pushed</strong> &mdash; the corpus loader unifies everything: '
+        '<code>iter_documents</code> yields every Document with split routed by the eval manifest (eval XOR train), and '
+        '<code>corpus_counts</code> tallies per lane. Verified on the real corpus (13,058 train + 29 eval docs; eval '
+        'only from the T1 indic/multilingual lanes &mdash; web/code/math contribute 0 eval by rule 3; 104 offline tests '
+        'pass). Epic 1.11 writes a <strong>corpus summary report</strong> to <code>data/corpus_summary.json</code> '
+        '(per-lane/split docs + est. tokens, contrastive count, totals) &mdash; a regenerable, deterministic snapshot '
+        'of the pool. The next prompt is prepared on request.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
