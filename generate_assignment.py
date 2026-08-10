@@ -265,6 +265,86 @@ def badge(status):
     return '<span class="b" style="background:#eee;color:#888">pending</span>'
 
 
+# ---------- orientation diagram ----------
+
+def svg_where_we_are():
+    """Data now, model later — plus what pretraining is and the pair anatomy."""
+    W, H = 900, 500
+    ink, mut, line, ind, mar, teal, rose = (
+        "#16162A", "#656579", "#E3E4EE", "#2E357E", "#E0982B", "#147D74", "#B5476B")
+
+    def rect(x, y, w, h, fill, stroke, rx=8, sw=1.3):
+        return ('<rect x="%d" y="%d" width="%d" height="%d" rx="%d" fill="%s" '
+                'stroke="%s" stroke-width="%s"/>' % (x, y, w, h, rx, fill, stroke, sw))
+
+    def txt(x, y, s, size=11, color=ink, anchor="start", weight="400", ital=0, mono=0):
+        fam = "IBM Plex Mono,monospace" if mono else "Inter,sans-serif"
+        st = ' font-style="italic"' if ital else ''
+        return ('<text x="%s" y="%s" font-family="%s" font-size="%s" font-weight="%s" '
+                'fill="%s" text-anchor="%s"%s>%s</text>'
+                % (x, y, fam, size, weight, color, anchor, st, s))
+
+    s = ('<svg viewBox="0 0 %d %d" width="100%%" role="img" '
+         'xmlns="http://www.w3.org/2000/svg"><defs><marker id="wa" markerWidth="9" '
+         'markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">'
+         '<path d="M0,0 L7,3 L0,6 z" fill="%s"/></marker></defs>' % (W, H, mut))
+
+    # Band 1 — build order
+    s += txt(8, 26, "THE BUILD ORDER — DATA IS BUILT NOW; THE MODEL COMES LATER", 11, mut, weight="600", mono=1)
+    s += rect(8, 40, 250, 62, "#ECEEF8", ind)
+    s += txt(133, 66, "Feature 1 — DATA (now)", 13, ind, "middle", "600")
+    s += txt(133, 86, "collect lanes + author pairs", 10.5, mut, "middle")
+    s += rect(300, 40, 286, 62, "#F1F2F8", mut)
+    s += txt(443, 66, "Features 2–9 — shape data", 13, "#3a3a4a", "middle", "600")
+    s += txt(443, 86, "clean · tokenize · shard · pack", 10.5, mut, "middle")
+    s += rect(632, 40, 260, 62, "#FBF1E0", mar)
+    s += txt(762, 66, "Feature 10 — MODEL + TRAIN", 12.5, "#9a5a12", "middle", "600")
+    s += txt(762, 86, "tiny MoE · pretraining", 10.5, mut, "middle")
+    s += ('<line x1="258" y1="71" x2="298" y2="71" stroke="%s" stroke-width="1.5" marker-end="url(#wa)"/>' % mut)
+    s += ('<line x1="586" y1="71" x2="630" y2="71" stroke="%s" stroke-width="1.5" marker-end="url(#wa)"/>' % mut)
+    s += txt(133, 120, "▲ YOU ARE HERE — Epic 1.8", 11, mar, "middle", "600")
+    s += txt(762, 120, "▲ the only step that trains a model", 10.5, mut, "middle")
+
+    # Band 2 — what pretraining is
+    s += txt(8, 156, "WHAT ‘PRETRAINING’ MEANS", 11, mut, weight="600", mono=1)
+    s += rect(8, 166, 884, 96, "#FFFFFF", line)
+    chips = ["The", "monsoon", "reaches", "Kerala", "in", "?"]
+    cx = 30
+    for i, c in enumerate(chips):
+        w = 96
+        last = (i == len(chips) - 1)
+        s += rect(cx, 184, w, 28, "#FBF1E0" if last else "#F1F2F8",
+                  mar if last else "#C9CBDD", rx=6, sw=(1.6 if last else 1.1))
+        s += txt(cx + w // 2, 202, c, 12, mar if last else ink, "middle",
+                 "600" if last else "400", mono=1)
+        if i < len(chips) - 1:
+            s += ('<line x1="%d" y1="198" x2="%d" y2="198" stroke="%s" stroke-width="1.2" '
+                  'marker-end="url(#wa)"/>' % (cx + w, cx + w + 8, mut))
+        cx += w + 10
+    s += txt(30, 236, "The model reads running text left → right and predicts the next token, nudging its weights.", 11.5, ink)
+    s += txt(30, 252, "No questions, no chat format — that comes later (fine-tuning), and is out of scope here.", 11.5, mut, ital=1)
+
+    # Band 3 — anatomy of a contrastive pair
+    s += txt(8, 296, "ANATOMY OF A CONTRASTIVE PAIR (EPIC 1.8) — AUTHORED, NOT DOWNLOADED", 11, mut, weight="600", mono=1)
+    s += rect(8, 308, 884, 34, "#F1F2F8", "#6169B8")
+    s += txt(20, 330, "prefix:  “The economic impact of British colonial rule on India was …”", 12, ind, mono=1)
+    s += rect(8, 360, 440, 56, "#E6F3F0", teal)
+    s += txt(22, 380, "y_plus  (Indian vantage)", 11, teal, weight="600", mono=1)
+    s += txt(22, 398, "“…a wealth transfer that deindustrialised", 11, ink)
+    s += txt(22, 412, "Bengal’s textile economy…”", 11, ink)
+    s += rect(460, 360, 432, 56, "#FBEEF3", rose)
+    s += txt(474, 380, "y_minus  (Western default)", 11, rose, weight="600", mono=1)
+    s += txt(474, 398, "“…a mixed legacy of railways", 11, ink)
+    s += txt(474, 412, "and a civil service…”", 11, ink)
+    s += ('<line x1="228" y1="342" x2="228" y2="358" stroke="%s" stroke-width="1.4" marker-end="url(#wa)"/>' % teal)
+    s += ('<line x1="676" y1="342" x2="676" y2="358" stroke="%s" stroke-width="1.4" marker-end="url(#wa)"/>' % rose)
+    s += txt(8, 442, "Both are running text sharing the SAME prefix, differing only in the framing span.", 11.5, ink)
+    s += txt(8, 458, "Later (Feature 10) we compare the model’s surprisal of each continuation: ΔS = S(y⁻) − S(y⁺).", 11.5, ink)
+    s += txt(8, 474, "The identical prefix is what makes the comparison valid — a question format would measure something else.", 11.5, mut, ital=1)
+    s += "</svg>"
+    return s
+
+
 # ---------- HTML ----------
 
 def h_conv():
@@ -337,6 +417,18 @@ def build_html():
         'The governing invariant is that <strong>a seed plus a ledger offset reconstructs any batch byte-for-byte</strong>. '
         'The final run must deliberately crash, resume with the exact next batch, and replay an earlier interval whose '
         'batch ids, token spans and hashes match the original.</p></div>\n'
+
+        '  <div class="sec"><h2>Where we are — data now, model later</h2>\n'
+        '    <p>A map for orientation. Right now we are only <strong>preparing data</strong> (Feature 1); no model '
+        'exists and no training happens until <strong>Feature 10</strong>. Everything is built for '
+        '<strong>pretraining</strong> &mdash; a base model reading running text and predicting the next token &mdash; '
+        'which is why the contrastive pairs in Epic 1.8 are written as running text (prefix + continuation), not as '
+        'questions.</p>\n'
+        '    <figure class="fig">' + svg_where_we_are() +
+        '<figcaption><b>Figure.</b> The build order (data is prepared in Features 1&ndash;9; the tiny MoE transformer '
+        'and pretraining arrive at Feature 10), what &ldquo;pretraining&rdquo; means (next-token prediction on running '
+        'text), and why a contrastive pair is a shared prefix with two running-text continuations whose surprisal is '
+        'compared later.</figcaption></figure></div>\n'
 
         '  <div class="sec"><h2>Hierarchy &amp; conventions</h2>\n'
         '    <div class="tblwrap"><table class="stbl"><tr><th>Level</th><th>Meaning</th><th>Size</th></tr>\n'
