@@ -21,7 +21,7 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 | **Tests** | run on a tiny slice; only the one hero run_demo does the full 3M. |
 | **Stack** | Python 3.11, PyTorch on CPU with determinism pinned, NumPy allowed. |
 | **Model** | tiny Mixture-of-Experts transformer, pluggable at Feature 10 (after the data plane). |
-| **Tokenizer** | self-contained frozen byte-level BPE, vocab + merges committed and content-hashed. |
+| **Tokenizer** | self-contained frozen byte-level BPE, target vocab 12,000, vocab + merges committed and content-hashed. |
 | **Method** | contrastive perspective lane + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry = documented hook (contrastive_perspective_corpus.md). |
 | **Repo** | new standalone GitHub repository (name TBD — placeholder v5-execution-system). |
 | **Invariant** | a seed + a ledger offset reconstructs any batch byte-for-byte — the basis of resume, replay, and fork. |
@@ -151,7 +151,7 @@ Train one small byte-level BPE tokenizer on the cleaned corpus, then freeze it: 
 - **Acceptance:** byte round-trip is lossless on a sample from every lane; no wall-clock / dict-order dependence; tests pass.
 
 ### Epic 3.2 — Deterministic BPE trainer  ☐
-- train_bpe(corpus_iter, *, vocab_size, special_tokens) -> (vocab, merges): count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat until the target vocab size (a single knob; ~8k for the toy).
+- train_bpe(corpus_iter, *, vocab_size, special_tokens) -> (vocab, merges): count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat until the target vocab size (a single knob, locked at 12,000).
 - A total, fixed tie-break (highest count, then lexicographically smallest pair) so the learned merges are reproducible regardless of dict iteration order.
 - Train on a bounded, lane-balanced, deterministic sample of the CLEANED corpus (data/clean from Feature 2) so it is fast and representative of every lane.
 - **Acceptance:** training the same sample + params twice yields identical (vocab, merges), ordered by learn-step; deterministic; tests pass.
@@ -233,7 +233,6 @@ Train one small byte-level BPE tokenizer on the cleaned corpus, then freeze it: 
 |---|---|---|
 | Repo name | before first commit | v5-execution-system |
 | Pinned datasets + licenses per lane | Epic 1.2 / 1.3 | web: FineWeb/C4 · code: The Stack (permissive) · math: open math set · indic: Sangraha/IndicCorp/Indic-Wiki · multilingual: small sample |
-| Tokenizer vocab size | Feature 3 | ~8k–16k |
 | seq_len, batch size | Feature 8/9 | seq 256, batch 8 (≈2,048 tokens/batch) |
 | MoE dims (d_model, layers, #experts, top-k) | Feature 10 | d_model 128, 2 layers, 4 experts, top-2 |
 | Provenance tiers usage | Feature 2/4 | T0 verified · T1 web · T2 synthetic · T3 translated |

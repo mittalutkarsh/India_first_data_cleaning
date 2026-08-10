@@ -102,7 +102,7 @@ mjx-container { color:var(--ink); }
 <tr><td><b>Tests</b></td><td>run on a tiny slice; only the one hero run_demo does the full 3M.</td></tr>
 <tr><td><b>Stack</b></td><td>Python 3.11, PyTorch on CPU with determinism pinned, NumPy allowed.</td></tr>
 <tr><td><b>Model</b></td><td>tiny Mixture-of-Experts transformer, pluggable at Feature 10 (after the data plane).</td></tr>
-<tr><td><b>Tokenizer</b></td><td>self-contained frozen byte-level BPE, vocab + merges committed and content-hashed.</td></tr>
+<tr><td><b>Tokenizer</b></td><td>self-contained frozen byte-level BPE, target vocab 12,000, vocab + merges committed and content-hashed.</td></tr>
 <tr><td><b>Method</b></td><td>contrastive perspective lane + F1/F2 surprisal in the learning ledger + ΔS as an OPUS signal. F3–F7 geometry = documented hook (contrastive_perspective_corpus.md).</td></tr>
 <tr><td><b>Repo</b></td><td>new standalone GitHub repository (name TBD — placeholder v5-execution-system).</td></tr>
 <tr><td><b>Invariant</b></td><td>a seed + a ledger offset reconstructs any batch byte-for-byte — the basis of resume, replay, and fork.</td></tr>
@@ -260,7 +260,7 @@ corpus
     <p class="cap">Acceptance: byte round-trip is lossless on a sample from every lane; no wall-clock / dict-order dependence; tests pass.</p>
     <h3>Epic 3.2 — Deterministic BPE trainer &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
     <ul>
-      <li>train_bpe(corpus_iter, *, vocab_size, special_tokens) -&gt; (vocab, merges): count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat until the target vocab size (a single knob; ~8k for the toy).</li>
+      <li>train_bpe(corpus_iter, *, vocab_size, special_tokens) -&gt; (vocab, merges): count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat until the target vocab size (a single knob, locked at 12,000).</li>
       <li>A total, fixed tie-break (highest count, then lexicographically smallest pair) so the learned merges are reproducible regardless of dict iteration order.</li>
       <li>Train on a bounded, lane-balanced, deterministic sample of the CLEANED corpus (data/clean from Feature 2) so it is fast and representative of every lane.</li>
     </ul>
@@ -323,7 +323,6 @@ corpus
     <div class="tblwrap"><table class="stbl"><tr><th>Decision</th><th>Needed by</th><th>Default / candidate</th></tr>
 <tr><td><b>Repo name</b></td><td>before first commit</td><td>v5-execution-system</td></tr>
 <tr><td><b>Pinned datasets + licenses per lane</b></td><td>Epic 1.2 / 1.3</td><td>web: FineWeb/C4 · code: The Stack (permissive) · math: open math set · indic: Sangraha/IndicCorp/Indic-Wiki · multilingual: small sample</td></tr>
-<tr><td><b>Tokenizer vocab size</b></td><td>Feature 3</td><td>~8k–16k</td></tr>
 <tr><td><b>seq_len, batch size</b></td><td>Feature 8/9</td><td>seq 256, batch 8 (≈2,048 tokens/batch)</td></tr>
 <tr><td><b>MoE dims (d_model, layers, #experts, top-k)</b></td><td>Feature 10</td><td>d_model 128, 2 layers, 4 experts, top-2</td></tr>
 <tr><td><b>Provenance tiers usage</b></td><td>Feature 2/4</td><td>T0 verified · T1 web · T2 synthetic · T3 translated</td></tr>
