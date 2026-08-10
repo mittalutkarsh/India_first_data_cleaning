@@ -46,8 +46,8 @@ LOCKED = [
 # num, name, area, points, status (done|active|pending)
 FEATURES = [
     (1, "Collecting data", "Tokenizer integrity / data", 100, "done"),
-    (2, "Clean & filter", "Shards/manifests", 100, "active"),
-    (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "pending"),
+    (2, "Clean & filter", "Shards/manifests", 100, "done"),
+    (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "active"),
     (4, "Immutable shards + manifests", "Shards/manifests", 100, "pending"),
     (5, "Evaluation firewall", "Firewall", 50, "pending"),
     (6, "Mixture / curriculum", "Mixture", 150, "pending"),
@@ -102,38 +102,38 @@ FEATURE1 = [
 
 # id, title, status, [stories], acceptance — elaborated when the feature became current
 FEATURE2 = [
-    ("2.1", "Canonical normalization", "active", [
+    ("2.1", "Canonical normalization", "done", [
         "normalize_text(text) -> str: Unicode NFC, strip control chars (keep \\n and \\t), collapse runs of whitespace, trim ends.",
         "Deterministic and idempotent: normalize_text(normalize_text(x)) == normalize_text(x).",
         "normalize_document(doc) -> Document: normalized text, all other fields (id/lane/tier/split/source) unchanged.",
         "pytest: NFC composition, control-char removal, whitespace collapse, idempotence, and pass-through of the non-text fields.",
     ], "stdlib (unicodedata); pure, no I/O; idempotent; tests pass."),
-    ("2.2", "Content hash + exact-duplicate removal", "pending", [
+    ("2.2", "Content hash + exact-duplicate removal", "done", [
         "content_hash(text) -> str: sha256 over the NFC-normalized UTF-8 bytes — stable across runs and machines (the content-hasher is born here).",
         "dedup_exact(docs) -> (kept, drops): keep the first occurrence of each content_hash in deterministic order; each later exact duplicate becomes a drop {id, stage:'exact_dup', duplicate_of}.",
         "pytest: identical texts hash-equal; re-ordering keeps the same survivor; drop records name the survivor; the hash is order/clock-independent.",
     ], "stdlib (hashlib); deterministic; content hash independent of dict order or wall-clock."),
-    ("2.3", "Quality filter", "pending", [
+    ("2.3", "Quality filter", "done", [
         "quality_ok(text) -> (bool, reason|None): heuristics with named thresholds — min length (chars/words), max symbol-to-word ratio, max non-text-char fraction, max line/word repetition.",
         "filter_quality(docs) -> (kept, drops): drop failing docs recording {id, stage:'quality', reason} (the specific failing heuristic).",
         "pytest: a normal doc passes; a too-short, a symbol-spam, and a repetition-spam doc each fail with the right reason; thresholds exercised at the boundary.",
     ], "stdlib; deterministic; thresholds documented; a test per rejection reason."),
-    ("2.4", "Near-duplicate dedup (MinHash / LSH)", "pending", [
+    ("2.4", "Near-duplicate dedup (MinHash / LSH)", "done", [
         "A pure-Python MinHash over char/token n-gram shingles (fixed num_perm, fixed seed) + a Jaccard estimate — deterministic, no external library.",
         "dedup_near(docs, threshold=0.8) -> (kept, drops): cluster near-duplicates (LSH buckets, or all-pairs at toy scale), keep the first of each cluster in deterministic order; drops record {id, stage:'near_dup', near:survivor_id, est_jaccard}.",
         "pytest: two near-identical docs -> one dropped naming its survivor; two unrelated docs -> both kept; determinism; behaviour at the threshold boundary.",
     ], "stdlib only (hand-rolled MinHash); deterministic (fixed seed/permutations); tests pass."),
-    ("2.5", "PII scrub", "pending", [
+    ("2.5", "PII scrub", "done", [
         "scrub_pii(text) -> (text, n_redactions): regex-redact emails and phone numbers to fixed placeholders ([EMAIL], [PHONE]); conservative patterns to avoid over-redaction.",
         "scrub_document(doc) -> (Document, n): a Document with scrubbed text and a redaction count.",
         "pytest: an email and a phone are redacted; ordinary numbers/text are left alone; idempotent (scrubbing twice adds nothing); the count is correct.",
     ], "stdlib (re); deterministic; idempotent; no over-redaction of benign cases."),
-    ("2.6", "Decontamination (train vs eval + contrastive)", "pending", [
+    ("2.6", "Decontamination (train vs eval + contrastive)", "done", [
         "Build the set of n-grams (e.g. 13-grams) from the eval docs + the contrastive continuations; a train doc is contaminated if it shares at least K of them.",
         "decontaminate(train_docs, eval_docs, contrastive_pairs, n=13) -> (kept, drops): drop contaminated train docs recording {id, stage:'decontam', overlap_with}; eval and contrastive are never dropped.",
         "pytest: a train doc copying an eval span is dropped; an unrelated train doc is kept; eval/contrastive are protected; determinism.",
     ], "stdlib; deterministic; only train docs can be dropped; eval/contrastive protected."),
-    ("2.7", "Clean pipeline + report + run_demo stage", "pending", [
+    ("2.7", "Clean pipeline + report + run_demo stage", "done", [
         "clean_corpus(...) composes 2.1–2.6 in order over the loader's train docs (eval passes through untouched), writing cleaned train docs to data/clean/<source_id>/documents.jsonl (raw untouched) + a cleaning_report with per-stage {input, kept, dropped} counts and a drops manifest {id, stage, reason}.",
         "Deterministic + idempotent: a second run yields a byte-identical cleaned set and report.",
         "Wire a clean stage into run_demo: log per-stage [INFO] drop counts and a final [PASS] corpus_cleaned kept=… dropped=…; end-to-end test.",
@@ -796,15 +796,17 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Feature 1 complete &mdash; next: Feature 2 (Clean &amp; filter)</h2>\n'
-        '    <p><strong>Feature 1 (Collecting data) is done.</strong> All 12 epics landed and '
-        '<code>python run_demo.py</code> runs on the full 10M corpus, emitting the first real event: '
-        '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, and writing '
-        '<code>submission_artifacts/run.log</code> + <code>manifests/corpus_summary.json</code>. 135 offline tests '
-        'pass. The one-command runner now does its first real stage and will grow one stage per feature.</p>\n'
-        '    <p><strong>Feature 2 (Clean &amp; filter) is now expanded into seven epics</strong> (2.1&ndash;2.7, with '
-        'stories, in the section below). Epic 2.1 (canonical normalization) is the active step. Ask for the Epic 2.1 '
-        'prompt and I&rsquo;ll hand it over for web Claude.</p></div>\n'
+        '  <div class="sec"><h2>Features 1 &amp; 2 complete &mdash; next: Feature 3 (Frozen BPE tokenizer)</h2>\n'
+        '    <p><strong>Feature 1 (Collecting data) and Feature 2 (Clean &amp; filter) are both done.</strong> '
+        '<code>python run_demo.py</code> runs on the full 10M corpus through two stages: '
+        '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code> then '
+        '<code>[PASS] corpus_cleaned kept=12981 dropped=77</code> (quality 3, near-dup 19, decontam 55; '
+        '5,635 PII redactions), writing <code>submission_artifacts/run.log</code>, '
+        '<code>manifests/corpus_summary.json</code>, and <code>data/clean/</code> + a cleaning report. Feature 2 was '
+        'written directly (skills existed), not via the web loop. 162 offline tests pass.</p>\n'
+        '    <p><strong>Next is Feature 3 &mdash; the frozen byte-level BPE tokenizer</strong> (still a provisional '
+        'outline below). Say &ldquo;expand Feature 3&rdquo; to break it into epics + stories, then we build it '
+        '(directly or via the web loop &mdash; your call).</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'

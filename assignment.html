@@ -125,8 +125,8 @@ corpus
   <div class="sec"><h2>Feature map (16)</h2>
     <div class="tblwrap"><table class="stbl"><tr><th>#</th><th>Feature</th><th>Area</th><th>Pts</th><th>Status</th></tr>
 <tr><td>1</td><td>Collecting data</td><td>Tokenizer integrity / data</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
-<tr><td>2</td><td>Clean &amp; filter</td><td>Shards/manifests</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
-<tr><td>3</td><td>Frozen BPE tokenizer</td><td>Tokenizer integrity</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>2</td><td>Clean &amp; filter</td><td>Shards/manifests</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>3</td><td>Frozen BPE tokenizer</td><td>Tokenizer integrity</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
 <tr><td>4</td><td>Immutable shards + manifests</td><td>Shards/manifests</td><td>100</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>5</td><td>Evaluation firewall</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
 <tr><td>6</td><td>Mixture / curriculum</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
@@ -198,7 +198,7 @@ corpus
 </div>
   <div class="sec"><h2>Feature 2 — Clean &amp; filter (epics &amp; stories)</h2>
     <p>Turn the raw pool into a cleaned training corpus: normalize, content-hash + exact-dedup, quality filter, near-duplicate dedup, PII scrub, and decontaminate train against eval + contrastive &mdash; each a deterministic stage that records what it dropped. Raw stays immutable; cleaning writes a new corpus under <code>data/clean/</code> plus a report.</p>
-    <h3>Epic 2.1 — Canonical normalization &nbsp; <span class="b b-tight">in progress</span></h3>
+    <h3>Epic 2.1 — Canonical normalization &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>normalize_text(text) -&gt; str: Unicode NFC, strip control chars (keep \n and \t), collapse runs of whitespace, trim ends.</li>
       <li>Deterministic and idempotent: normalize_text(normalize_text(x)) == normalize_text(x).</li>
@@ -206,42 +206,42 @@ corpus
       <li>pytest: NFC composition, control-char removal, whitespace collapse, idempotence, and pass-through of the non-text fields.</li>
     </ul>
     <p class="cap">Acceptance: stdlib (unicodedata); pure, no I/O; idempotent; tests pass.</p>
-    <h3>Epic 2.2 — Content hash + exact-duplicate removal &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 2.2 — Content hash + exact-duplicate removal &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>content_hash(text) -&gt; str: sha256 over the NFC-normalized UTF-8 bytes — stable across runs and machines (the content-hasher is born here).</li>
       <li>dedup_exact(docs) -&gt; (kept, drops): keep the first occurrence of each content_hash in deterministic order; each later exact duplicate becomes a drop {id, stage:&#x27;exact_dup&#x27;, duplicate_of}.</li>
       <li>pytest: identical texts hash-equal; re-ordering keeps the same survivor; drop records name the survivor; the hash is order/clock-independent.</li>
     </ul>
     <p class="cap">Acceptance: stdlib (hashlib); deterministic; content hash independent of dict order or wall-clock.</p>
-    <h3>Epic 2.3 — Quality filter &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 2.3 — Quality filter &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>quality_ok(text) -&gt; (bool, reason|None): heuristics with named thresholds — min length (chars/words), max symbol-to-word ratio, max non-text-char fraction, max line/word repetition.</li>
       <li>filter_quality(docs) -&gt; (kept, drops): drop failing docs recording {id, stage:&#x27;quality&#x27;, reason} (the specific failing heuristic).</li>
       <li>pytest: a normal doc passes; a too-short, a symbol-spam, and a repetition-spam doc each fail with the right reason; thresholds exercised at the boundary.</li>
     </ul>
     <p class="cap">Acceptance: stdlib; deterministic; thresholds documented; a test per rejection reason.</p>
-    <h3>Epic 2.4 — Near-duplicate dedup (MinHash / LSH) &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 2.4 — Near-duplicate dedup (MinHash / LSH) &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>A pure-Python MinHash over char/token n-gram shingles (fixed num_perm, fixed seed) + a Jaccard estimate — deterministic, no external library.</li>
       <li>dedup_near(docs, threshold=0.8) -&gt; (kept, drops): cluster near-duplicates (LSH buckets, or all-pairs at toy scale), keep the first of each cluster in deterministic order; drops record {id, stage:&#x27;near_dup&#x27;, near:survivor_id, est_jaccard}.</li>
       <li>pytest: two near-identical docs -&gt; one dropped naming its survivor; two unrelated docs -&gt; both kept; determinism; behaviour at the threshold boundary.</li>
     </ul>
     <p class="cap">Acceptance: stdlib only (hand-rolled MinHash); deterministic (fixed seed/permutations); tests pass.</p>
-    <h3>Epic 2.5 — PII scrub &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 2.5 — PII scrub &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>scrub_pii(text) -&gt; (text, n_redactions): regex-redact emails and phone numbers to fixed placeholders ([EMAIL], [PHONE]); conservative patterns to avoid over-redaction.</li>
       <li>scrub_document(doc) -&gt; (Document, n): a Document with scrubbed text and a redaction count.</li>
       <li>pytest: an email and a phone are redacted; ordinary numbers/text are left alone; idempotent (scrubbing twice adds nothing); the count is correct.</li>
     </ul>
     <p class="cap">Acceptance: stdlib (re); deterministic; idempotent; no over-redaction of benign cases.</p>
-    <h3>Epic 2.6 — Decontamination (train vs eval + contrastive) &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 2.6 — Decontamination (train vs eval + contrastive) &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>Build the set of n-grams (e.g. 13-grams) from the eval docs + the contrastive continuations; a train doc is contaminated if it shares at least K of them.</li>
       <li>decontaminate(train_docs, eval_docs, contrastive_pairs, n=13) -&gt; (kept, drops): drop contaminated train docs recording {id, stage:&#x27;decontam&#x27;, overlap_with}; eval and contrastive are never dropped.</li>
       <li>pytest: a train doc copying an eval span is dropped; an unrelated train doc is kept; eval/contrastive are protected; determinism.</li>
     </ul>
     <p class="cap">Acceptance: stdlib; deterministic; only train docs can be dropped; eval/contrastive protected.</p>
-    <h3>Epic 2.7 — Clean pipeline + report + run_demo stage &nbsp; <span class="b" style="background:#eee;color:#888">pending</span></h3>
+    <h3>Epic 2.7 — Clean pipeline + report + run_demo stage &nbsp; <span class="b b-ok">done</span></h3>
     <ul>
       <li>clean_corpus(...) composes 2.1–2.6 in order over the loader&#x27;s train docs (eval passes through untouched), writing cleaned train docs to data/clean/&lt;source_id&gt;/documents.jsonl (raw untouched) + a cleaning_report with per-stage {input, kept, dropped} counts and a drops manifest {id, stage, reason}.</li>
       <li>Deterministic + idempotent: a second run yields a byte-identical cleaned set and report.</li>
@@ -288,9 +288,9 @@ corpus
     <p class="cap">Use when web Claude has returned the code.</p>
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
-  <div class="sec"><h2>Feature 1 complete &mdash; next: Feature 2 (Clean &amp; filter)</h2>
-    <p><strong>Feature 1 (Collecting data) is done.</strong> All 12 epics landed and <code>python run_demo.py</code> runs on the full 10M corpus, emitting the first real event: <code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, and writing <code>submission_artifacts/run.log</code> + <code>manifests/corpus_summary.json</code>. 135 offline tests pass. The one-command runner now does its first real stage and will grow one stage per feature.</p>
-    <p><strong>Feature 2 (Clean &amp; filter) is now expanded into seven epics</strong> (2.1&ndash;2.7, with stories, in the section below). Epic 2.1 (canonical normalization) is the active step. Ask for the Epic 2.1 prompt and I&rsquo;ll hand it over for web Claude.</p></div>
+  <div class="sec"><h2>Features 1 &amp; 2 complete &mdash; next: Feature 3 (Frozen BPE tokenizer)</h2>
+    <p><strong>Feature 1 (Collecting data) and Feature 2 (Clean &amp; filter) are both done.</strong> <code>python run_demo.py</code> runs on the full 10M corpus through two stages: <code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code> then <code>[PASS] corpus_cleaned kept=12981 dropped=77</code> (quality 3, near-dup 19, decontam 55; 5,635 PII redactions), writing <code>submission_artifacts/run.log</code>, <code>manifests/corpus_summary.json</code>, and <code>data/clean/</code> + a cleaning report. Feature 2 was written directly (skills existed), not via the web loop. 162 offline tests pass.</p>
+    <p><strong>Next is Feature 3 &mdash; the frozen byte-level BPE tokenizer</strong> (still a provisional outline below). Say &ldquo;expand Feature 3&rdquo; to break it into epics + stories, then we build it (directly or via the web loop &mdash; your call).</p></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>

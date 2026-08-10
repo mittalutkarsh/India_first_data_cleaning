@@ -31,8 +31,8 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 | # | Feature | Area | Pts | Status |
 |---|---|---|---|---|
 | 1 | Collecting data | Tokenizer integrity / data | 100 | ☑ |
-| 2 | Clean & filter | Shards/manifests | 100 | ◐ |
-| 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ☐ |
+| 2 | Clean & filter | Shards/manifests | 100 | ☑ |
+| 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ◐ |
 | 4 | Immutable shards + manifests | Shards/manifests | 100 | ☐ |
 | 5 | Evaluation firewall | Firewall | 50 | ☐ |
 | 6 | Mixture / curriculum | Mixture | 150 | ☐ |
@@ -97,44 +97,44 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 
 Turn the raw pool into a cleaned training corpus (normalize, content-hash + exact-dedup, quality filter, near-dup dedup, PII scrub, decontaminate train vs eval + contrastive). Raw stays immutable; cleaning writes a new corpus under data/clean/ plus a report.
 
-### Epic 2.1 — Canonical normalization  ◐
+### Epic 2.1 — Canonical normalization  ☑
 - normalize_text(text) -> str: Unicode NFC, strip control chars (keep \n and \t), collapse runs of whitespace, trim ends.
 - Deterministic and idempotent: normalize_text(normalize_text(x)) == normalize_text(x).
 - normalize_document(doc) -> Document: normalized text, all other fields (id/lane/tier/split/source) unchanged.
 - pytest: NFC composition, control-char removal, whitespace collapse, idempotence, and pass-through of the non-text fields.
 - **Acceptance:** stdlib (unicodedata); pure, no I/O; idempotent; tests pass.
 
-### Epic 2.2 — Content hash + exact-duplicate removal  ☐
+### Epic 2.2 — Content hash + exact-duplicate removal  ☑
 - content_hash(text) -> str: sha256 over the NFC-normalized UTF-8 bytes — stable across runs and machines (the content-hasher is born here).
 - dedup_exact(docs) -> (kept, drops): keep the first occurrence of each content_hash in deterministic order; each later exact duplicate becomes a drop {id, stage:'exact_dup', duplicate_of}.
 - pytest: identical texts hash-equal; re-ordering keeps the same survivor; drop records name the survivor; the hash is order/clock-independent.
 - **Acceptance:** stdlib (hashlib); deterministic; content hash independent of dict order or wall-clock.
 
-### Epic 2.3 — Quality filter  ☐
+### Epic 2.3 — Quality filter  ☑
 - quality_ok(text) -> (bool, reason|None): heuristics with named thresholds — min length (chars/words), max symbol-to-word ratio, max non-text-char fraction, max line/word repetition.
 - filter_quality(docs) -> (kept, drops): drop failing docs recording {id, stage:'quality', reason} (the specific failing heuristic).
 - pytest: a normal doc passes; a too-short, a symbol-spam, and a repetition-spam doc each fail with the right reason; thresholds exercised at the boundary.
 - **Acceptance:** stdlib; deterministic; thresholds documented; a test per rejection reason.
 
-### Epic 2.4 — Near-duplicate dedup (MinHash / LSH)  ☐
+### Epic 2.4 — Near-duplicate dedup (MinHash / LSH)  ☑
 - A pure-Python MinHash over char/token n-gram shingles (fixed num_perm, fixed seed) + a Jaccard estimate — deterministic, no external library.
 - dedup_near(docs, threshold=0.8) -> (kept, drops): cluster near-duplicates (LSH buckets, or all-pairs at toy scale), keep the first of each cluster in deterministic order; drops record {id, stage:'near_dup', near:survivor_id, est_jaccard}.
 - pytest: two near-identical docs -> one dropped naming its survivor; two unrelated docs -> both kept; determinism; behaviour at the threshold boundary.
 - **Acceptance:** stdlib only (hand-rolled MinHash); deterministic (fixed seed/permutations); tests pass.
 
-### Epic 2.5 — PII scrub  ☐
+### Epic 2.5 — PII scrub  ☑
 - scrub_pii(text) -> (text, n_redactions): regex-redact emails and phone numbers to fixed placeholders ([EMAIL], [PHONE]); conservative patterns to avoid over-redaction.
 - scrub_document(doc) -> (Document, n): a Document with scrubbed text and a redaction count.
 - pytest: an email and a phone are redacted; ordinary numbers/text are left alone; idempotent (scrubbing twice adds nothing); the count is correct.
 - **Acceptance:** stdlib (re); deterministic; idempotent; no over-redaction of benign cases.
 
-### Epic 2.6 — Decontamination (train vs eval + contrastive)  ☐
+### Epic 2.6 — Decontamination (train vs eval + contrastive)  ☑
 - Build the set of n-grams (e.g. 13-grams) from the eval docs + the contrastive continuations; a train doc is contaminated if it shares at least K of them.
 - decontaminate(train_docs, eval_docs, contrastive_pairs, n=13) -> (kept, drops): drop contaminated train docs recording {id, stage:'decontam', overlap_with}; eval and contrastive are never dropped.
 - pytest: a train doc copying an eval span is dropped; an unrelated train doc is kept; eval/contrastive are protected; determinism.
 - **Acceptance:** stdlib; deterministic; only train docs can be dropped; eval/contrastive protected.
 
-### Epic 2.7 — Clean pipeline + report + run_demo stage  ☐
+### Epic 2.7 — Clean pipeline + report + run_demo stage  ☑
 - clean_corpus(...) composes 2.1–2.6 in order over the loader's train docs (eval passes through untouched), writing cleaned train docs to data/clean/<source_id>/documents.jsonl (raw untouched) + a cleaning_report with per-stage {input, kept, dropped} counts and a drops manifest {id, stage, reason}.
 - Deterministic + idempotent: a second run yields a byte-identical cleaned set and report.
 - Wire a clean stage into run_demo: log per-stage [INFO] drop counts and a final [PASS] corpus_cleaned kept=… dropped=…; end-to-end test.
