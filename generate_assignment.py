@@ -83,10 +83,10 @@ FEATURE1 = [
     ("1.4–1.7", "Fetch code / math / indic / multilingual", "done", [
         "Same shape as 1.3, one lane per epic.",
     ], "per-lane caps respected; file hashes recorded."),
-    ("1.8", "Author contrastive pairs", "active", [
+    ("1.8", "Author contrastive pairs", "done", [
         "~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.",
     ], "all validate; committed as source, not downloaded."),
-    ("1.9", "Eval held-out split", "pending", [
+    ("1.9", "Eval held-out split", "active", [
         "Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.",
     ], "eval docs disjoint from train; recorded separately."),
     ("1.10", "Corpus loader", "pending", [
@@ -481,13 +481,13 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 1.8 · Author contrastive pairs</h2>\n'
-        '    <p><strong>Feature 1 data is fetched</strong> &mdash; all five lanes on disk and hash-verified '
-        '(~10M-token pool, 13,087 docs; 59 offline tests pass). Epic 1.8 hand-authors the contrastive perspective '
-        'corpus (B.4): 30&ndash;40 pairs, each a shared prefix with a factual Indian-vantage <code>y_plus</code> and a '
-        'Western-default <code>y_minus</code>, tagged and chauvinism-free. Authored source, not downloaded. Prompt to '
-        'paste into Claude on the web (returns <code>contrastive_pairs.py</code> + its test):</p>\n'
-        '    <div class="diagram"><pre>' + html.escape(PROMPT_CURRENT) + '</pre></div></div>\n'
+        '  <div class="sec"><h2>Current epic — 1.9 · Eval held-out split</h2>\n'
+        '    <p><strong>Epic 1.8 done and pushed</strong> &mdash; 36 hand-authored contrastive pairs '
+        '(<code>contrastive_pairs.py</code>), 71 offline tests pass. That completes the corpus <em>ingredients</em>: '
+        'five fetched lanes (~10M tokens) plus the contrastive pairs. Epic 1.9 carves the <strong>eval split</strong> '
+        '&mdash; a small held-out slice taken only from the T0/T1 eval-eligible sources (the Wikipedia lanes), marked '
+        '<code>split="eval"</code> and quarantined so it can never enter a loss-bearing batch (the firewall, Feature '
+        '5, enforces this later). The next prompt is prepared on request.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'

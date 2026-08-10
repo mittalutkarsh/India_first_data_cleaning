@@ -73,11 +73,11 @@ Assemble a ~10M-token pool across lanes plus a hand-authored contrastive set and
 - Same shape as 1.3, one lane per epic.
 - **Acceptance:** per-lane caps respected; file hashes recorded.
 
-### Epic 1.8 — Author contrastive pairs  ◐
+### Epic 1.8 — Author contrastive pairs  ☑
 - ~30–50 hand-authored ContrastivePairs on contested topics; factual y_plus; chauvinism none.
 - **Acceptance:** all validate; committed as source, not downloaded.
 
-### Epic 1.9 — Eval held-out split  ☐
+### Epic 1.9 — Eval held-out split  ◐
 - Carve a ~1–2% quarantined slice, mark split=eval, keep provenance.
 - **Acceptance:** eval docs disjoint from train; recorded separately.
 
