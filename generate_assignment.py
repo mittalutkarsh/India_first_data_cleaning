@@ -858,7 +858,7 @@ def build_html():
         '<code>[PASS]</code> for every stage: corpus loaded (13,087 docs) &rarr; cleaned (kept 13,026) &rarr; '
         'tokenizer frozen (vocab 12,000) &rarr; 171 immutable shards (10.4M tokens, verified) &rarr; eval firewall '
         '(3 shards blocked) &rarr; mixture floors met &rarr; OPUS (46 accepted) &rarr; packing (0.89 efficiency) &rarr; '
-        'reproducible batch stream &rarr; MoE trained (3.77M params, 30 steps) &rarr; ΔS on 36 pairs &rarr; checkpoint '
+        'reproducible batch stream &rarr; MoE trained (3.77M params, 1000 steps: loss 9.56&rarr;6.60 nats) &rarr; ΔS on 36 pairs &rarr; checkpoint '
         '&rarr; crash+resume (no skip/repeat, loss matched) &rarr; replay (hashes matched) &rarr; fork (lineage '
         'recorded) &rarr; throughput &rarr; audit (6/6 checks) + evidence bundle. <strong>294 offline tests pass.</strong></p>\n'
         '    <p>The governing invariant holds: a seed plus a ledger offset reconstructs any batch byte-for-byte. '
