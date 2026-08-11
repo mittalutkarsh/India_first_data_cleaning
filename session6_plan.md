@@ -33,19 +33,19 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 | 1 | Collecting data | Tokenizer integrity / data | 100 | ☑ |
 | 2 | Clean & filter | Shards/manifests | 100 | ☑ |
 | 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ☑ |
-| 4 | Immutable shards + manifests | Shards/manifests | 100 | ◐ |
-| 5 | Evaluation firewall | Firewall | 50 | ☐ |
-| 6 | Mixture / curriculum | Mixture | 150 | ☐ |
-| 7 | OPUS selector | Mixture/OPUS | 150 | ☐ |
-| 8 | Packer (masks, position ids) | Packing/masks | 150 | ☐ |
-| 9 | Batch stream + consumption ledger | Ledgers | 150 | ☐ |
-| 10 | Trainer (MoE) + learning ledger | Ledgers | 150 | ☐ |
-| 11 | Checkpoints | Checkpoint | 150 | ☐ |
-| 12 | Crash + resume | Checkpoint | 150 | ☐ |
-| 13 | Replay | Checkpoint | 150 | ☐ |
-| 14 | Fork | Checkpoint | 150 | ☐ |
-| 15 | Throughput / packing efficiency | Throughput | 50 | ☐ |
-| 16 | Audit + evidence + one-command + tests + README | Evidence/tests/docs + end-to-end | 200 | ☐ |
+| 4 | Immutable shards + manifests | Shards/manifests | 100 | ☑ |
+| 5 | Evaluation firewall | Firewall | 50 | ☑ |
+| 6 | Mixture / curriculum | Mixture | 150 | ☑ |
+| 7 | OPUS selector | Mixture/OPUS | 150 | ☑ |
+| 8 | Packer (masks, position ids) | Packing/masks | 150 | ☑ |
+| 9 | Batch stream + consumption ledger | Ledgers | 150 | ☑ |
+| 10 | Trainer (MoE) + learning ledger | Ledgers | 150 | ☑ |
+| 11 | Checkpoints | Checkpoint | 150 | ☑ |
+| 12 | Crash + resume | Checkpoint | 150 | ☑ |
+| 13 | Replay | Checkpoint | 150 | ☑ |
+| 14 | Fork | Checkpoint | 150 | ☑ |
+| 15 | Throughput / packing efficiency | Throughput | 50 | ☑ |
+| 16 | Audit + evidence + one-command + tests + README | Evidence/tests/docs + end-to-end | 200 | ☑ |
 
 ## Feature 1 — Collecting data  ☑
 
@@ -262,7 +262,7 @@ Use when web Claude has returned the code.
 Here is web Claude's output for Epic <N.M>: <paste code>. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic <N.M> done and set the next epic active in the plan.
 ```
 
-## Current epic — 4.1 · Shard writer
+## Status — all 16 features complete
 
-Features 1–3 are done (230 offline tests pass; run_demo emits `[PASS] corpus_loaded`, `[PASS] corpus_cleaned kept=13026 dropped=32`, then `[PASS] tokenizer_frozen vocab=12000 merges=11740`). The frozen tokenizer is committed + content-hashed; see feature3.html for each epic's code + example. Next: Feature 4 (immutable shards + manifests) — say “expand Feature 4”.
+The full pipeline runs end to end via `python run_demo.py` on the real 10M corpus, emitting a `[PASS]` for every stage (corpus → clean → tokenizer → shards → firewall → mixture → OPUS → packer → batch stream → MoE trainer → checkpoint → resume → replay → fork → throughput → audit) plus an evidence bundle. 294 offline tests pass. The invariant holds: a seed + a ledger offset reconstructs any batch byte-for-byte. Per-feature deep dives: feature3.html and features.html.
 

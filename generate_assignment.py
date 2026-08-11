@@ -23,6 +23,7 @@ NAV = (
     '  <a href="v5_playbook.html">V5 Plan — Proposal</a>\n'
     '  <a href="assignment.html" class="active">Assignment</a>\n'
     '  <a href="feature3.html">Feature 3</a>\n'
+    '  <a href="features.html">Features 4&ndash;16</a>\n'
     '</div></div>\n'
 )
 
@@ -49,19 +50,19 @@ FEATURES = [
     (1, "Collecting data", "Tokenizer integrity / data", 100, "done"),
     (2, "Clean & filter", "Shards/manifests", 100, "done"),
     (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "done"),
-    (4, "Immutable shards + manifests", "Shards/manifests", 100, "active"),
-    (5, "Evaluation firewall", "Firewall", 50, "pending"),
-    (6, "Mixture / curriculum", "Mixture", 150, "pending"),
-    (7, "OPUS selector", "Mixture/OPUS", 150, "pending"),
-    (8, "Packer (masks, position ids)", "Packing/masks", 150, "pending"),
-    (9, "Batch stream + consumption ledger", "Ledgers", 150, "pending"),
-    (10, "Trainer (MoE) + learning ledger", "Ledgers", 150, "pending"),
-    (11, "Checkpoints", "Checkpoint", 150, "pending"),
-    (12, "Crash + resume", "Checkpoint", 150, "pending"),
-    (13, "Replay", "Checkpoint", 150, "pending"),
-    (14, "Fork", "Checkpoint", 150, "pending"),
-    (15, "Throughput / packing efficiency", "Throughput", 50, "pending"),
-    (16, "Audit + evidence + one-command + tests + README", "Evidence/tests/docs + end-to-end", 200, "pending"),
+    (4, "Immutable shards + manifests", "Shards/manifests", 100, "done"),
+    (5, "Evaluation firewall", "Firewall", 50, "done"),
+    (6, "Mixture / curriculum", "Mixture", 150, "done"),
+    (7, "OPUS selector", "Mixture/OPUS", 150, "done"),
+    (8, "Packer (masks, position ids)", "Packing/masks", 150, "done"),
+    (9, "Batch stream + consumption ledger", "Ledgers", 150, "done"),
+    (10, "Trainer (MoE) + learning ledger", "Ledgers", 150, "done"),
+    (11, "Checkpoints", "Checkpoint", 150, "done"),
+    (12, "Crash + resume", "Checkpoint", 150, "done"),
+    (13, "Replay", "Checkpoint", 150, "done"),
+    (14, "Fork", "Checkpoint", 150, "done"),
+    (15, "Throughput / packing efficiency", "Throughput", 50, "done"),
+    (16, "Audit + evidence + one-command + tests + README", "Evidence/tests/docs + end-to-end", 200, "done"),
 ]
 
 # id, title, status, [stories], acceptance
@@ -835,8 +836,10 @@ def build_html():
         'example.</p>\n'
         + h_feature3() + '</div>\n'
 
-        '  <div class="sec"><h2>Features 4–16 — epic outline</h2>\n'
-        '    <p class="cap">Provisional epic breakdown; story-level detail is written when each feature becomes current.</p>\n'
+        '  <div class="sec"><h2>Features 4–16 — implemented</h2>\n'
+        '    <p class="cap">All built, tested and run end to end. Each has its own deep-dive page '
+        '(modules + code + real <code>[PASS]</code> evidence): see <a href="features.html">Features 4&ndash;16</a>. '
+        'The epic outline below is kept for reference.</p>\n'
         '    <div class="tblwrap"><table class="stbl"><tr><th>Feature</th><th>Epics</th></tr>\n'
         + h_outline() + '</table></div></div>\n'
 
@@ -849,17 +852,18 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Features 1&ndash;3 complete &mdash; next: Feature 4 (Immutable shards + manifests)</h2>\n'
-        '    <p><strong>Features 1 (Collecting data), 2 (Clean &amp; filter) and 3 (Frozen tokenizer) are done.</strong> '
-        '<code>python run_demo.py</code> runs on the full 10M corpus through three stages: '
-        '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, '
-        '<code>[PASS] corpus_cleaned kept=13026 dropped=32</code>, then '
-        '<code>[PASS] tokenizer_frozen vocab=12000 merges=11740 hash=3eb8d6c50b13&hellip;</code>. The frozen tokenizer '
-        '(<code>vocab.json</code> + <code>merges.txt</code> + manifest) is committed and content-hashed; '
-        'encode&rarr;decode round-trips every lane exactly. 230 offline tests pass. Feature 3 was built directly, with '
-        'a dedicated <a href="feature3.html">deep-dive page</a> (each epic&rsquo;s code + a worked example).</p>\n'
-        '    <p><strong>Next is Feature 4 &mdash; immutable tokenized shards + manifests</strong> (still a provisional '
-        'outline below). Say &ldquo;expand Feature 4&rdquo; to break it into epics, then we build it.</p></div>\n'
+        '  <div class="sec"><h2>All 16 features complete &mdash; the full pipeline runs end to end</h2>\n'
+        '    <p><strong>Every feature (1&ndash;16) is built, tested and run.</strong> '
+        '<code>python run_demo.py</code> executes the whole data plane on the real 10M corpus and emits a '
+        '<code>[PASS]</code> for every stage: corpus loaded (13,087 docs) &rarr; cleaned (kept 13,026) &rarr; '
+        'tokenizer frozen (vocab 12,000) &rarr; 171 immutable shards (10.4M tokens, verified) &rarr; eval firewall '
+        '(3 shards blocked) &rarr; mixture floors met &rarr; OPUS (46 accepted) &rarr; packing (0.89 efficiency) &rarr; '
+        'reproducible batch stream &rarr; MoE trained (3.77M params, 30 steps) &rarr; ΔS on 36 pairs &rarr; checkpoint '
+        '&rarr; crash+resume (no skip/repeat, loss matched) &rarr; replay (hashes matched) &rarr; fork (lineage '
+        'recorded) &rarr; throughput &rarr; audit (6/6 checks) + evidence bundle. <strong>294 offline tests pass.</strong></p>\n'
+        '    <p>The governing invariant holds: a seed plus a ledger offset reconstructs any batch byte-for-byte. '
+        'See the per-feature deep dives at <a href="features.html">Features 4&ndash;16</a> and '
+        '<a href="feature3.html">Feature 3</a>.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
@@ -936,12 +940,12 @@ def build_md():
                "Fill in the angle-bracket placeholders.\n")
     for label, when, text in TEMPLATES:
         out.append("### Template %s\nUse %s.\n\n```\n%s\n```\n" % (label, when, text))
-    out.append("## Current epic — 4.1 · Shard writer\n")
-    out.append("Features 1–3 are done (230 offline tests pass; run_demo emits `[PASS] corpus_loaded`, "
-               "`[PASS] corpus_cleaned kept=13026 dropped=32`, then "
-               "`[PASS] tokenizer_frozen vocab=12000 merges=11740`). The frozen tokenizer is committed + "
-               "content-hashed; see feature3.html for each epic's code + example. Next: Feature 4 (immutable "
-               "shards + manifests) — say “expand Feature 4”.\n")
+    out.append("## Status — all 16 features complete\n")
+    out.append("The full pipeline runs end to end via `python run_demo.py` on the real 10M corpus, emitting a "
+               "`[PASS]` for every stage (corpus → clean → tokenizer → shards → firewall → mixture → OPUS → "
+               "packer → batch stream → MoE trainer → checkpoint → resume → replay → fork → throughput → audit) "
+               "plus an evidence bundle. 294 offline tests pass. The invariant holds: a seed + a ledger offset "
+               "reconstructs any batch byte-for-byte. Per-feature deep dives: feature3.html and features.html.\n")
     return "\n".join(out) + "\n"
 
 

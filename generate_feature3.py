@@ -14,6 +14,7 @@ NAV = (
     '  <a href="v5_playbook.html">V5 Plan — Proposal</a>\n'
     '  <a href="assignment.html">Assignment</a>\n'
     '  <a href="feature3.html" class="active">Feature 3</a>\n'
+    '  <a href="features.html">Features 4&ndash;16</a>\n'
     '</div></div>\n'
 )
 

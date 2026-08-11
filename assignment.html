@@ -76,6 +76,7 @@ mjx-container { color:var(--ink); }
   <a href="v5_playbook.html">V5 Plan — Proposal</a>
   <a href="assignment.html" class="active">Assignment</a>
   <a href="feature3.html">Feature 3</a>
+  <a href="features.html">Features 4&ndash;16</a>
 </div></div>
 <div class="wrap">
   <div class="crumb">Session 6 / Training Data Execution System</div>
@@ -128,19 +129,19 @@ corpus
 <tr><td>1</td><td>Collecting data</td><td>Tokenizer integrity / data</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
 <tr><td>2</td><td>Clean &amp; filter</td><td>Shards/manifests</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
 <tr><td>3</td><td>Frozen BPE tokenizer</td><td>Tokenizer integrity</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
-<tr><td>4</td><td>Immutable shards + manifests</td><td>Shards/manifests</td><td>100</td><td><span class="b b-tight">in progress</span></td></tr>
-<tr><td>5</td><td>Evaluation firewall</td><td>Firewall</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>6</td><td>Mixture / curriculum</td><td>Mixture</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>7</td><td>OPUS selector</td><td>Mixture/OPUS</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>8</td><td>Packer (masks, position ids)</td><td>Packing/masks</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>9</td><td>Batch stream + consumption ledger</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>10</td><td>Trainer (MoE) + learning ledger</td><td>Ledgers</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>11</td><td>Checkpoints</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>12</td><td>Crash + resume</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>13</td><td>Replay</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>14</td><td>Fork</td><td>Checkpoint</td><td>150</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>15</td><td>Throughput / packing efficiency</td><td>Throughput</td><td>50</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
-<tr><td>16</td><td>Audit + evidence + one-command + tests + README</td><td>Evidence/tests/docs + end-to-end</td><td>200</td><td><span class="b" style="background:#eee;color:#888">pending</span></td></tr>
+<tr><td>4</td><td>Immutable shards + manifests</td><td>Shards/manifests</td><td>100</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>5</td><td>Evaluation firewall</td><td>Firewall</td><td>50</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>6</td><td>Mixture / curriculum</td><td>Mixture</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>7</td><td>OPUS selector</td><td>Mixture/OPUS</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>8</td><td>Packer (masks, position ids)</td><td>Packing/masks</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>9</td><td>Batch stream + consumption ledger</td><td>Ledgers</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>10</td><td>Trainer (MoE) + learning ledger</td><td>Ledgers</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>11</td><td>Checkpoints</td><td>Checkpoint</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>12</td><td>Crash + resume</td><td>Checkpoint</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>13</td><td>Replay</td><td>Checkpoint</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>14</td><td>Fork</td><td>Checkpoint</td><td>150</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>15</td><td>Throughput / packing efficiency</td><td>Throughput</td><td>50</td><td><span class="b b-ok">done</span></td></tr>
+<tr><td>16</td><td>Audit + evidence + one-command + tests + README</td><td>Evidence/tests/docs + end-to-end</td><td>200</td><td><span class="b b-ok">done</span></td></tr>
 </table></div>
     <p class="cap">Points map to the assignment&rsquo;s 1,000-point rubric.</p></div>
   <div class="sec"><h2>Feature 1 — Collecting data (epics &amp; stories) &nbsp;<span class="b b-ok">complete</span></h2>
@@ -303,8 +304,8 @@ corpus
     </ul>
     <p class="cap">Acceptance: python run_demo.py emits [PASS] tokenizer_frozen after corpus_cleaned, the hash matches the manifest, and the end-to-end test passes.</p>
 </div>
-  <div class="sec"><h2>Features 4–16 — epic outline</h2>
-    <p class="cap">Provisional epic breakdown; story-level detail is written when each feature becomes current.</p>
+  <div class="sec"><h2>Features 4–16 — implemented</h2>
+    <p class="cap">All built, tested and run end to end. Each has its own deep-dive page (modules + code + real <code>[PASS]</code> evidence): see <a href="features.html">Features 4&ndash;16</a>. The epic outline below is kept for reference.</p>
     <div class="tblwrap"><table class="stbl"><tr><th>Feature</th><th>Epics</th></tr>
 <tr><td><b>4 · Immutable shards + manifests</b></td><td>4.1 shard writer (fixed-size token shards, content-addressed, immutable) · 4.2 per-shard manifest (hash, token count, lane, provenance, tags, source doc ids) · 4.3 shard-set index · 4.4 immutability / re-hash verification + test</td></tr>
 <tr><td><b>5 · Evaluation firewall</b></td><td>5.1 mark eval shards · 5.2 firewall gate (eval shard ids can never enter a train batch) · 5.3 [PASS] eval_shard_blocked event + test</td></tr>
@@ -340,9 +341,9 @@ corpus
     <p class="cap">Use when web Claude has returned the code.</p>
     <div class="diagram"><pre>Here is web Claude&#x27;s output for Epic &lt;N.M&gt;: &lt;paste code&gt;. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic &lt;N.M&gt; done and set the next epic active in the plan.</pre></div>
 </div>
-  <div class="sec"><h2>Features 1&ndash;3 complete &mdash; next: Feature 4 (Immutable shards + manifests)</h2>
-    <p><strong>Features 1 (Collecting data), 2 (Clean &amp; filter) and 3 (Frozen tokenizer) are done.</strong> <code>python run_demo.py</code> runs on the full 10M corpus through three stages: <code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, <code>[PASS] corpus_cleaned kept=13026 dropped=32</code>, then <code>[PASS] tokenizer_frozen vocab=12000 merges=11740 hash=3eb8d6c50b13&hellip;</code>. The frozen tokenizer (<code>vocab.json</code> + <code>merges.txt</code> + manifest) is committed and content-hashed; encode&rarr;decode round-trips every lane exactly. 230 offline tests pass. Feature 3 was built directly, with a dedicated <a href="feature3.html">deep-dive page</a> (each epic&rsquo;s code + a worked example).</p>
-    <p><strong>Next is Feature 4 &mdash; immutable tokenized shards + manifests</strong> (still a provisional outline below). Say &ldquo;expand Feature 4&rdquo; to break it into epics, then we build it.</p></div>
+  <div class="sec"><h2>All 16 features complete &mdash; the full pipeline runs end to end</h2>
+    <p><strong>Every feature (1&ndash;16) is built, tested and run.</strong> <code>python run_demo.py</code> executes the whole data plane on the real 10M corpus and emits a <code>[PASS]</code> for every stage: corpus loaded (13,087 docs) &rarr; cleaned (kept 13,026) &rarr; tokenizer frozen (vocab 12,000) &rarr; 171 immutable shards (10.4M tokens, verified) &rarr; eval firewall (3 shards blocked) &rarr; mixture floors met &rarr; OPUS (46 accepted) &rarr; packing (0.89 efficiency) &rarr; reproducible batch stream &rarr; MoE trained (3.77M params, 30 steps) &rarr; ΔS on 36 pairs &rarr; checkpoint &rarr; crash+resume (no skip/repeat, loss matched) &rarr; replay (hashes matched) &rarr; fork (lineage recorded) &rarr; throughput &rarr; audit (6/6 checks) + evidence bundle. <strong>294 offline tests pass.</strong></p>
+    <p>The governing invariant holds: a seed plus a ledger offset reconstructs any batch byte-for-byte. See the per-feature deep dives at <a href="features.html">Features 4&ndash;16</a> and <a href="feature3.html">Feature 3</a>.</p></div>
   <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. Method spec: <code>contrastive_perspective_corpus.md</code>.</div>
 </div>
 </body>

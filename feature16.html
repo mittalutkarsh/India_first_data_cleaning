@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature 16 — Audit + evidence bundle</title>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
+  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; } .nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:820px; margin:0 auto; padding:0 24px 80px; }
+.crumb { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding:18px 0 0; }
+.phead { padding:8px 0 14px; border-bottom:2px solid var(--ink); }
+.eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(26px,3.6vw,38px); margin:8px 0 8px; }
+.phead .dek { font-size:15px; color:#33334a; margin:0; }
+.sec { margin:28px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:20px; margin:0 0 6px; }
+h3 { font-size:15px; margin:22px 0 4px; color:var(--indigo); }
+p { margin:13px 0; } strong { font-weight:600; }
+ol, ul { margin:12px 0; padding-left:22px; } li { margin:6px 0; }
+.diagram { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
+.diagram pre { margin:0; font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.55; color:#26263c; white-space:pre; }
+.tblwrap { overflow-x:auto; }
+.egbox { border:1px solid var(--line); border-left:3px solid var(--indigo-soft); border-radius:0 8px 8px 0; background:#fff; padding:11px 14px; margin:10px 0; font-size:13.5px; line-height:1.55; }
+.yes { color:var(--teal); font-weight:600; } .no { color:var(--rose); font-weight:600; }
+.q { font-family:"IBM Plex Mono",monospace; font-size:12.5px; }
+.tbl { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.tbl th, .tbl td { padding:8px 11px; border-bottom:1px solid var(--line); text-align:right; }
+.tbl th:first-child, .tbl td:first-child { text-align:left; }
+.tbl th { font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+.b { font-weight:600; padding:1px 7px; border-radius:5px; }
+.b-ok { background:#e6f5ef; color:#0f7a54; } .b-tight { background:#fbeede; color:#9a5a12; }
+.b-starved { background:#fceef2; color:var(--rose); } .b-inf { background:#f7e0e6; color:#8a1a3a; }
+.cap { font-size:13px; color:var(--muted); margin-top:-6px; font-style:italic; }
+.callout { margin:16px 0; border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; padding:12px 16px; font-size:14px; color:#4a3a1e; }
+.foot { margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted); }
+code { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--panel); padding:1px 5px; border-radius:4px; }
+.fig { margin:20px 0; padding:16px 16px 6px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+.fig svg { display:block; }
+.fig figcaption { font-size:12.5px; color:var(--muted); margin-top:10px; padding-top:8px; border-top:1px solid var(--line); line-height:1.5; }
+.fig figcaption b { color:var(--ink); }
+.eq { margin:14px 0; overflow-x:auto; }
+mjx-container { color:var(--ink); }
+.stbl { width:100%; border-collapse:collapse; font-family:"Inter",sans-serif; font-size:12.5px; line-height:1.45; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.stbl th, .stbl td { text-align:left; vertical-align:top; padding:9px 11px; border-bottom:1px solid var(--line); }
+.stbl th { font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); font-weight:600; }
+.stbl td:first-child { white-space:nowrap; }
+.stbl .lanetag { font-family:"IBM Plex Mono",monospace; font-size:10px; }
+.stbl .tgt { font-weight:600; color:var(--indigo); }
+</style>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="assignment.html">Assignment</a>
+  <a href="feature3.html">Feature 3</a>
+  <a href="features.html">Features 4&ndash;16</a>
+</div></div>
+<div class="wrap">
+  <div class="crumb">Session 6 / Feature 16</div>
+  <div class="phead">
+    <div class="eyebrow">Feature 16 · implementation</div>
+    <h1>Audit + evidence bundle</h1>
+    <p class="dek">Cross-check the whole run against its own artifacts and assemble evidence.json + evidence.md entirely from written files — nothing hardcoded.</p>
+  </div>
+  <div class="sec"><h2>Evidence — from the real run</h2>
+    <p class="cap">Emitted by <code>python run_demo.py</code> on the full 10M corpus.</p>
+    <div class="diagram"><pre>[PASS] audit_complete checks=6 all_passed=True</pre></div>
+  </div>
+  <div class="sec"><h2>feature16_audit/audit.py</h2>
+    <p>Feature 16 — audit + evidence (epics 16.1-16.4).</p>
+    <p class="cap">Public interface</p>
+    <div class="diagram"><pre>def run_audit(*, emitted_pass_events, tokenizer_dir, shard_root, checkpoint_dir, manifests)
+def build_evidence(*, tokenizer_dir, shard_root, checkpoint_dir, manifests, audit)
+def write_evidence_md(evidence, path)</pre></div>
+  </div>
+  <div class="foot">Code in the <code>v5-execution-system</code> repo · <a href="features.html">all features</a> · <a href="assignment.html">tracker</a></div>
+</div>
+</body>
+</html>
