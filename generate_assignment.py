@@ -22,6 +22,7 @@ NAV = (
     '  <a href="v5_brief.html">V5 Plan</a>\n'
     '  <a href="v5_playbook.html">V5 Plan — Proposal</a>\n'
     '  <a href="assignment.html" class="active">Assignment</a>\n'
+    '  <a href="feature3.html">Feature 3</a>\n'
     '</div></div>\n'
 )
 
@@ -47,8 +48,8 @@ LOCKED = [
 FEATURES = [
     (1, "Collecting data", "Tokenizer integrity / data", 100, "done"),
     (2, "Clean & filter", "Shards/manifests", 100, "done"),
-    (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "active"),
-    (4, "Immutable shards + manifests", "Shards/manifests", 100, "pending"),
+    (3, "Frozen BPE tokenizer", "Tokenizer integrity", 100, "done"),
+    (4, "Immutable shards + manifests", "Shards/manifests", 100, "active"),
     (5, "Evaluation firewall", "Firewall", 50, "pending"),
     (6, "Mixture / curriculum", "Mixture", 150, "pending"),
     (7, "OPUS selector", "Mixture/OPUS", 150, "pending"),
@@ -142,37 +143,37 @@ FEATURE2 = [
 
 # id, title, status, [stories], acceptance — elaborated when the feature became current
 FEATURE3 = [
-    ("3.1", "Byte-level alphabet + pre-tokenization", "active", [
+    ("3.1", "Byte-level alphabet + pre-tokenization", "done", [
         "byte_encode(text) -> list[int] / byte_decode(list[int]) -> str over UTF-8 bytes: the base alphabet is the 256 byte values, so EVERY lane — including Devanagari, Bengali and Tamil — is representable with no <unk> and nothing to fragment (the byte-level choice is what makes an India-first tokenizer safe).",
         "A reversible byte<->printable-symbol view (GPT-2 style) so merge rules can be stored and diffed as text while staying lossless.",
         "Pre-tokenize on a single fixed regex so merges never cross a whitespace boundary; deterministic and stdlib-only.",
     ], "byte round-trip is lossless on a sample from every lane; no wall-clock / dict-order dependence; tests pass."),
-    ("3.2", "Deterministic BPE trainer", "pending", [
+    ("3.2", "Deterministic BPE trainer", "done", [
         "train_bpe(corpus_iter, *, vocab_size, special_tokens) -> (vocab, merges): count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat until the target vocab size (a single knob, locked at 12,000).",
         "A total, fixed tie-break (highest count, then lexicographically smallest pair) so the learned merges are reproducible regardless of dict iteration order.",
         "Train on a bounded, lane-balanced, deterministic sample of the CLEANED corpus (data/clean from Feature 2) so it is fast and representative of every lane.",
     ], "training the same sample + params twice yields identical (vocab, merges), ordered by learn-step; deterministic; tests pass."),
-    ("3.3", "Freeze: serialize vocab + merges (immutable artifact)", "pending", [
+    ("3.3", "Freeze: serialize vocab + merges (immutable artifact)", "done", [
         "Write tokenizer/vocab.json (token->id) and tokenizer/merges.txt (ordered merge rules) with deterministic bytes: ranked where order is semantic, sorted where it is not, ensure_ascii=False, newline=\"\\n\".",
         "The artifact is written ONCE and treated as immutable — no later stage rewrites it (the same immutability discipline as raw and eval).",
     ], "serialize -> load -> serialize is byte-identical, and identical across machines; tests pass."),
-    ("3.4", "Encoder", "pending", [
+    ("3.4", "Encoder", "done", [
         "Tokenizer.load(dir) reads the frozen vocab+merges; encode(text) -> list[int] applies the merges greedily by rank within each pre-token.",
         "Pure function of the frozen artifact — no training-time state; a byte-level fallback guarantees unknown bytes can never occur.",
     ], "encoding is deterministic; known strings map to expected id sequences; no <unk> on any lane; tests pass."),
-    ("3.5", "Decoder + lossless round-trip", "pending", [
+    ("3.5", "Decoder + lossless round-trip", "done", [
         "decode(ids) -> str inverts encode through the byte-level mapping.",
         "Round-trip invariant: decode(encode(x)) == x for a sample from every lane, including Indic combining sequences, emoji and code punctuation, plus a property test over random Unicode.",
     ], "exact round-trip on every lane sample and the property test; tests pass."),
-    ("3.6", "Special tokens + integrity checks", "pending", [
+    ("3.6", "Special tokens + integrity checks", "done", [
         "Reserve special tokens with fixed ids (<pad>, <bos>, <eos>, <doc>) that never collide with learned tokens and never arise from encoding ordinary text.",
         "Integrity checks: the vocab covers all 256 base bytes, every merge references tokens that exist, ids are a contiguous 0..N-1, and special ids are disjoint.",
     ], "the integrity check passes on the frozen tokenizer and rejects a corrupted vocab (missing byte / duplicate id); tests pass."),
-    ("3.7", "Tokenizer manifest + content hash (the freeze contract)", "pending", [
+    ("3.7", "Tokenizer manifest + content hash (the freeze contract)", "done", [
         "content_hash over the canonical (vocab + merges + special tokens) bytes; write tokenizer/tokenizer_manifest.json {hash, vocab_size, n_merges, special_tokens, base=\"bytes\", trained_on (cleaned-corpus reference), tokenizer_version}.",
         "This hash is the tokenizer's identity — every downstream stage (shards, batches) references it, so re-freezing the same corpus must reproduce the same hash.",
     ], "the manifest regenerates identically and the hash is stable across runs/machines; a one-token change changes the hash; tests pass."),
-    ("3.8", "Wire the tokenizer stage into run_demo", "pending", [
+    ("3.8", "Wire the tokenizer stage into run_demo", "done", [
         "Load the frozen tokenizer, VERIFY its content hash matches the manifest, then encode+decode a sample from every lane and assert the round-trip.",
         "Log [INFO] tokenizer lines and a final [PASS] tokenizer_frozen vocab=… merges=… hash=…; run.log stays deterministic (basename-only, no timestamps or absolute paths).",
     ], "python run_demo.py emits [PASS] tokenizer_frozen after corpus_cleaned, the hash matches the manifest, and the end-to-end test passes."),
@@ -823,12 +824,15 @@ def build_html():
         '<code>data/clean/</code> plus a report.</p>\n'
         + h_feature2() + '</div>\n'
 
-        '  <div class="sec"><h2>Feature 3 — Frozen byte-level BPE tokenizer (epics &amp; stories)</h2>\n'
+        '  <div class="sec"><h2>Feature 3 — Frozen byte-level BPE tokenizer (epics &amp; stories) &nbsp;'
+        '<span class="b b-ok">complete</span></h2>\n'
         '    <p>Train one small byte-level BPE tokenizer on the cleaned corpus, then <em>freeze</em> it: serialize its '
         'vocab and merges, content-hash the artifact, and let every downstream stage reference that hash. Byte-level is '
         'a deliberate India-first choice &mdash; the 256-byte base alphabet represents Devanagari, Bengali and Tamil '
         'losslessly, so there is no <code>&lt;unk&gt;</code> and nothing to fragment. The whole feature turns on one '
-        'invariant: <strong>encode then decode returns the original text exactly, on every lane</strong>.</p>\n'
+        'invariant: <strong>encode then decode returns the original text exactly, on every lane</strong>. '
+        'See the <a href="feature3.html">full Feature 3 page</a> &mdash; every epic with its code and a worked '
+        'example.</p>\n'
         + h_feature3() + '</div>\n'
 
         '  <div class="sec"><h2>Features 4–16 — epic outline</h2>\n'
@@ -845,17 +849,17 @@ def build_html():
         'Fill in the angle-bracket placeholders.</p>\n'
         + h_templates() + '</div>\n'
 
-        '  <div class="sec"><h2>Current epic — 3.1 · Byte-level alphabet + pre-tokenization</h2>\n'
-        '    <p><strong>Features 1 (Collecting data) and 2 (Clean &amp; filter) are done.</strong> '
-        '<code>python run_demo.py</code> runs on the full 10M corpus through two stages: '
-        '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code> then '
-        '<code>[PASS] corpus_cleaned kept=13026 dropped=32</code> (quality 4, near-dup 19, decontam 9; '
-        '534 PII redactions), writing <code>submission_artifacts/run.log</code>, '
-        '<code>manifests/corpus_summary.json</code>, and <code>data/clean/</code> + a cleaning report. 176 offline '
-        'tests pass.</p>\n'
-        '    <p><strong>Feature 3 (frozen byte-level BPE tokenizer) is now expanded into eight epics</strong> '
-        '(3.1&ndash;3.8, with stories, in the section above). Epic 3.1 (byte-level alphabet + pre-tokenization) is the '
-        'active step. Next we build it &mdash; directly, or via the web-Claude loop; your call.</p></div>\n'
+        '  <div class="sec"><h2>Features 1&ndash;3 complete &mdash; next: Feature 4 (Immutable shards + manifests)</h2>\n'
+        '    <p><strong>Features 1 (Collecting data), 2 (Clean &amp; filter) and 3 (Frozen tokenizer) are done.</strong> '
+        '<code>python run_demo.py</code> runs on the full 10M corpus through three stages: '
+        '<code>[PASS] corpus_loaded total=13087 eval=29 contrastive=36</code>, '
+        '<code>[PASS] corpus_cleaned kept=13026 dropped=32</code>, then '
+        '<code>[PASS] tokenizer_frozen vocab=12000 merges=11740 hash=3eb8d6c50b13&hellip;</code>. The frozen tokenizer '
+        '(<code>vocab.json</code> + <code>merges.txt</code> + manifest) is committed and content-hashed; '
+        'encode&rarr;decode round-trips every lane exactly. 230 offline tests pass. Feature 3 was built directly, with '
+        'a dedicated <a href="feature3.html">deep-dive page</a> (each epic&rsquo;s code + a worked example).</p>\n'
+        '    <p><strong>Next is Feature 4 &mdash; immutable tokenized shards + manifests</strong> (still a provisional '
+        'outline below). Say &ldquo;expand Feature 4&rdquo; to break it into epics, then we build it.</p></div>\n'
 
         '  <div class="foot">Session 6 tracker · mirrors <code>session6_plan.md</code>. '
         'Method spec: <code>contrastive_perspective_corpus.md</code>.</div>\n'
@@ -908,7 +912,7 @@ def build_md():
         for story in stories:
             out.append("- %s" % story)
         out.append("- **Acceptance:** %s\n" % acc)
-    out.append("## Feature 3 — Frozen byte-level BPE tokenizer  " + st["active"] + "\n")
+    out.append("## Feature 3 — Frozen byte-level BPE tokenizer  " + st["done"] + "\n")
     out.append("Train one small byte-level BPE tokenizer on the cleaned corpus, then freeze it: serialize vocab + "
                "merges, content-hash the artifact, and reference that hash everywhere downstream. Byte-level is an "
                "India-first choice — the 256-byte base alphabet represents Devanagari/Bengali/Tamil losslessly (no "
@@ -932,10 +936,12 @@ def build_md():
                "Fill in the angle-bracket placeholders.\n")
     for label, when, text in TEMPLATES:
         out.append("### Template %s\nUse %s.\n\n```\n%s\n```\n" % (label, when, text))
-    out.append("## Current epic — 3.1 · Byte-level alphabet + pre-tokenization\n")
-    out.append("Features 1 & 2 are done (176 offline tests pass; run_demo emits `[PASS] corpus_loaded` then "
-               "`[PASS] corpus_cleaned kept=13026 dropped=32`). Feature 3 is expanded into epics 3.1–3.8; 3.1 is "
-               "active. Next we build it — directly or via the web-Claude loop.\n")
+    out.append("## Current epic — 4.1 · Shard writer\n")
+    out.append("Features 1–3 are done (230 offline tests pass; run_demo emits `[PASS] corpus_loaded`, "
+               "`[PASS] corpus_cleaned kept=13026 dropped=32`, then "
+               "`[PASS] tokenizer_frozen vocab=12000 merges=11740`). The frozen tokenizer is committed + "
+               "content-hashed; see feature3.html for each epic's code + example. Next: Feature 4 (immutable "
+               "shards + manifests) — say “expand Feature 4”.\n")
     return "\n".join(out) + "\n"
 
 

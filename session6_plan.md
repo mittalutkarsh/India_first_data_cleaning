@@ -32,8 +32,8 @@ One epic at a time; an epic is **Done** only when its acceptance criteria are pr
 |---|---|---|---|---|
 | 1 | Collecting data | Tokenizer integrity / data | 100 | ☑ |
 | 2 | Clean & filter | Shards/manifests | 100 | ☑ |
-| 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ◐ |
-| 4 | Immutable shards + manifests | Shards/manifests | 100 | ☐ |
+| 3 | Frozen BPE tokenizer | Tokenizer integrity | 100 | ☑ |
+| 4 | Immutable shards + manifests | Shards/manifests | 100 | ◐ |
 | 5 | Evaluation firewall | Firewall | 50 | ☐ |
 | 6 | Mixture / curriculum | Mixture | 150 | ☐ |
 | 7 | OPUS selector | Mixture/OPUS | 150 | ☐ |
@@ -140,48 +140,48 @@ Turn the raw pool into a cleaned training corpus (normalize, content-hash + exac
 - Wire a clean stage into run_demo: log per-stage [INFO] drop counts and a final [PASS] corpus_cleaned kept=… dropped=…; end-to-end test.
 - **Acceptance:** reads raw + eval, writes only under data/clean and submission_artifacts; deterministic; run_demo emits [PASS] corpus_cleaned; tests pass.
 
-## Feature 3 — Frozen byte-level BPE tokenizer  ◐
+## Feature 3 — Frozen byte-level BPE tokenizer  ☑
 
 Train one small byte-level BPE tokenizer on the cleaned corpus, then freeze it: serialize vocab + merges, content-hash the artifact, and reference that hash everywhere downstream. Byte-level is an India-first choice — the 256-byte base alphabet represents Devanagari/Bengali/Tamil losslessly (no <unk>, nothing to fragment). The invariant: encode then decode returns the original text exactly, on every lane.
 
-### Epic 3.1 — Byte-level alphabet + pre-tokenization  ◐
+### Epic 3.1 — Byte-level alphabet + pre-tokenization  ☑
 - byte_encode(text) -> list[int] / byte_decode(list[int]) -> str over UTF-8 bytes: the base alphabet is the 256 byte values, so EVERY lane — including Devanagari, Bengali and Tamil — is representable with no <unk> and nothing to fragment (the byte-level choice is what makes an India-first tokenizer safe).
 - A reversible byte<->printable-symbol view (GPT-2 style) so merge rules can be stored and diffed as text while staying lossless.
 - Pre-tokenize on a single fixed regex so merges never cross a whitespace boundary; deterministic and stdlib-only.
 - **Acceptance:** byte round-trip is lossless on a sample from every lane; no wall-clock / dict-order dependence; tests pass.
 
-### Epic 3.2 — Deterministic BPE trainer  ☐
+### Epic 3.2 — Deterministic BPE trainer  ☑
 - train_bpe(corpus_iter, *, vocab_size, special_tokens) -> (vocab, merges): count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat until the target vocab size (a single knob, locked at 12,000).
 - A total, fixed tie-break (highest count, then lexicographically smallest pair) so the learned merges are reproducible regardless of dict iteration order.
 - Train on a bounded, lane-balanced, deterministic sample of the CLEANED corpus (data/clean from Feature 2) so it is fast and representative of every lane.
 - **Acceptance:** training the same sample + params twice yields identical (vocab, merges), ordered by learn-step; deterministic; tests pass.
 
-### Epic 3.3 — Freeze: serialize vocab + merges (immutable artifact)  ☐
+### Epic 3.3 — Freeze: serialize vocab + merges (immutable artifact)  ☑
 - Write tokenizer/vocab.json (token->id) and tokenizer/merges.txt (ordered merge rules) with deterministic bytes: ranked where order is semantic, sorted where it is not, ensure_ascii=False, newline="\n".
 - The artifact is written ONCE and treated as immutable — no later stage rewrites it (the same immutability discipline as raw and eval).
 - **Acceptance:** serialize -> load -> serialize is byte-identical, and identical across machines; tests pass.
 
-### Epic 3.4 — Encoder  ☐
+### Epic 3.4 — Encoder  ☑
 - Tokenizer.load(dir) reads the frozen vocab+merges; encode(text) -> list[int] applies the merges greedily by rank within each pre-token.
 - Pure function of the frozen artifact — no training-time state; a byte-level fallback guarantees unknown bytes can never occur.
 - **Acceptance:** encoding is deterministic; known strings map to expected id sequences; no <unk> on any lane; tests pass.
 
-### Epic 3.5 — Decoder + lossless round-trip  ☐
+### Epic 3.5 — Decoder + lossless round-trip  ☑
 - decode(ids) -> str inverts encode through the byte-level mapping.
 - Round-trip invariant: decode(encode(x)) == x for a sample from every lane, including Indic combining sequences, emoji and code punctuation, plus a property test over random Unicode.
 - **Acceptance:** exact round-trip on every lane sample and the property test; tests pass.
 
-### Epic 3.6 — Special tokens + integrity checks  ☐
+### Epic 3.6 — Special tokens + integrity checks  ☑
 - Reserve special tokens with fixed ids (<pad>, <bos>, <eos>, <doc>) that never collide with learned tokens and never arise from encoding ordinary text.
 - Integrity checks: the vocab covers all 256 base bytes, every merge references tokens that exist, ids are a contiguous 0..N-1, and special ids are disjoint.
 - **Acceptance:** the integrity check passes on the frozen tokenizer and rejects a corrupted vocab (missing byte / duplicate id); tests pass.
 
-### Epic 3.7 — Tokenizer manifest + content hash (the freeze contract)  ☐
+### Epic 3.7 — Tokenizer manifest + content hash (the freeze contract)  ☑
 - content_hash over the canonical (vocab + merges + special tokens) bytes; write tokenizer/tokenizer_manifest.json {hash, vocab_size, n_merges, special_tokens, base="bytes", trained_on (cleaned-corpus reference), tokenizer_version}.
 - This hash is the tokenizer's identity — every downstream stage (shards, batches) references it, so re-freezing the same corpus must reproduce the same hash.
 - **Acceptance:** the manifest regenerates identically and the hash is stable across runs/machines; a one-token change changes the hash; tests pass.
 
-### Epic 3.8 — Wire the tokenizer stage into run_demo  ☐
+### Epic 3.8 — Wire the tokenizer stage into run_demo  ☑
 - Load the frozen tokenizer, VERIFY its content hash matches the manifest, then encode+decode a sample from every lane and assert the round-trip.
 - Log [INFO] tokenizer lines and a final [PASS] tokenizer_frozen vocab=… merges=… hash=…; run.log stays deterministic (basename-only, no timestamps or absolute paths).
 - **Acceptance:** python run_demo.py emits [PASS] tokenizer_frozen after corpus_cleaned, the hash matches the manifest, and the end-to-end test passes.
@@ -262,7 +262,7 @@ Use when web Claude has returned the code.
 Here is web Claude's output for Epic <N.M>: <paste code>. Review it against the acceptance criteria, integrate it into the v5-execution-system repo, run the test, then mark Epic <N.M> done and set the next epic active in the plan.
 ```
 
-## Current epic — 3.1 · Byte-level alphabet + pre-tokenization
+## Current epic — 4.1 · Shard writer
 
-Features 1 & 2 are done (176 offline tests pass; run_demo emits `[PASS] corpus_loaded` then `[PASS] corpus_cleaned kept=13026 dropped=32`). Feature 3 is expanded into epics 3.1–3.8; 3.1 is active. Next we build it — directly or via the web-Claude loop.
+Features 1–3 are done (230 offline tests pass; run_demo emits `[PASS] corpus_loaded`, `[PASS] corpus_cleaned kept=13026 dropped=32`, then `[PASS] tokenizer_frozen vocab=12000 merges=11740`). The frozen tokenizer is committed + content-hashed; see feature3.html for each epic's code + example. Next: Feature 4 (immutable shards + manifests) — say “expand Feature 4”.
 

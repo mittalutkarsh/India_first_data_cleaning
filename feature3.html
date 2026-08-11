@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Feature 3 — Frozen byte-level BPE tokenizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root { --bg:#FAFBFD; --ink:#16162A; --indigo:#2E357E; --indigo-soft:#6169B8; --marigold:#E0982B;
+  --teal:#147D74; --rose:#B5476B; --line:#E3E4EE; --muted:#656579; --panel:#F1F2F8; }
+*, *::before, *::after { box-sizing:border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font-family:"Inter",system-ui,sans-serif; font-size:15px; line-height:1.65; -webkit-font-smoothing:antialiased; }
+a { color:var(--indigo); text-decoration:none; } a:hover { text-decoration:underline; }
+.nav { position:sticky; top:0; z-index:50; background:rgba(250,251,253,.96); border-bottom:1px solid var(--line); }
+.nav-in { max-width:1280px; margin:0 auto; padding:10px 24px; display:flex; align-items:center; gap:13px; flex-wrap:wrap; }
+.brand { font-family:"Spectral",serif; font-weight:700; color:var(--indigo); font-size:16px; margin-right:auto; }
+.nav a { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.02em; color:var(--muted); padding:3px 2px; border-bottom:2px solid transparent; }
+.nav a:hover { color:var(--ink); text-decoration:none; } .nav a.active { color:var(--indigo); border-bottom-color:var(--marigold); }
+.wrap { max-width:820px; margin:0 auto; padding:0 24px 80px; }
+.crumb { font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--muted); padding:18px 0 0; }
+.phead { padding:8px 0 14px; border-bottom:2px solid var(--ink); }
+.eyebrow { font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.13em; text-transform:uppercase; color:var(--marigold); font-weight:600; }
+.phead h1 { font-family:"Spectral",serif; font-weight:700; font-size:clamp(26px,3.6vw,38px); margin:8px 0 8px; }
+.phead .dek { font-size:15px; color:#33334a; margin:0; }
+.sec { margin:28px 0 0; } .sec h2 { font-family:"Spectral",serif; font-size:20px; margin:0 0 6px; }
+h3 { font-size:15px; margin:22px 0 4px; color:var(--indigo); }
+p { margin:13px 0; } strong { font-weight:600; }
+ol, ul { margin:12px 0; padding-left:22px; } li { margin:6px 0; }
+.diagram { background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow-x:auto; margin:16px 0; }
+.diagram pre { margin:0; font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.55; color:#26263c; white-space:pre; }
+.tblwrap { overflow-x:auto; }
+.egbox { border:1px solid var(--line); border-left:3px solid var(--indigo-soft); border-radius:0 8px 8px 0; background:#fff; padding:11px 14px; margin:10px 0; font-size:13.5px; line-height:1.55; }
+.yes { color:var(--teal); font-weight:600; } .no { color:var(--rose); font-weight:600; }
+.q { font-family:"IBM Plex Mono",monospace; font-size:12.5px; }
+.tbl { width:100%; border-collapse:collapse; font-family:"IBM Plex Mono",monospace; font-size:13px; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.tbl th, .tbl td { padding:8px 11px; border-bottom:1px solid var(--line); text-align:right; }
+.tbl th:first-child, .tbl td:first-child { text-align:left; }
+.tbl th { font-size:10px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); }
+.b { font-weight:600; padding:1px 7px; border-radius:5px; }
+.b-ok { background:#e6f5ef; color:#0f7a54; } .b-tight { background:#fbeede; color:#9a5a12; }
+.b-starved { background:#fceef2; color:var(--rose); } .b-inf { background:#f7e0e6; color:#8a1a3a; }
+.cap { font-size:13px; color:var(--muted); margin-top:-6px; font-style:italic; }
+.callout { margin:16px 0; border-left:3px solid var(--marigold); background:#fdf9f1; border-radius:0 8px 8px 0; padding:12px 16px; font-size:14px; color:#4a3a1e; }
+.foot { margin-top:30px; padding-top:16px; border-top:1px solid var(--line); font-size:13.5px; color:var(--muted); }
+code { font-family:"IBM Plex Mono",monospace; font-size:12.5px; background:var(--panel); padding:1px 5px; border-radius:4px; }
+.fig { margin:20px 0; padding:16px 16px 6px; background:#fff; border:1px solid var(--line); border-radius:12px; }
+.fig svg { display:block; }
+.fig figcaption { font-size:12.5px; color:var(--muted); margin-top:10px; padding-top:8px; border-top:1px solid var(--line); line-height:1.5; }
+.fig figcaption b { color:var(--ink); }
+.eq { margin:14px 0; overflow-x:auto; }
+mjx-container { color:var(--ink); }
+.stbl { width:100%; border-collapse:collapse; font-family:"Inter",sans-serif; font-size:12.5px; line-height:1.45; background:#fff; border:1px solid var(--line); border-radius:12px; overflow:hidden; margin:16px 0; }
+.stbl th, .stbl td { text-align:left; vertical-align:top; padding:9px 11px; border-bottom:1px solid var(--line); }
+.stbl th { font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); background:var(--panel); font-weight:600; }
+.stbl td:first-child { white-space:nowrap; }
+.stbl .lanetag { font-family:"IBM Plex Mono",monospace; font-size:10px; }
+.stbl .tgt { font-weight:600; color:var(--indigo); }
+</style>
+</head>
+<body>
+<div class="nav"><div class="nav-in">
+  <span class="brand">India-First 40B</span>
+  <a href="overview.html">Overview</a>
+  <a href="v5_playbook.html">V5 Plan — Proposal</a>
+  <a href="assignment.html">Assignment</a>
+  <a href="feature3.html" class="active">Feature 3</a>
+</div></div>
+<div class="wrap">
+  <div class="crumb">Session 6 / Feature 3 — Frozen byte-level BPE tokenizer</div>
+  <div class="phead">
+    <div class="eyebrow">Feature 3 · epics with code &amp; worked examples</div>
+    <h1>Frozen byte-level BPE tokenizer</h1>
+    <p class="dek">Train one small byte-level BPE tokenizer on the cleaned corpus, then <em>freeze</em> it: serialize its vocab and merges, content-hash the artifact, and let every downstream stage reference that hash. Byte-level is a deliberate India-first choice &mdash; the 256-byte base alphabet represents Devanagari, Bengali and Tamil losslessly, so there is no <code>&lt;unk&gt;</code> and nothing to fragment.</p>
+  </div>
+  <div class="sec"><h2>The pipeline &amp; the invariant</h2>
+    <div class="diagram"><pre>
+text
+  -> bytes (UTF-8, 0..255)             every script representable, no &lt;unk&gt;
+  -> printable symbols (GPT-2 map)     so vocab/merges store as text
+  -> pre-tokens ( ?\S+ | \s+ )         words never split inside; merges never cross a space
+  -> BPE merges (learned, ranked)      trained on the cleaned corpus, vocab = 12,000
+  -> ids            [encode]
+  -> text           [decode]           INVARIANT: decode(encode(x)) == x, on every lane
+  -> frozen + content-hashed           the tokenizer's identity for all downstream stages
+</pre></div>
+    <p class="cap">Built directly (Feature 2&rsquo;s cleaning skills carried over); 53 offline tests for this feature, 230 across the repo. The real run trains in ~2 minutes.</p>
+  </div>
+  <div class="sec"><h2>Epic 3.1 — Byte-level alphabet + pre-tokenization</h2>
+    <p>Represent any text as its raw UTF-8 bytes (0&ndash;255). Because the base alphabet is all 256 byte values, <em>every</em> script &mdash; Devanagari, Bengali, Tamil, emoji, code &mdash; is representable with <strong>zero <code>&lt;unk&gt;</code></strong> and nothing to fragment. A GPT-2-style map turns each byte into one printable symbol so merges can be stored as text, and a single fixed regex splits words on whitespace without ever cutting inside a syllable.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def _bytes_to_unicode():          # the classic GPT-2 construction
+    bs = list(range(ord(&quot;!&quot;), ord(&quot;~&quot;)+1)) + list(range(ord(&quot;¡&quot;), ord(&quot;¬&quot;)+1)) \
+       + list(range(ord(&quot;®&quot;), ord(&quot;ÿ&quot;)+1))
+    cs = bs[:]; n = 0
+    for b in range(256):
+        if b not in bs:
+            bs.append(b); cs.append(256 + n); n += 1
+    return {b: chr(c) for b, c in zip(bs, cs)}   # every byte -&gt; one printable char
+
+BYTE_TO_UNICODE = _bytes_to_unicode()
+UNICODE_TO_BYTE = {c: b for b, c in BYTE_TO_UNICODE.items()}
+
+# a single leading space attaches to the next word; a &quot;word&quot; is a run of
+# non-whitespace, so an Indic syllable + its marks is never split.
+PRETOKEN_RE = __import__(&quot;re&quot;).compile(r&quot; ?\S+|\s+&quot;)
+
+def encode_to_symbols(text): return &quot;&quot;.join(BYTE_TO_UNICODE[b] for b in text.encode(&quot;utf-8&quot;))
+def decode_from_symbols(s):  return bytes(UNICODE_TO_BYTE[c] for c in s).decode(&quot;utf-8&quot;)
+def pretokenize(text):       return PRETOKEN_RE.findall(text)</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>&gt;&gt;&gt; byte_encode(&quot;the monsoon&quot;)
+[116, 104, 101, 32, 109, 111, 110, 115, 111, 111, 110]
+
+&gt;&gt;&gt; encode_to_symbols(&quot;the monsoon&quot;)      # byte 32 (space) -&gt; the symbol &quot;Ġ&quot;
+&#x27;theĠmonsoon&#x27;
+
+&gt;&gt;&gt; pretokenize(&quot;the monsoon&quot;)            # leading space rides with the word
+[&#x27;the&#x27;, &#x27; monsoon&#x27;]
+
+&gt;&gt;&gt; pretokenize(&quot;हिन्दी भाषा&quot;)             # the whole syllable stays together
+[&#x27;हिन्दी&#x27;, &#x27; भाषा&#x27;]
+
+&gt;&gt;&gt; decode_from_symbols(encode_to_symbols(&quot;தமிழ் 😀 ₹100&quot;))   # lossless, every lane
+&#x27;தமிழ் 😀 ₹100&#x27;</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.2 — Deterministic BPE trainer</h2>
+    <p>Count adjacent symbol-pair frequencies inside pre-tokens, merge the most frequent pair, repeat to the target vocab (locked at 12,000). The tie-break is total and fixed &mdash; highest count, then the lexicographically smallest pair &mdash; so the learned merges are reproducible regardless of dict order. A lazy max-heap keeps it near-linear.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def train_bpe(texts, *, vocab_size, special_tokens=()):
+    # base vocab: specials first (reserved ids), then all 256 byte symbols
+    vocab = {}
+    for tok in list(special_tokens) + [BYTE_TO_UNICODE[b] for b in range(256)]:
+        vocab.setdefault(tok, len(vocab))
+    target_merges = vocab_size - len(vocab)
+
+    # ... count adjacent symbol-pair frequencies inside pre-tokens ...
+    merges = []
+    while len(merges) &lt; target_merges:
+        # pick the best pair: MAX count, and on a tie the SMALLEST pair.
+        # a lazy max-heap makes this near-linear instead of rescanning.
+        best = pop_best(heap, pair_count)          # (-count, pair) -&gt; smallest tuple wins
+        if best is None: break
+        a, b = best
+        merge_everywhere(a, b)                      # incremental pair-count updates
+        vocab[a + b] = len(vocab)
+        merges.append((a, b))
+    return vocab, merges</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre># trained on the real cleaned 10M corpus (lane-balanced sample), vocab=12,000.
+# the FIRST merges the trainer chose are Indic byte-pairs — the corpus is
+# India-heavy, so BPE spends its early budget where the bytes are:
+
+&gt;&gt;&gt; merges[:8]
+[(&#x27;à&#x27;,&#x27;®&#x27;), (&#x27;à&#x27;,&#x27;¤&#x27;), (&#x27;à&#x27;,&#x27;¦&#x27;), (&#x27;à&#x27;,&#x27;¯&#x27;), (&#x27;à&#x27;,&#x27;¥&#x27;),
+ (&#x27;Ġ&#x27;,&#x27;à¤&#x27;), (&#x27;à¯&#x27;,&#x27;į&#x27;), (&#x27;Ġ&#x27;,&#x27;t&#x27;)]
+
+# determinism: retrain on the same sample -&gt; byte-identical (vocab, merges).</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.3 — Freeze: serialize vocab + merges</h2>
+    <p>Write <code>vocab.json</code>, <code>merges.txt</code> and <code>special_tokens.json</code> with deterministic bytes, then treat them as immutable. Serialize &rarr; load &rarr; serialize must be byte-identical across machines.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def save(self, out_dir):                 # deterministic bytes; newline=&quot;\n&quot;
+    write vocab.json          # {token: id}     (sort_keys, ensure_ascii=False)
+    write merges.txt          # &quot;# v5-bpe merges v1&quot; header, then &quot;a b&quot; per line
+    write special_tokens.json # [&quot;&lt;pad&gt;&quot;,&quot;&lt;bos&gt;&quot;,&quot;&lt;eos&gt;&quot;,&quot;&lt;doc&gt;&quot;]
+
+@classmethod
+def load(cls, in_dir):
+    merges = []
+    for line in read(merges.txt):
+        # skip ONLY the exact header, never a merge whose first symbol is &quot;#&quot;
+        # (byte &#x27;#&#x27; maps to the symbol &#x27;#&#x27;, so &quot;# x&quot; is real data, not a comment)
+        if not line or line == MERGES_HEADER:
+            continue
+        a, b = line.split(&quot; &quot;)
+        merges.append((a, b))
+    return cls(vocab, merges, specials)</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>merges.txt (first lines):
+    # v5-bpe merges v1
+    à ®
+    à ¤
+    à ¦
+    ...
+
+A bug this caught: the loader first skipped every line starting with &quot;#&quot;,
+which silently dropped 4 real merges whose first token was &quot;#&quot;. The frozen
+hash then failed to verify — exactly the guard doing its job (see Epic 3.7).
+Fix: match the header line EXACTLY. Regression test now forces a &quot;#&quot;-merge.</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.4 — Encoder</h2>
+    <p>Turn text into token ids: within each pre-token, greedily apply the lowest-rank merge until none remain, then map tokens to ids. A byte-level fallback guarantees <code>&lt;unk&gt;</code> can never occur.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def _bpe_word(self, symbols):            # greedily apply the lowest-rank merge
+    word = list(symbols)
+    while True:
+        best = argmin_rank((word[i], word[i+1]) for i in range(len(word)-1))
+        if best is None: return word
+        merge best pair in `word`
+
+def encode(self, text):                  # text -&gt; token ids, never &lt;unk&gt;
+    ids = []
+    for sym in pretokens_as_symbols(text):
+        for tok in self._bpe_word(sym):
+            ids.append(self.vocab[tok])
+    return ids</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>&gt;&gt;&gt; ids = tok.encode(&quot;the monsoon&quot;)
+&gt;&gt;&gt; ids
+[1454, 1741, 1093, 275]
+&gt;&gt;&gt; [tok.id_to_token[i] for i in ids]
+[&#x27;the&#x27;, &#x27;Ġmon&#x27;, &#x27;so&#x27;, &#x27;on&#x27;]            #  &quot;the&quot; learned as ONE token
+
+&gt;&gt;&gt; tok.encode(&quot;हिन्दी भाषा&quot;)
+[10638, 2547]
+&gt;&gt;&gt; [tok.id_to_token[i] for i in _]
+[&#x27;à¤¹à¤¿à¤¨à¥įà¤¦à¥Ģ&#x27;, &#x27;Ġà¤Ńà¤¾à¤·à¤¾&#x27;]   # the whole Hindi word = ONE token</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.5 — Decoder + lossless round-trip</h2>
+    <p>Invert encoding through the byte-level map. The whole feature turns on one property: <strong>decode(encode(x)) == x on every lane</strong>, including Indic combining sequences, emoji and code punctuation.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def decode(self, ids):
+    # special tokens carry no bytes -&gt; skip them; concatenate symbols FIRST,
+    # then convert the whole stream to bytes once (a token may end mid-UTF-8).
+    symbols = &quot;&quot;.join(self.id_to_token[i] for i in ids
+                      if self.id_to_token[i] not in self.special_set)
+    return decode_from_symbols(symbols)</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>The invariant for the whole feature — decode(encode(x)) == x, on every lane:
+
+    &quot;The monsoon reaches Kerala.&quot;      -&gt;  True
+    &quot;हिन्दी भाषा 😀 ₹100&quot;               -&gt;  True
+    &quot;বাংলা ভাষা — naïve café&quot;          -&gt;  True
+    &quot;def add(a, b):\n    return a + b&quot; -&gt;  True
+    &quot;தமிழ் ஒரு செம்மொழி ஆகும்.&quot;          -&gt;  True   (Tamil never seen in training)</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.6 — Special tokens + integrity checks</h2>
+    <p>Reserve <code>&lt;pad&gt; &lt;bos&gt; &lt;eos&gt; &lt;doc&gt;</code> with fixed low ids that never arise from ordinary text, and assert the tokenizer is internally consistent &mdash; all 256 bytes covered, ids contiguous, every merge grounded, no collisions.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def check_integrity(self):               # raises ValueError on any inconsistency
+    assert ids == 0..N-1                  # contiguous, no duplicates
+    assert every one of the 256 bytes is in the vocab       # no &lt;unk&gt; possible
+    assert every merge (a, b) has a, b and a+b in the vocab
+    assert special tokens are in the vocab
+    assert no special token collides with a byte / merge token</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>&gt;&gt;&gt; [tok.vocab[s] for s in (&quot;&lt;pad&gt;&quot;,&quot;&lt;bos&gt;&quot;,&quot;&lt;eos&gt;&quot;,&quot;&lt;doc&gt;&quot;)]
+[0, 1, 2, 3]                             # reserved, low ids
+
+&gt;&gt;&gt; tok.decode([tok.vocab[&quot;&lt;bos&gt;&quot;]] + tok.encode(&quot;hello&quot;) + [tok.vocab[&quot;&lt;eos&gt;&quot;]])
+&#x27;hello&#x27;                                  # specials frame the text, decode drops them
+
+# a corrupted vocab (a byte removed) is rejected:
+&gt;&gt;&gt; Tokenizer(broken, merges, specials).check_integrity()
+ValueError: byte 65 (&#x27;A&#x27;) missing from the vocab</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.7 — Tokenizer manifest + content hash</h2>
+    <p>Hash the canonical (vocab + merges + specials) into the tokenizer&rsquo;s identity and record it in a manifest. Re-freezing the same corpus reproduces the hash; a one-token change breaks it. This is the contract every downstream stage references.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def content_hash(self):                  # the tokenizer&#x27;s frozen identity
+    obj = {&quot;special_tokens&quot;: ..., &quot;vocab&quot;: self.vocab,
+           &quot;merges&quot;: [list(m) for m in self.merges]}
+    return sha256(json.dumps(obj, sort_keys=True, ensure_ascii=False))
+
+def verify_frozen(out_dir):              # downstream stages call this
+    manifest = read(tokenizer_manifest.json)
+    return load(out_dir).content_hash() == manifest[&quot;hash&quot;]</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>tokenizer_manifest.json:
+    {
+      &quot;kind&quot;: &quot;tokenizer_manifest&quot;,
+      &quot;hash&quot;: &quot;3eb8d6c50b13dc2733e6379d8dbd082bdd0bbb9200031b8984e18ca1b5684756&quot;,
+      &quot;vocab_size&quot;: 12000,
+      &quot;n_merges&quot;: 11740,
+      &quot;special_tokens&quot;: [&quot;&lt;pad&gt;&quot;,&quot;&lt;bos&gt;&quot;,&quot;&lt;eos&gt;&quot;,&quot;&lt;doc&gt;&quot;],
+      &quot;base&quot;: &quot;bytes-256&quot;,
+      &quot;trained_on&quot;: &quot;data/clean&quot;
+    }
+
+Re-freeze the same corpus -&gt; the SAME hash. Change one token -&gt; a new hash.
+Every downstream stage (shards, batches) references this hash as the tokenizer&#x27;s
+identity.</pre></div>
+  </div>
+  <div class="sec"><h2>Epic 3.8 — Wire the tokenizer stage into run_demo</h2>
+    <p>Build &rarr; verify the hash against the manifest &rarr; encode/decode a real document from every lane &rarr; emit <code>[PASS] tokenizer_frozen</code>. The evidence is real cleaned text, never a canned string, and <code>run.log</code> stays byte-identical across machines.</p>
+    <p class="cap">The code</p>
+    <div class="diagram"><pre>def stage_tokenizer(log, *, clean_root, tokenizer_dir, vocab_size):
+    tok = build_frozen_tokenizer(clean_root=clean_root, out_dir=tokenizer_dir,
+                                 vocab_size=vocab_size)
+    if not verify_frozen(tokenizer_dir):
+        raise ValueError(&quot;frozen tokenizer hash does not match its manifest&quot;)
+    for text in sample_clean_corpus(clean_root, docs_per_lane=1):   # real evidence
+        assert tok.decode(tok.encode(text)) == text
+    log.passed(&quot;tokenizer_frozen&quot;, vocab=len(tok.vocab),
+               merges=len(tok.merges), hash=tok.content_hash())</pre></div>
+    <p class="cap">Worked example</p>
+    <div class="diagram"><pre>python run_demo.py  (on the real 10M corpus):
+
+    [PASS] corpus_loaded total=13087 eval=29 contrastive=36
+    [PASS] corpus_cleaned kept=13026 dropped=32
+    [INFO] tokenizer vocab=12000 merges=11740
+    [INFO] tokenizer_roundtrip lanes_checked=5
+    [PASS] tokenizer_frozen vocab=12000 merges=11740 hash=3eb8d6c50b13...
+    [INFO] run_complete</pre></div>
+  </div>
+  <div class="foot">Session 6 · Feature 3 deep-dive. Tracker: <code>assignment.html</code>. Code lives in the <code>v5-execution-system</code> repo (<code>byte_level.py</code>, <code>bpe_train.py</code>, <code>bpe_tokenizer.py</code>, <code>tokenizer_build.py</code>).</div>
+</div>
+</body>
+</html>
